@@ -27,10 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated API documentation to explicitly describe callback handler `this` binding and hydrated route instance fields.
 - Updated README, Express, H3, and testing docs with handler argument and `clearRequest` behavior details.
 
-### Fixed
-
-- Fixed handler invocation safety by avoiding access to `instance.clearRequest` when no controller instance is present.
-
 ## [2.0.8] - 2026-02-20
 
 ### Changed
