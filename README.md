@@ -65,7 +65,7 @@ See [API.md](./docs/API.md) for complete API documentation.
 
 ## Middleware Execution Order
 
-```
+```txt
 [ Global Middleware ] → [ Group Middleware ] → [ Route Middleware ]
 ```
 

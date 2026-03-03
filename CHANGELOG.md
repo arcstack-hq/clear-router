@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated import statements to use single quotes consistently.
+- Removed unnecessary semicolons and adjusted line endings for consistency.
+- Refactored router classes in both Express and H3 to improve readability.
+- Enhanced error handling and logging in route definitions.
+- Updated tests to align with new formatting and ensure consistency.
+- Added ESLint configuration for improved code quality and style enforcement.
 - Changed internal route storage from plain object/array-style entries to `Route` class instances.
 - Updated router application pipeline to bind request data through a shared instance-binding step for controller and callback handlers.
 - Updated API documentation to explicitly describe callback handler `this` binding and hydrated route instance fields.

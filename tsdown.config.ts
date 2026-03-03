@@ -14,7 +14,7 @@ export default defineConfig([
     exports: true,
     unbundle: true,
     entry: {
-      "types/*": ["./types/*.ts", "!./types/index.ts"],
+      'types/*': ['./types/*.ts', '!./types/index.ts'],
     },
     outDir: 'dist',
     format: ['esm'],

@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, Response } from 'express'
 
-import Route from "../../src/express/router";
+import Route from '../../src/express/router'
 
 function pickRequestFields (req: Request) {
     return {
@@ -13,24 +13,24 @@ function pickRequestFields (req: Request) {
         params: req.params,
         path: req.path,
         query: req.query
-    };
+    }
 }
 
 export class Middleware {
     static unprotected (req: Request, res: Response, next: NextFunction) {
-        next();
+        next()
     }
 
     static protected (req: Request, res: Response, next: NextFunction) {
-        const id = req.query.id;
+        const id = req.query.id
         if (!id || id !== '12345678') {
             return res.status(403).json({
                 status: false,
                 code: 403,
                 message: 'Forbidden',
-            });
+            })
         }
-        next();
+        next()
     }
 }
 
@@ -41,7 +41,7 @@ const ThisObject = {
             code: 200,
             message: 'Route handler with object',
             request: pickRequestFields(req),
-        });
+        })
     },
     protected ({ req, res }: { req: Request, res: Response }) {
         return res.status(200).json({
@@ -49,9 +49,9 @@ const ThisObject = {
             code: 200,
             message: 'Route handler with object + protected middleware',
             request: pickRequestFields(req),
-        });
+        })
     },
-};
+}
 
 class ThisInstanceClass {
     index ({ req, res }: { req: Request, res: Response }) {
@@ -60,7 +60,7 @@ class ThisInstanceClass {
             code: 200,
             message: 'Route handler with instance class',
             request: pickRequestFields(req),
-        });
+        })
     }
 
     protected ({ req, res }: { req: Request, res: Response }) {
@@ -69,7 +69,7 @@ class ThisInstanceClass {
             code: 200,
             message: 'Route handler with instance class + protected middleware',
             request: pickRequestFields(req),
-        });
+        })
     }
 }
 
@@ -80,7 +80,7 @@ class ThisStaticClass {
             code: 200,
             message: 'Route handler with static class',
             request: pickRequestFields(req),
-        });
+        })
     }
 
     static protected ({ req, res }: { req: Request, res: Response }) {
@@ -89,7 +89,7 @@ class ThisStaticClass {
             code: 200,
             message: 'Route handler with static class + protected middleware',
             request: pickRequestFields(req),
-        });
+        })
     }
 }
 
@@ -100,13 +100,13 @@ Route.middleware([Middleware.unprotected], () => {
             code: 200,
             message: 'Route handler with directly function',
             request: pickRequestFields(req),
-        });
-    });
+        })
+    })
 
-    Route.get('object', ThisObject.index);
-    Route.get('instance', [ThisInstanceClass, 'index']);
-    Route.get('static', ThisStaticClass.index);
-});
+    Route.get('object', ThisObject.index)
+    Route.get('instance', [ThisInstanceClass, 'index'])
+    Route.get('static', ThisStaticClass.index)
+})
 
 Route.middleware([Middleware.protected], () => {
     Route.group('protected', () => {
@@ -116,22 +116,22 @@ Route.middleware([Middleware.protected], () => {
                 code: 200,
                 message: 'Route handler with directly function + protected middleware',
                 request: pickRequestFields(req),
-            });
-        });
+            })
+        })
 
-        Route.get('object', ThisObject.protected);
-        Route.get('instance', [ThisInstanceClass, 'protected']);
-        Route.get('static', ThisStaticClass.protected);
-    });
-});
+        Route.get('object', ThisObject.protected)
+        Route.get('instance', [ThisInstanceClass, 'protected'])
+        Route.get('static', ThisStaticClass.protected)
+    })
+})
 
 Route.get('routes-info', ({ res }: { res: Response }) => {
-    const allRoutes = Route.allRoutes();
+    const allRoutes = Route.allRoutes()
     res.json({
         total: allRoutes.length,
         routes: allRoutes
-    });
-});
+    })
+})
 
-export const Routes = Route;
-export default Routes;
+export const Routes = Route
+export default Routes

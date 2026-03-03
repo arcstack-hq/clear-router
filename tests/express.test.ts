@@ -1,10 +1,10 @@
 import '../example/express/web'
 
-import { beforeAll, describe, expect, it } from "vitest"
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import Router from "../src/express/router"
-import express from "express"
-import request from "supertest"
+import Router from '../src/express/router'
+import express from 'express'
+import request from 'supertest'
 
 describe('Express App (JS)', () => {
     let app: express.Application

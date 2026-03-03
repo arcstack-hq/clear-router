@@ -1,4 +1,4 @@
-import { RequestData } from "types"
+import { RequestData } from 'types'
 
 export class ClearRequest {
     [key: string]: any

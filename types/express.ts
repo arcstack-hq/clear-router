@@ -1,7 +1,7 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express'
 
-import { ClearRequest } from 'src/ClearRequest';
-import type { ControllerHandler } from './basic';
+import { ClearRequest } from 'src/ClearRequest'
+import type { ControllerHandler } from './basic'
 
 /**
  * HTTP context passed to route handlers

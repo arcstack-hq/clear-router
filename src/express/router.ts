@@ -1,10 +1,10 @@
-import { ControllerAction, HttpMethod, RouteInfo } from "types/basic";
-import { Handler, HttpContext, Middleware, RouteHandler } from "types/express";
+import { ControllerAction, HttpMethod, RouteInfo } from 'types/basic'
+import { Handler, HttpContext, Middleware, RouteHandler } from 'types/express'
 
-import { ClearRequest } from "src/ClearRequest";
-import { Controller } from "src/Controller";
-import { Router as ExpressRouter } from "express";
-import { Route } from "src/Route";
+import { ClearRequest } from 'src/ClearRequest'
+import { Controller } from 'src/Controller'
+import { Router as ExpressRouter } from 'express'
+import { Route } from 'src/Route'
 
 /**
  * @class clear-router
@@ -17,22 +17,22 @@ export class Router {
     /**
      * All registered routes
      */
-    static routes: Array<Route<HttpContext, Middleware>> = [];
+    static routes: Array<Route<HttpContext, Middleware>> = []
 
     /**
      * Current route prefix
      */
-    static prefix: string = '';
+    static prefix: string = ''
 
     /**
      * Group-level middlewares
      */
-    static groupMiddlewares: Middleware[] = [];
+    static groupMiddlewares: Middleware[] = []
 
     /**
      * Global-level middlewares
      */
-    static globalMiddlewares: Middleware[] = [];
+    static globalMiddlewares: Middleware[] = []
 
     /**
      * Normalize path by removing duplicate slashes and ensuring leading slash
@@ -257,8 +257,7 @@ export class Router {
                     ) {
                         instance = Controller
                         handlerFunction = Controller[method].bind(Controller)
-                    }
-                    else if (typeof Controller === 'function') {
+                    } else if (typeof Controller === 'function') {
                         instance = new Controller()
                         if (typeof instance![method] === 'function') {
                             handlerFunction = instance![method].bind(instance)
@@ -295,7 +294,7 @@ export class Router {
                     const error = new Error(
                         `Invalid HTTP method: ${method} for route: ${route.path}`
                     )
-                    console.error(`[ROUTES]`, error.message)
+                    console.error('[ROUTES]', error.message)
                     throw error
                 }
 
@@ -305,8 +304,9 @@ export class Router {
                     async (req, res, next) => {
                         try {
                             const ctx = { req, res, next }
-                            await Router.bindRequestToInstance(ctx, instance ?? route)
-                            const result = handlerFunction(ctx, instance?.clearRequest!)
+                            const inst = instance ?? route
+                            await Router.bindRequestToInstance(ctx, inst)
+                            const result = handlerFunction(ctx, inst.clearRequest)
                             await Promise.resolve(result)
                         } catch (error: any) {
                             next(error)

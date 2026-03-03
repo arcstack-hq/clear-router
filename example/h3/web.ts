@@ -1,7 +1,7 @@
-import { H3Event, getQuery, getRouterParams } from "h3";
+import { H3Event, getQuery, getRouterParams } from 'h3'
 
-import { NextFunction } from "types/h3";
-import Route from "../../src/h3/router";
+import { NextFunction } from 'types/h3'
+import Route from '../../src/h3/router'
 
 function pickRequestFields (evt: H3Event) {
     return {
@@ -14,24 +14,24 @@ function pickRequestFields (evt: H3Event) {
         params: getRouterParams(evt),
         path: evt.url.pathname,
         query: getQuery(evt)
-    };
+    }
 }
 
 export class Middleware {
     static unprotected (event: H3Event, next: NextFunction) {
-        next();
+        next()
     }
 
     static protected (evt: H3Event, next: NextFunction) {
-        const id = getQuery(evt).id;
+        const id = getQuery(evt).id
         if (!id || id !== '12345678') {
             return {
                 status: false,
                 code: 403,
                 message: 'Forbidden',
-            };
+            }
         }
-        next();
+        next()
     }
 }
 
@@ -42,7 +42,7 @@ const ThisObject = {
             code: 200,
             message: 'Route handler with object',
             request: pickRequestFields(evt),
-        };
+        }
     },
     protected (evt: H3Event) {
         return {
@@ -50,9 +50,9 @@ const ThisObject = {
             code: 200,
             message: 'Route handler with object + protected middleware',
             request: pickRequestFields(evt),
-        };
+        }
     },
-};
+}
 
 class ThisInstanceClass {
     index (evt: H3Event) {
@@ -61,7 +61,7 @@ class ThisInstanceClass {
             code: 200,
             message: 'Route handler with instance class',
             request: pickRequestFields(evt),
-        };
+        }
     }
 
     protected (evt: H3Event) {
@@ -70,7 +70,7 @@ class ThisInstanceClass {
             code: 200,
             message: 'Route handler with instance class + protected middleware',
             request: pickRequestFields(evt),
-        };
+        }
     }
 }
 
@@ -81,7 +81,7 @@ class ThisStaticClass {
             code: 200,
             message: 'Route handler with static class',
             request: pickRequestFields(evt),
-        };
+        }
     }
 
     static protected (evt: H3Event) {
@@ -90,7 +90,7 @@ class ThisStaticClass {
             code: 200,
             message: 'Route handler with static class + protected middleware',
             request: pickRequestFields(evt),
-        };
+        }
     }
 }
 
@@ -101,13 +101,13 @@ Route.middleware([Middleware.unprotected], () => {
             code: 200,
             message: 'Route handler with directly function',
             request: pickRequestFields(evt),
-        };
-    });
+        }
+    })
 
-    Route.get('object', ThisObject.index);
-    Route.get('instance', [ThisInstanceClass, 'index']);
-    Route.get('static', ThisStaticClass.index);
-});
+    Route.get('object', ThisObject.index)
+    Route.get('instance', [ThisInstanceClass, 'index'])
+    Route.get('static', ThisStaticClass.index)
+})
 
 Route.middleware([Middleware.protected], () => {
     Route.group('protected', () => {
@@ -117,22 +117,23 @@ Route.middleware([Middleware.protected], () => {
                 code: 200,
                 message: 'Route handler with directly function + protected middleware',
                 request: pickRequestFields(evt),
-            };
-        });
+            }
+        })
 
-        Route.get('object', ThisObject.protected);
-        Route.get('instance', [ThisInstanceClass, 'protected']);
-        Route.get('static', ThisStaticClass.protected);
-    });
-});
+        Route.get('object', ThisObject.protected)
+        Route.get('instance', [ThisInstanceClass, 'protected'])
+        Route.get('static', ThisStaticClass.protected)
+    })
+})
 
 Route.get('routes-info', () => {
-    const allRoutes = Route.allRoutes();
-    return {
+    const allRoutes = Route.allRoutes()
+    
+return {
         total: allRoutes.length,
         routes: allRoutes
-    };
-});
+    }
+})
 
-export const Routes = Route;
-export default Routes;
+export const Routes = Route
+export default Routes

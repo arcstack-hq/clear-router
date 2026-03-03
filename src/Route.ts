@@ -1,8 +1,8 @@
-import { Middleware as HMiddleware, Handler } from "types/h3"
-import { HttpMethod, RequestData } from "types"
+import { Middleware as HMiddleware, Handler } from 'types/h3'
+import { HttpMethod, RequestData } from 'types'
 
-import { ClearRequest } from "./ClearRequest"
-import { Middleware as EMiddleware } from "types/express"
+import { ClearRequest } from './ClearRequest'
+import { Middleware as EMiddleware } from 'types/express'
 
 export class Route<X = any, M = HMiddleware | EMiddleware> {
     ctx!: X
@@ -11,10 +11,10 @@ export class Route<X = any, M = HMiddleware | EMiddleware> {
     params: RequestData = {}
     clearRequest!: ClearRequest
 
-    methods: HttpMethod[];
-    path: string;
-    handler: Handler;
-    middlewares: M[];
+    methods: HttpMethod[]
+    path: string
+    handler: Handler
+    middlewares: M[]
 
     constructor(
         methods: HttpMethod[],
@@ -22,9 +22,9 @@ export class Route<X = any, M = HMiddleware | EMiddleware> {
         handler: Handler,
         middlewares: M[] = []
     ) {
-        this.methods = methods;
-        this.path = path;
-        this.handler = handler;
-        this.middlewares = middlewares;
+        this.methods = methods
+        this.path = path
+        this.handler = handler
+        this.middlewares = middlewares
     }
 }

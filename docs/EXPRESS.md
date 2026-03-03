@@ -242,7 +242,7 @@ app.use((err, req, res, next) => {
 
 ## Middleware Execution Order
 
-```
+```txt
 [ Global Middleware ] → [ Group Middleware ] → [ Route Middleware ]
 ```
 

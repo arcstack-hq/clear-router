@@ -1,5 +1,5 @@
-import { ClearRequest } from "./ClearRequest"
-import { RequestData } from "types"
+import { ClearRequest } from './ClearRequest'
+import { RequestData } from 'types'
 
 export abstract class Controller<X = any> {
     [x: string]: any
