@@ -153,7 +153,7 @@ describe('Express Routing - TypeScript', () => {
             clearRequestBodyName: 'Amina',
             clearRequestQueryDraft: 'yes',
             clearRequestParamId: '42',
-            secondArgMatches: false,
+            secondArgMatches: true,
         })
     })
 
@@ -217,7 +217,7 @@ describe('Express Routing - TypeScript', () => {
 
         await setupApp()
 
-        app.use((err: Error, req: Request, res: Response) => {
+        app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
             res.status(500).json({ error: err.message })
         })
 
@@ -381,7 +381,7 @@ describe('H3 Routing - TypeScript', () => {
             clearRequestBodyName: 'Amina',
             clearRequestQueryDraft: 'yes',
             clearRequestParamId: '77',
-            secondArgMatches: false,
+            secondArgMatches: true,
         })
     })
 
