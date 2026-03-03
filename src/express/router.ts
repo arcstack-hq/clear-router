@@ -1,7 +1,10 @@
-import { ControllerAction, HttpMethod, RouteInfo } from "../../types/basic";
-import { Handler, Middleware } from "../../types/express";
+import { ControllerAction, HttpMethod, RouteInfo } from "types/basic";
+import { Handler, HttpContext, Middleware, RouteHandler } from "types/express";
 
+import { ClearRequest } from "src/ClearRequest";
+import { Controller } from "src/Controller";
 import { Router as ExpressRouter } from "express";
+import { Route } from "src/Route";
 
 /**
  * @class clear-router
@@ -14,12 +17,7 @@ export class Router {
     /**
      * All registered routes
      */
-    static routes: Array<{
-        methods: HttpMethod[];
-        path: string;
-        handler: Handler;
-        middlewares: Middleware[];
-    }> = [];
+    static routes: Array<Route<HttpContext, Middleware>> = [];
 
     /**
      * Current route prefix
@@ -64,16 +62,12 @@ export class Router {
         const methodArray = Array.isArray(methods) ? methods : [methods]
         const fullPath = this.normalizePath(`${this.prefix}/${path}`)
 
-        this.routes.push({
-            methods: methodArray,
-            path: fullPath,
-            handler,
-            middlewares: [
-                ...this.globalMiddlewares,
-                ...this.groupMiddlewares,
-                ...(middlewares || []),
-            ],
-        })
+        this.routes.push(new Route(
+            methodArray,
+            fullPath,
+            handler as never,
+            [...this.globalMiddlewares, ...this.groupMiddlewares, ...(middlewares || [])]
+        ))
     }
 
     /**
@@ -242,11 +236,15 @@ export class Router {
     static async apply (router: ExpressRouter): Promise<void>
     static async apply (router: ExpressRouter): Promise<void> {
         for (const route of this.routes) {
-            let handlerFunction = null
+            let handlerFunction: RouteHandler | null = null
+            let instance: Controller<HttpContext> | null = null
 
             try {
                 if (typeof route.handler === 'function') {
-                    handlerFunction = route.handler
+                    /** 
+                     * Since we do not have a controller instance, we will call the handler function directly and the route instance will be the this argument. This allows for both controller-based and function-based handlers to work seamlessly.
+                     */
+                    handlerFunction = route.handler.bind(route) as never
                 } else if (
                     Array.isArray(route.handler) &&
                     route.handler.length === 2
@@ -254,15 +252,16 @@ export class Router {
                     const [Controller, method] = route.handler
 
                     if (
-                        typeof Controller === 'function' &&
+                        ['function', 'object'].includes(typeof Controller) &&
                         typeof Controller[method] === 'function'
                     ) {
+                        instance = Controller
                         handlerFunction = Controller[method].bind(Controller)
                     }
                     else if (typeof Controller === 'function') {
-                        const instance = new Controller()
-                        if (typeof instance[method] === 'function') {
-                            handlerFunction = instance[method].bind(instance)
+                        instance = new Controller()
+                        if (typeof instance![method] === 'function') {
+                            handlerFunction = instance![method].bind(instance)
                         } else {
                             throw new Error(
                                 `Method "${method}" not found in controller instance "${Controller.name}"`
@@ -306,7 +305,8 @@ export class Router {
                     async (req, res, next) => {
                         try {
                             const ctx = { req, res, next }
-                            const result = handlerFunction(ctx)
+                            await Router.bindRequestToInstance(ctx, instance ?? route)
+                            const result = handlerFunction(ctx, instance?.clearRequest!)
                             await Promise.resolve(result)
                         } catch (error: any) {
                             next(error)
@@ -315,6 +315,24 @@ export class Router {
                 )
             }
         }
+    }
+
+    private static async bindRequestToInstance (
+        ctx: HttpContext,
+        instance: Controller<HttpContext> | Route<HttpContext, Middleware> | null
+    ): Promise<void> {
+        if (!instance) return
+
+        instance.ctx = ctx
+        instance.body = ctx.req.body
+        instance.query = ctx.req.query
+        instance.params = ctx.req.params
+        instance.clearRequest = new ClearRequest({
+            ctx,
+            body: instance.body,
+            query: instance.query,
+            params: instance.params,
+        })
     }
 }
 

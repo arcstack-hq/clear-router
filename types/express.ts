@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
+import { ClearRequest } from 'src/ClearRequest';
 import type { ControllerHandler } from './basic';
 
 /**
@@ -14,7 +15,16 @@ export interface HttpContext {
 /**
  * Route handler function type
  */
-export type RouteHandler = (ctx: HttpContext) => any | Promise<any>;
+export type RouteHandler = (
+    /**
+     * Express context object containing req, res, and next
+     */
+    ctx: HttpContext,
+    /**
+     * ClearRequest instance
+     */
+    req: ClearRequest
+) => any | Promise<any>;
 
 /**
  * Handler can be either a function or controller reference

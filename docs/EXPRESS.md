@@ -94,6 +94,60 @@ Router.get('/users', [UserController, 'index']);
 
 Class-based handlers will auto-bind to static or instance methods.
 
+### Custom Controllers (Extending the Base Controller)
+
+For advanced use cases, you can create project-specific controller base classes that extend the clear-router `Controller`.
+
+```typescript
+// Example app-level base controller
+class AppController extends Controller<HttpContext> {
+  ok(data: any) {
+    this.ctx.res.json({ success: true, data });
+  }
+
+  get userId() {
+    return this.params?.id;
+  }
+}
+
+class UserController extends AppController {
+  show() {
+    this.ok({ id: this.userId, query: this.query });
+  }
+}
+
+Router.get('/users/:id', [UserController, 'show']);
+```
+
+#### Benefits
+
+- Centralizes shared response helpers and controller utilities.
+- Reuses hydrated request data (`this.ctx`, `this.body`, `this.query`, `this.params`, `this.clearRequest`) consistently.
+- Reduces repeated boilerplate across controllers.
+- Makes controller behavior easier to standardize and test.
+
+### Handler Arguments and ClearRequest
+
+Express handlers are invoked with:
+
+1. `ctx`: `{ req, res, next }`
+2. `clearRequest`: `ClearRequest | undefined`
+
+```javascript
+Router.post('/users', ({ req, res }, clearRequest) => {
+  // clearRequest is available for controller handlers
+  // and may be undefined for plain function handlers
+  res.json({ hasReq: Boolean(req), hasClearRequest: Boolean(clearRequest) });
+});
+```
+
+For controller instance handlers (`[ControllerClass, 'method']`), router hydration includes:
+
+- `this.body` (request body)
+- `this.query` (request query)
+- `this.params` (route params)
+- `this.clearRequest` (normalized request wrapper)
+
 ### API Resource Binding
 
 You can also bind routes to API resources:
@@ -196,6 +250,8 @@ app.use((err, req, res, next) => {
 
 - If function: executed directly
 - If [Controller, 'method']: auto-instantiated (if needed), method is called
+- First argument is always `ctx` (`{ req, res, next }`)
+- Second argument is `clearRequest` (defined for controller handlers)
 
 ## Testing
 

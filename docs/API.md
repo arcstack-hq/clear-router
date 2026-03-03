@@ -351,14 +351,67 @@ Router.get('/users', ({ req, res, next }) => {
 #### Function Handler
 
 ```javascript
-({ req, res, next }) => void | Promise<void>
+(ctx, clearRequest?) => any | Promise<any>
 ```
+
+`ctx` is always the first argument:
+
+- Express: `{ req, res, next }`
+- H3: `H3Event`
+
+`clearRequest` is passed as second argument and is guaranteed for controller handlers.
+
+For callback route handlers, `this` is bound to the current route instance. During request execution, this instance is hydrated with:
+
+- `this.ctx`
+- `this.body`
+- `this.query`
+- `this.params`
+- `this.clearRequest`
 
 #### Controller Handler
 
 ```javascript
 [ControllerClass, 'methodName'];
 ```
+
+For controller instance handlers, the router hydrates request data on `this` before method execution:
+
+- `this.body`
+- `this.query`
+- `this.params`
+- `this.clearRequest`
+
+#### Custom Controller Pattern (Recommended)
+
+You can extend the clear-router `Controller` to create an app-specific base controller and share behavior across feature controllers.
+
+```typescript
+class AppController extends Controller<HttpContext> {
+  ok(data: any) {
+    this.ctx.res.json({ success: true, data });
+  }
+
+  get userId() {
+    return this.params?.id;
+  }
+}
+
+class UserController extends AppController {
+  show() {
+    this.ok({ id: this.userId, query: this.query });
+  }
+}
+
+Router.get('/users/:id', [UserController, 'show']);
+```
+
+#### Benefits
+
+- Shared helpers live in one place.
+- Hydrated request state is consistently available on `this`.
+- Feature controllers stay small and focused.
+- Controller behavior is easier to test and enforce.
 
 **Static Method:**
 

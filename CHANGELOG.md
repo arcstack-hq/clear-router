@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-03-03
+
+### Added
+
+- Added new core abstractions `src/Controller.ts` and `src/Route.ts` for shared request-state and route metadata handling across Express and H3 routers.
+- Added `ClearRequest` as a first-class request wrapper in route/controller binding flow, with per-request hydration of `body`, `query`, and `params`.
+- Added callback route handler context binding so `this` points to the current route instance during execution (Express and H3).
+- Added controller instance context binding so `this.ctx` and `this.clearRequest` are populated before controller method execution.
+- Added route instance request hydration for callback handlers with `ctx`, `body`, `query`, `params`, and `clearRequest` on `this`.
+- Added shared request-to-instance binding flow for both controller instances and callback route instances.
+- Added normalized handler invocation contract where route handlers receive `ctx` as first argument and `req` (`ClearRequest`) as second argument.
+- Added TypeScript tests validating callback handler `this` binding for both Express and H3.
+- Added TypeScript tests validating controller instance hydration and handler argument behavior.
+- Added TypeScript tests validating callback route `this` hydration (`ctx/body/query/params/clearRequest`) in Express and H3.
+
+### Changed
+
+- Changed internal route storage from plain object/array-style entries to `Route` class instances.
+- Updated router application pipeline to bind request data through a shared instance-binding step for controller and callback handlers.
+- Updated API documentation to explicitly describe callback handler `this` binding and hydrated route instance fields.
+- Updated README, Express, H3, and testing docs with handler argument and `clearRequest` behavior details.
+
+### Fixed
+
+- Fixed handler invocation safety by avoiding access to `instance.clearRequest` when no controller instance is present.
+
 ## [2.0.8] - 2026-02-20
 
 ### Changed

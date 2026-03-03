@@ -22,3 +22,8 @@ export interface RouteInfo {
  * Common controller action names
  */
 export type ControllerAction = 'index' | 'show' | 'create' | 'update' | 'destroy';
+
+/**
+ * Generic Object type for request data
+ */
+export type RequestData = Record<string, any>;

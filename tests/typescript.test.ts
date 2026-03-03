@@ -2,6 +2,7 @@ import { H3, H3Event, HTTPError, getRouterParams } from 'h3';
 import { beforeEach, describe, expect, test } from 'vitest';
 import express, { Router as ExRouter, NextFunction, Request, Response } from 'express';
 
+import { Controller } from 'src/Controller';
 import { H3App } from 'types/h3';
 import { NextFunction as H3NextFunction } from '../types/h3';
 import H3Router from '../src/h3/router';
@@ -78,6 +79,82 @@ describe('Express Routing - TypeScript', () => {
 
         const showResponse = await request(app).get('/users/123');
         expect(showResponse.body.id).toBe('123');
+    });
+
+    test('should hydrate controller instance fields and pass req context arg', async () => {
+        class UserController extends Controller<HttpContext> {
+            store (ctx: HttpContext, clearRequest: any): void {
+                ctx.res.json({
+                    hasReq: Boolean(ctx.req),
+                    hasRes: Boolean(ctx.res),
+                    bodyName: this.body?.name,
+                    queryDraft: this.query?.draft,
+                    paramId: this.params?.id,
+                    clearRequestBodyName: clearRequest?.body?.name,
+                    clearRequestQueryDraft: clearRequest?.query?.draft,
+                    clearRequestParamId: clearRequest?.params?.id,
+                });
+            }
+        }
+
+        Router.post('/users/:id', [UserController, 'store']);
+
+        await setupApp();
+
+        const response = await request(app)
+            .post('/users/99?draft=yes')
+            .send({ name: 'Amina' });
+
+        expect(response.status).toBe(200);
+        expect(response.body).toMatchObject({
+            hasReq: true,
+            hasRes: true,
+            bodyName: 'Amina',
+            queryDraft: 'yes',
+            paramId: '99',
+            clearRequestBodyName: 'Amina',
+            clearRequestQueryDraft: 'yes',
+            clearRequestParamId: '99',
+        });
+    });
+
+    test('should bind callback handler this to current clear route instance', async () => {
+        Router.post('/this-binding/:id', function (this: any, ctx: HttpContext, clearRequest: any) {
+            ctx.res.json({
+                routePath: this.path,
+                methodListHasPost: Array.isArray(this.methods) && this.methods.includes('post'),
+                hasCtx: Boolean(this.ctx),
+                ctxMatchesReq: this.ctx?.req === ctx.req,
+                bodyName: this.body?.name,
+                queryDraft: this.query?.draft,
+                paramId: this.params?.id,
+                clearRequestBodyName: this.clearRequest?.body?.name,
+                clearRequestQueryDraft: this.clearRequest?.query?.draft,
+                clearRequestParamId: this.clearRequest?.params?.id,
+                secondArgMatches: clearRequest === this.clearRequest,
+            });
+        });
+
+        await setupApp();
+
+        const response = await request(app)
+            .post('/this-binding/42?draft=yes')
+            .send({ name: 'Amina' });
+
+        expect(response.status).toBe(200);
+        expect(response.body).toMatchObject({
+            routePath: '/this-binding/:id',
+            methodListHasPost: true,
+            hasCtx: true,
+            ctxMatchesReq: true,
+            bodyName: 'Amina',
+            queryDraft: 'yes',
+            paramId: '42',
+            clearRequestBodyName: 'Amina',
+            clearRequestQueryDraft: 'yes',
+            clearRequestParamId: '42',
+            secondArgMatches: false,
+        });
     });
 
     test('should handle typed middleware', async () => {
@@ -222,6 +299,90 @@ describe('H3 Routing - TypeScript', () => {
             .fetch(new global.Request(new URL('http://localhost/users/123')))
             .then(res => res.json())
         expect(showResponse.id).toBe('123');
+    });
+
+    test('should hydrate h3 controller instance fields and pass event arg', async () => {
+        class UserController extends Controller<H3Event> {
+            async update (event: H3Event, clearRequest: any) {
+                return {
+                    hasEvent: Boolean(event),
+                    method: event.req.method,
+                    bodyName: this.body?.name,
+                    queryDraft: this.query?.draft,
+                    paramId: this.params?.id,
+                    clearRequestBodyName: clearRequest?.body?.name,
+                    clearRequestQueryDraft: clearRequest?.query?.draft,
+                    clearRequestParamId: clearRequest?.params?.id,
+                    contextBound: this.ctx === event,
+                };
+            }
+        }
+
+        H3Router.put('/users/:id', [UserController, 'update']);
+
+        setupApp();
+
+        const response = await router
+            .fetch(new global.Request(new URL('http://localhost/users/77?draft=yes'), {
+                method: 'PUT',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ name: 'Amina' }),
+            }))
+            .then(res => res.json())
+
+        expect(response).toMatchObject({
+            hasEvent: true,
+            method: 'PUT',
+            bodyName: 'Amina',
+            queryDraft: 'yes',
+            paramId: '77',
+            clearRequestBodyName: 'Amina',
+            clearRequestQueryDraft: 'yes',
+            clearRequestParamId: '77',
+            contextBound: true,
+        });
+    });
+
+    test('should bind callback handler this to current clear route instance', async () => {
+        H3Router.put('/this-binding/:id', async function (this: any, event: H3Event, clearRequest: any) {
+            return {
+                routePath: this.path,
+                methodListHasPut: Array.isArray(this.methods) && this.methods.includes('put'),
+                hasCtx: Boolean(this.ctx),
+                ctxMatchesEvent: this.ctx === event,
+                bodyName: this.body?.name,
+                queryDraft: this.query?.draft,
+                paramId: this.params?.id,
+                clearRequestBodyName: this.clearRequest?.body?.name,
+                clearRequestQueryDraft: this.clearRequest?.query?.draft,
+                clearRequestParamId: this.clearRequest?.params?.id,
+                secondArgMatches: clearRequest === this.clearRequest,
+            };
+        });
+
+        setupApp();
+
+        const response = await router
+            .fetch(new global.Request(new URL('http://localhost/this-binding/77?draft=yes'), {
+                method: 'PUT',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ name: 'Amina' }),
+            }))
+            .then(res => res.json())
+
+        expect(response).toMatchObject({
+            routePath: '/this-binding/:id',
+            methodListHasPut: true,
+            hasCtx: true,
+            ctxMatchesEvent: true,
+            bodyName: 'Amina',
+            queryDraft: 'yes',
+            paramId: '77',
+            clearRequestBodyName: 'Amina',
+            clearRequestQueryDraft: 'yes',
+            clearRequestParamId: '77',
+            secondArgMatches: false,
+        });
     });
 
     test('should handle typed middleware', async () => {

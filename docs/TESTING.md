@@ -139,6 +139,8 @@ All tests follow a similar structure testing:
 4. Controller bindings (static and instance)
 5. Error handling
 6. Route inspection with `allRoutes()`
+7. Controller instance request hydration (`body`, `query`, `params`, `clearRequest`)
+8. Handler argument contract (context as first arg, `clearRequest` as second arg)
 
 ## CommonJS Tests
 

@@ -1,6 +1,6 @@
 {
     "name": "clear-router",
-    "version": "2.0.8",
+    "version": "2.1.0",
     "description": "Laravel-style routing system for Express.js and H3, with CommonJS, ESM, and TypeScript support",
     "keywords": [
         "h3",
@@ -51,7 +51,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "test": "pnpm test:esm && pnpm test:ts",
+        "test": "vitest",
         "test:esm": "vitest tests/esm.test.ts",
         "test:ts": "vitest tests/typescript.test.ts",
         "example": "tsx example/express/index.ts",

@@ -39,6 +39,9 @@ yarn add clear-router express
 - Middleware stack: per-route and group-level
 - Controller-method pair as route handler
 - Supports HttpContext style handlers: { req, res, next }
+- Function handlers always receive context as first argument
+- Controller handlers receive hydrated `this.body`, `this.query`, `this.params`, and `this.clearRequest`
+- `clearRequest` is passed as second handler argument for controller handlers
 - Auto-binds controller methods
 - Full CommonJS, ESM, and TypeScript support
 - Error handling delegated to Express
@@ -81,6 +84,8 @@ app.use((err, req, res, next) => {
 
 - If function: executed directly
 - If [Controller, 'method']: auto-instantiated (if needed), method is called
+- First handler arg is always context (`{ req, res, next }` for Express, H3 event for H3)
+- Second handler arg is `clearRequest` for controller handlers
 
 ## Testing
 
