@@ -1,6 +1,6 @@
 {
     "name": "clear-router",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "Laravel-style routing system for Express.js and H3, with CommonJS, ESM, and TypeScript support",
     "keywords": [
         "h3",

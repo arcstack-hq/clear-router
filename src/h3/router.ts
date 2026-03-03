@@ -299,7 +299,7 @@ export class Router {
                     try {
                         const ctx: HttpContext = event
                         const inst = instance ?? route
-                        await Router.bindRequestToInstance(ctx, inst)
+                        await Router.bindRequestToInstance(ctx, inst, route)
                         const result = handlerFunction(ctx, inst.clearRequest!)
 
                         return await Promise.resolve(result)
@@ -317,7 +317,8 @@ export class Router {
 
     private static async bindRequestToInstance (
         ctx: HttpContext,
-        instance: Controller<HttpContext> | Route<HttpContext, Middleware> | null
+        instance: Controller<HttpContext> | Route<HttpContext, Middleware> | null,
+        route: Route<HttpContext, Middleware>
     ): Promise<void> {
         if (!instance) return
 
@@ -327,6 +328,7 @@ export class Router {
         instance.params = getRouterParams(ctx, { decode: true })
         instance.clearRequest = new ClearRequest({
             ctx,
+            route,
             body: instance.body,
             query: instance.query,
             params: instance.params,
