@@ -279,9 +279,9 @@ export class Router {
      * Get all registered routes with their information
      * @returns Array of route information objects
      */
-    static allRoutes (type?: 'path'): Record<string, Route<HttpContext, Middleware>>
-    static allRoutes (type?: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<HttpContext, Middleware>> }
-    static allRoutes (type?: 'method'): Array<Route<HttpContext, Middleware>>
+    static allRoutes (): Array<Route<HttpContext, Middleware>>
+    static allRoutes (type: 'path'): Record<string, Route<HttpContext, Middleware>>
+    static allRoutes (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<HttpContext, Middleware>> }
     static allRoutes (type?: 'method' | 'path'):
         Array<Route<HttpContext, Middleware>> |
         Record<string, Route<HttpContext, Middleware>> |
