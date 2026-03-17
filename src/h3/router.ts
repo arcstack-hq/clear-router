@@ -1,5 +1,5 @@
 import { ClearRequest } from 'src/ClearRequest'
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
+import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
 import { H3App, Handler, HttpContext, Middleware, RouteHandler } from 'types/h3'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
@@ -14,6 +14,16 @@ import { Route } from 'src/Route'
  * @repository https://github.com/toneflix/clear-router
  */
 export class Router {
+    static config: RouterConfig = {
+        methodOverride: {
+            enabled: true,
+            bodyKeys: ['_method'],
+            headerKeys: ['x-http-method'],
+        }
+    }
+
+    private static readonly bodyCache = new WeakMap<HttpContext, any>()
+
     private static readonly groupContext = new AsyncLocalStorage<{
         prefix: string
         groupMiddlewares: Middleware[]
@@ -59,6 +69,89 @@ export class Router {
             .split('/')
             .filter(Boolean)
             .join('/')
+    }
+
+    static configure (options?: RouterConfig): void {
+        if (!this.config.methodOverride) {
+            this.config.methodOverride = {
+                enabled: true,
+                bodyKeys: ['_method'],
+                headerKeys: ['x-http-method'],
+            }
+        }
+
+        const override = options?.methodOverride
+        if (!override) return
+
+        if (typeof override.enabled === 'boolean') {
+            this.config.methodOverride.enabled = override.enabled
+        }
+
+        const bodyKeys = override.bodyKeys
+        if (typeof bodyKeys !== 'undefined') {
+            this.config.methodOverride.bodyKeys = (Array.isArray(bodyKeys)
+                ? bodyKeys
+                : [bodyKeys])
+                .map(e => String(e).trim())
+                .filter(Boolean)
+        }
+
+        const headerKeys = override.headerKeys
+        if (typeof headerKeys !== 'undefined') {
+            this.config.methodOverride.headerKeys = (Array.isArray(headerKeys)
+                ? headerKeys
+                : [headerKeys])
+                .map(e => String(e).trim().toLowerCase())
+                .filter(Boolean)
+        }
+    }
+
+    private static async readBodyCached (ctx: HttpContext): Promise<any> {
+        if (this.bodyCache.has(ctx)) {
+            return this.bodyCache.get(ctx)
+        }
+
+        const body = await readBody(ctx) ?? {}
+        this.bodyCache.set(ctx, body)
+
+        return body
+    }
+
+    private static resolveMethodOverride (
+        method: string,
+        headers: Headers,
+        body: unknown
+    ): HttpMethod | null {
+        if (!this.config.methodOverride?.enabled || method.toLowerCase() !== 'post') {
+            return null
+        }
+
+        let override: unknown
+        for (const key of this.config.methodOverride?.headerKeys || []) {
+            const value = headers.get(key)
+            if (value) {
+                override = value
+                break
+            }
+        }
+
+        if (!override && body && typeof body === 'object') {
+            for (const key of this.config.methodOverride?.bodyKeys || []) {
+                const value = (body as Record<string, unknown>)[key]
+                if (typeof value !== 'undefined' && value !== null && value !== '') {
+                    override = value
+                    break
+                }
+            }
+        }
+
+        const normalized = String(override || '').trim().toLowerCase()
+        if (!normalized) return null
+        if (['put', 'patch', 'delete', 'post'].includes(normalized)) {
+            return normalized as HttpMethod
+        }
+
+        return null
     }
 
     /**
@@ -372,8 +465,14 @@ export class Router {
                 app[method](route.path, async (event) => {
                     try {
                         const ctx: HttpContext = event
+                        const reqBody = await Router.readBodyCached(ctx)
+                        const override = Router.resolveMethodOverride(ctx.req.method, ctx.req.headers, reqBody)
+                        if (method === 'post' && override && override !== 'post') {
+                            return
+                        }
+
                         const inst = instance ?? route
-                        await Router.bindRequestToInstance(ctx, inst, route)
+                        await Router.bindRequestToInstance(ctx, inst, route, reqBody)
                         const result = handlerFunction(ctx, inst.clearRequest!)
 
                         return await Promise.resolve(result)
@@ -383,6 +482,29 @@ export class Router {
                 }, {
                     middleware: route.middlewares,
                 })
+
+                if (['put', 'patch', 'delete'].includes(method)) {
+                    app.post(route.path, async (event) => {
+                        try {
+                            const ctx: HttpContext = event
+                            const reqBody = await Router.readBodyCached(ctx)
+                            const override = Router.resolveMethodOverride(ctx.req.method, ctx.req.headers, reqBody)
+                            if (override !== method) {
+                                return
+                            }
+
+                            const inst = instance ?? route
+                            await Router.bindRequestToInstance(ctx, inst, route, reqBody)
+                            const result = handlerFunction(ctx, inst.clearRequest!)
+
+                            return await Promise.resolve(result)
+                        } catch (error: any) {
+                            return error
+                        }
+                    }, {
+                        middleware: route.middlewares,
+                    })
+                }
             }
         }
 
@@ -392,12 +514,13 @@ export class Router {
     private static async bindRequestToInstance (
         ctx: HttpContext,
         instance: Controller<HttpContext> | Route<HttpContext, Middleware> | null,
-        route: Route<HttpContext, Middleware>
+        route: Route<HttpContext, Middleware>,
+        body?: any
     ): Promise<void> {
         if (!instance) return
 
         instance.ctx = ctx
-        instance.body = await readBody(ctx) ?? {}
+        instance.body = body ?? await Router.readBodyCached(ctx)
         instance.query = getQuery(ctx)
         instance.params = getRouterParams(ctx, { decode: true })
         instance.clearRequest = new ClearRequest({

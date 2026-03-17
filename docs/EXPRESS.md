@@ -80,6 +80,41 @@ const authMiddleware = (req, res, next) => {
 Router.post('/secure', ({ res }) => res.send('Protected'), [authMiddleware]);
 ```
 
+### Method Override
+
+Clear Router supports HTTP method override for POST requests using form body keys or headers.
+
+Default override keys:
+
+- Body: `_method`
+- Header: `X-HTTP-Method`
+
+```javascript
+Router.put('/users/:id', ({ req, res }) => {
+  res.json({ method: req.method, id: req.params.id });
+});
+
+// Form/body override
+// POST /users/12 with body { "_method": "PUT" }
+```
+
+Custom keys are supported:
+
+```javascript
+Router.configure({
+  methodOverride: {
+    bodyKeys: ['_method', 'method'],
+    headerKeys: ['x-http-method', 'x-method-override'],
+  },
+});
+```
+
+Disable override behavior:
+
+```javascript
+Router.configure({ methodOverride: { enabled: false } });
+```
+
 ### Controller Binding
 
 ```javascript

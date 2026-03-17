@@ -1,4 +1,4 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
+import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
 import { Handler, HttpContext, Middleware, RouteHandler } from 'types/express'
 
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -15,6 +15,14 @@ import { Route } from 'src/Route'
  * @repository https://github.com/toneflix/clear-router
  */
 export class Router {
+    static config: RouterConfig = {
+        methodOverride: {
+            enabled: true,
+            bodyKeys: ['_method'],
+            headerKeys: ['x-http-method'],
+        }
+    }
+
     private static readonly groupContext = new AsyncLocalStorage<{
         prefix: string
         groupMiddlewares: Middleware[]
@@ -60,6 +68,84 @@ export class Router {
             .split('/')
             .filter(Boolean)
             .join('/')
+    }
+
+    /**
+     * Configure router settings to modify behavior.
+     * 
+     * @param options - Configuration options for the router
+     * @returns 
+     */
+    static configure (options?: RouterConfig): void {
+        if (!this.config.methodOverride) {
+            this.config.methodOverride = {
+                enabled: true,
+                bodyKeys: ['_method'],
+                headerKeys: ['x-http-method'],
+            }
+        }
+
+        const override = options?.methodOverride
+        if (!override) return
+
+        if (typeof override.enabled === 'boolean') {
+            this.config.methodOverride.enabled = override.enabled
+        }
+
+        const bodyKeys = override.bodyKeys
+        if (typeof bodyKeys !== 'undefined') {
+            this.config.methodOverride.bodyKeys = (Array.isArray(bodyKeys)
+                ? bodyKeys
+                : [bodyKeys])
+                .map(e => String(e).trim())
+                .filter(Boolean)
+        }
+
+        const headerKeys = override.headerKeys
+        if (typeof headerKeys !== 'undefined') {
+            this.config.methodOverride.headerKeys = (Array.isArray(headerKeys)
+                ? headerKeys
+                : [headerKeys])
+                .map(e => String(e).trim().toLowerCase())
+                .filter(Boolean)
+        }
+    }
+
+    private static resolveMethodOverride (
+        method: string,
+        headers: Record<string, any>,
+        body: unknown
+    ): HttpMethod | null {
+        if (!this.config.methodOverride?.enabled || method.toLowerCase() !== 'post') {
+            return null
+        }
+
+        let override: unknown
+        for (const key of this.config.methodOverride?.headerKeys || []) {
+            const value = headers?.[key]
+            if (Array.isArray(value) ? value[0] : value) {
+                override = Array.isArray(value) ? value[0] : value
+                break
+            }
+        }
+
+        if (!override && body && typeof body === 'object') {
+            for (const key of this.config.methodOverride?.bodyKeys || []) {
+                const value = (body as Record<string, unknown>)[key]
+                if (typeof value !== 'undefined' && value !== null && value !== '') {
+                    override = value
+                    break
+                }
+            }
+        }
+
+        const normalized = String(override || '').trim().toLowerCase()
+        if (!normalized) return null
+        if (['put', 'patch', 'delete', 'post'].includes(normalized)) {
+            return normalized as HttpMethod
+        }
+
+        return null
     }
 
     /**
@@ -374,6 +460,15 @@ export class Router {
 
                 router[method](
                     route.path,
+                    (req, res, next) => {
+                        const override = Router.resolveMethodOverride(req.method, req.headers as Record<string, any>, req.body)
+
+                        if (method === 'post' && override && override !== 'post') {
+                            return next('route')
+                        }
+
+                        return next()
+                    },
                     ...(route.middlewares || []),
                     async (req, res, next) => {
                         try {
@@ -387,6 +482,34 @@ export class Router {
                         }
                     }
                 )
+
+                if (['put', 'patch', 'delete'].includes(method)) {
+                    router.post(
+                        route.path,
+                        (req, res, next) => {
+                            const override = Router.resolveMethodOverride(req.method, req.headers as Record<string, any>, req.body)
+                            if (override !== method) {
+                                return next('route')
+                            }
+
+                            req.method = method.toUpperCase()
+
+                            return next()
+                        },
+                        ...(route.middlewares || []),
+                        async (req, res, next) => {
+                            try {
+                                const ctx = { req, res, next }
+                                const inst = instance ?? route
+                                await Router.bindRequestToInstance(ctx, inst, route)
+                                const result = handlerFunction(ctx, inst.clearRequest)
+                                await Promise.resolve(result)
+                            } catch (error: any) {
+                                next(error)
+                            }
+                        }
+                    )
+                }
             }
         }
     }

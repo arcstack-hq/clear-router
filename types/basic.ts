@@ -25,3 +25,19 @@ export type ApiResourceMiddleware<M extends EMiddleware | HMiddleware> =
     | M
     | M[]
     | { [K in ControllerAction]?: M | M[] }
+
+
+export interface RouterConfig {
+    /**
+     * Configuration for method override functionality, allowing clients to use a 
+     * specific header or body parameter to override the HTTP method.
+     */
+    methodOverride?: {
+        /** Whether method override is enabled */
+        enabled?: boolean
+        /** Keys in the request body to check for method override */
+        bodyKeys?: string[] | string
+        /** Keys in the request headers to check for method override */
+        headerKeys?: string[] | string
+    }
+}

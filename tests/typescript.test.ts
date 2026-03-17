@@ -18,9 +18,12 @@ describe('Express Routing - TypeScript', () => {
 
     beforeEach(() => {
         Router.routes = []
+        Router.routesByPathMethod = {}
+        Router.routesByMethod = {}
         Router.prefix = ''
         Router.groupMiddlewares = []
         Router.globalMiddlewares = []
+        Router.configure()
 
         app = express()
         router = ExRouter()
@@ -261,6 +264,55 @@ describe('Express Routing - TypeScript', () => {
         expect(response.body.grouped).toBe(true)
     })
 
+    test('should override method from body using default _method key', async () => {
+        Router.put('/users/:id', ({ req, res }: HttpContext) => {
+            res.json({ ok: true, method: req.method, id: req.params.id })
+        })
+
+        await setupApp()
+
+        const response = await request(app)
+            .post('/users/77')
+            .send({ _method: 'PUT' })
+
+        expect(response.status).toBe(200)
+        expect(response.body).toMatchObject({ ok: true, method: 'PUT', id: '77' })
+    })
+
+    test('should override method from custom header key', async () => {
+        Router.configure({ methodOverride: { headerKeys: 'x-custom-method' } })
+
+        Router.patch('/users/:id', ({ req, res }: HttpContext) => {
+            res.json({ ok: true, method: req.method, id: req.params.id })
+        })
+
+        await setupApp()
+
+        const response = await request(app)
+            .post('/users/88')
+            .set('x-custom-method', 'PATCH')
+
+        expect(response.status).toBe(200)
+        expect(response.body).toMatchObject({ ok: true, method: 'PATCH', id: '88' })
+    })
+
+    test('should override method from custom body key', async () => {
+        Router.configure({ methodOverride: { bodyKeys: 'verb' } })
+
+        Router.delete('/users/:id', ({ req, res }: HttpContext) => {
+            res.json({ ok: true, method: req.method, id: req.params.id })
+        })
+
+        await setupApp()
+
+        const response = await request(app)
+            .post('/users/99')
+            .send({ verb: 'DELETE' })
+
+        expect(response.status).toBe(200)
+        expect(response.body).toMatchObject({ ok: true, method: 'DELETE', id: '99' })
+    })
+
     test('should keep group context isolated across async registration tasks', async () => {
         await Router.group('/api', async () => {
             void (async () => {
@@ -322,9 +374,12 @@ describe('H3 Routing - TypeScript', () => {
 
     beforeEach(() => {
         H3Router.routes = []
+        H3Router.routesByPathMethod = {}
+        H3Router.routesByMethod = {}
         H3Router.prefix = ''
         H3Router.groupMiddlewares = []
         H3Router.globalMiddlewares = []
+        H3Router.configure()
 
         app = new H3()
     })
@@ -580,6 +635,63 @@ describe('H3 Routing - TypeScript', () => {
             .fetch(new global.Request(new URL('http://localhost/api/async-group'), { method: 'GET' }))
             .then(res => res.json())
         expect(response.grouped).toBe(true)
+    })
+
+    test('should override method from body using default _method key for h3', async () => {
+        H3Router.put('/users/:id', (event) => {
+            return { ok: true, method: event.req.method, id: getRouterParams(event).id }
+        })
+
+        setupApp()
+
+        const response = await router
+            .fetch(new global.Request(new URL('http://localhost/users/77'), {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ _method: 'PUT' }),
+            }))
+            .then(res => res.json())
+
+        expect(response).toMatchObject({ ok: true, id: '77' })
+    })
+
+    test('should override method from custom header key for h3', async () => {
+        H3Router.configure({ methodOverride: { headerKeys: 'x-custom-method' } })
+
+        H3Router.patch('/users/:id', (event) => {
+            return { ok: true, method: event.req.method, id: getRouterParams(event).id }
+        })
+
+        setupApp()
+
+        const response = await router
+            .fetch(new global.Request(new URL('http://localhost/users/88'), {
+                method: 'POST',
+                headers: { 'x-custom-method': 'PATCH' },
+            }))
+            .then(res => res.json())
+
+        expect(response).toMatchObject({ ok: true, id: '88' })
+    })
+
+    test('should override method from custom body key for h3', async () => {
+        H3Router.configure({ methodOverride: { bodyKeys: 'verb' } })
+
+        H3Router.delete('/users/:id', (event) => {
+            return { ok: true, method: event.req.method, id: getRouterParams(event).id }
+        })
+
+        setupApp()
+
+        const response = await router
+            .fetch(new global.Request(new URL('http://localhost/users/99'), {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ verb: 'DELETE' }),
+            }))
+            .then(res => res.json())
+
+        expect(response).toMatchObject({ ok: true, id: '99' })
     })
 
     test('should keep h3 group context isolated across async registration tasks', async () => {

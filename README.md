@@ -42,6 +42,7 @@ yarn add clear-router express
 
 - Simple and clean route declarations (get, post, put, delete, patch, options, head)
 - Grouped routes with prefix
+- Method override support via body or header keys (configurable)
 - Middleware stack: per-route and group-level
 - Controller-method pair as route handler
 - Supports HttpContext style handlers: { req, res, next }

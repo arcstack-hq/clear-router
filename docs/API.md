@@ -238,6 +238,41 @@ Router.group('/api', () => {
 });
 ```
 
+### configure(options)
+
+Configure HTTP method override behavior for POST requests.
+
+**Parameters:**
+
+- `options.methodOverride.enabled` (boolean): Enable/disable method override support
+- `options.methodOverride.bodyKeys` (string | string[]): Body key(s) to inspect for method override
+- `options.methodOverride.headerKeys` (string | string[]): Header key(s) to inspect for method override
+
+When enabled, a POST request can target `put`, `patch`, `delete`, or `post` route handlers based on configured override keys.
+
+Default keys:
+
+- Body: `_method`
+- Header: `x-http-method`
+
+**Example:**
+
+```javascript
+Router.configure({
+  methodOverride: {
+    bodyKeys: ['_method', 'method'],
+    headerKeys: ['x-http-method', 'x-method-override'],
+  },
+});
+
+Router.put('/users/:id', handler);
+// POST /users/12 with body { "method": "PUT" } routes to PUT handler
+```
+
+```javascript
+Router.configure({ methodOverride: { enabled: false } });
+```
+
 ### middleware(middlewares, callback)
 
 Apply global middlewares to all routes defined within the callback.
