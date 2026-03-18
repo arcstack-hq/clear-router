@@ -608,7 +608,6 @@ beforeEach(() => {
 
 ## Additional Resources
 
-- [Jest Documentation](https://jestjs.io/)
+- [Vitest Documentation](https://vitest.dev/)
 - [Supertest Documentation](https://github.com/visionmedia/supertest)
-- [Express Testing Guide](https://expressjs.com/en/guide/testing.html)
-- [TypeScript Testing](https://jestjs.io/docs/getting-started#via-ts-node)
+- [TypeScript Testing](https://www.typescriptlang.org/docs/handbook/project-references.html#an-example-project)

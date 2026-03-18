@@ -1,9 +1,10 @@
 import '../example/h3/web'
 
+import { H3App, HttpContext } from 'types/h3'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { Controller } from 'src'
 import { H3 } from 'h3'
-import { H3App } from 'types/h3'
 import Router from '../src/h3/router'
 
 describe('H3 App (JS)', () => {
@@ -44,5 +45,66 @@ describe('H3 App (JS)', () => {
 
         expect(res.status).toBe(204)
         expect(res.headers.get('Allow')).toBe('GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+    })
+
+    it('can parse multipart form data', async () => {
+        class TestControler extends Controller {
+            async upload () {
+                return `Received file: ${this.body.file.name}`
+            }
+        }
+        Router.post('/upload', [TestControler, 'upload'])
+
+        await setupApp()
+
+        const formData = new FormData()
+        formData.append('file', new Blob(['Hello World'], { type: 'text/plain' }), 'hello.txt')
+
+        const res = await router.fetch(new global.Request(new URL('http://localhost/upload'), {
+            method: 'POST',
+            body: formData,
+        }))
+
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('Received file: hello.txt')
+    })
+
+    it('should always expose req.getBody in handlers', async () => {
+        Router.get('/body-check', (ctx) => {
+            return JSON.stringify({
+                hasGetBody: typeof ctx.req.getBody === 'function',
+                body: ctx.req.getBody(),
+            })
+        })
+
+        Router.post('/body-check', (ctx) => {
+            return JSON.stringify({
+                hasGetBody: typeof ctx.req.getBody === 'function',
+                body: ctx.req.getBody(),
+            })
+        })
+
+        await setupApp()
+
+        const getRes = await router.fetch(new global.Request(new URL('http://localhost/body-check')))
+        expect(getRes.status).toBe(200)
+        expect(await getRes.json()).toEqual({
+            hasGetBody: true,
+            body: {},
+        })
+
+        const payload = { foo: 'bar' }
+        const postRes = await router.fetch(new global.Request(new URL('http://localhost/body-check'), {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        }))
+        expect(postRes.status).toBe(200)
+        expect(await postRes.json()).toEqual({
+            hasGetBody: true,
+            body: payload,
+        })
     })
 })

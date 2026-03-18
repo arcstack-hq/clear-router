@@ -210,7 +210,7 @@ Group routes under a common prefix with optional middlewares.
 - `callback` (Function): Sync or async function containing route definitions
 - `middlewares` (Function[]): Optional middleware functions
 
-**Returns:** Promise<void>
+**Returns:** `Promise<void>`
 
 **Example:**
 
@@ -295,7 +295,7 @@ Router.middleware([authMiddleware, logMiddleware], () => {
 
 Get information about all registered routes.
 
-**Returns:** Array<Route>
+**Returns:** `Array<Route>`
 
 **Route Object:**
 
@@ -345,7 +345,7 @@ Apply all registered routes to an Express Router instance.
 
 - `router` (express.Router): Express Router instance
 
-**Returns:** Promise<void>
+**Returns:** `Promise<void>`
 
 **Example:**
 
@@ -374,11 +374,17 @@ Context object passed to route handlers.
 
 ```typescript
 interface HttpContext {
-  req: express.Request;
+  req: express.Request & { getBody: () => Record<string, any> };
   res: express.Response;
   next: express.NextFunction;
 }
 ```
+
+Request body accessor behavior:
+
+- `req.getBody()` is always available in Express handlers.
+- `ctx.req.getBody()` is always available in H3 handlers.
+- Returns parsed body when present, otherwise `{}`.
 
 **Example:**
 
@@ -390,6 +396,11 @@ Router.get('/users', ({ req, res, next }) => {
   } catch (error) {
     next(error);
   }
+});
+
+Router.post('/users', ({ req, res }) => {
+  const body = req.getBody();
+  res.json({ hasName: Boolean(body.name) });
 });
 ```
 

@@ -7,10 +7,16 @@ export type H3App = Omit<H3['fetch'], 'fetch'> & { fetch: (request: TypedServerR
 
 export type MaybePromise<T = unknown> = T | Promise<T>;
 
+export type HttpRequest = H3Event['req'] & {
+    getBody: () => Record<string, any>
+}
+
 /**
  * HTTP context passed to route handlers
  */
-export type HttpContext = H3Event & {}
+export type HttpContext = Omit<H3Event, 'req'> & {
+    req: HttpRequest
+}
 
 /**
  * Route handler function type

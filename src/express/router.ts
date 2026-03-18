@@ -111,6 +111,12 @@ export class Router {
         }
     }
 
+    private static ensureRequestBodyAccessor (req: any): void {
+        if (typeof req.getBody !== 'function') {
+            req.getBody = () => req.body ?? {}
+        }
+    }
+
     private static resolveMethodOverride (
         method: string,
         headers: Record<string, any>,
@@ -461,6 +467,7 @@ export class Router {
                 router[method](
                     route.path,
                     (req, res, next) => {
+                        Router.ensureRequestBodyAccessor(req)
                         const override = Router.resolveMethodOverride(req.method, req.headers as Record<string, any>, req.body)
 
                         if (method === 'post' && override && override !== 'post') {
@@ -472,7 +479,8 @@ export class Router {
                     ...(route.middlewares || []),
                     async (req, res, next) => {
                         try {
-                            const ctx = { req, res, next }
+                            Router.ensureRequestBodyAccessor(req)
+                            const ctx: HttpContext = { req: req as HttpContext['req'], res, next }
                             const inst = instance ?? route
                             await Router.bindRequestToInstance(ctx, inst, route)
                             const result = handlerFunction(ctx, inst.clearRequest)
@@ -487,6 +495,7 @@ export class Router {
                     router.post(
                         route.path,
                         (req, res, next) => {
+                            Router.ensureRequestBodyAccessor(req)
                             const override = Router.resolveMethodOverride(req.method, req.headers as Record<string, any>, req.body)
                             if (override !== method) {
                                 return next('route')
@@ -499,7 +508,8 @@ export class Router {
                         ...(route.middlewares || []),
                         async (req, res, next) => {
                             try {
-                                const ctx = { req, res, next }
+                                Router.ensureRequestBodyAccessor(req)
+                                const ctx: HttpContext = { req: req as HttpContext['req'], res, next }
                                 const inst = instance ?? route
                                 await Router.bindRequestToInstance(ctx, inst, route)
                                 const result = handlerFunction(ctx, inst.clearRequest)
@@ -521,8 +531,10 @@ export class Router {
     ): Promise<void> {
         if (!instance) return
 
+        Router.ensureRequestBodyAccessor(ctx.req)
+
         instance.ctx = ctx
-        instance.body = ctx.req.body
+        instance.body = ctx.req.getBody()
         instance.query = ctx.req.query
         instance.params = ctx.req.params
         instance.clearRequest = new ClearRequest({

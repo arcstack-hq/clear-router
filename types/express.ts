@@ -3,11 +3,15 @@ import type { NextFunction, Request, Response } from 'express'
 import { ClearRequest } from 'src/ClearRequest'
 import type { ControllerHandler } from './basic'
 
+export interface RequestWithGetBody extends Request {
+    getBody: () => Record<string, any>
+}
+
 /**
  * HTTP context passed to route handlers
  */
 export interface HttpContext {
-    req: Request;
+    req: RequestWithGetBody;
     res: Response;
     next: NextFunction;
 }

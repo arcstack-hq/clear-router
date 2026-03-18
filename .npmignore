@@ -5,7 +5,7 @@ coverage/
 *.test.js
 *.test.mjs
 *.test.ts
-jest.config.js
+vitest.config.js
 tsconfig.json
 .gitignore
 .github/

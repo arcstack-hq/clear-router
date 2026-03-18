@@ -44,4 +44,37 @@ describe('Express App (JS)', () => {
         expect(res.status).toBe(204)
         expect(res.headers['allow']).toBe('GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
     })
+
+    it('should always expose req.getBody in handlers', async () => {
+        Router.get('/body-check', ({ req, res }) => {
+            res.json({
+                hasGetBody: typeof req.getBody === 'function',
+                body: req.getBody(),
+            })
+        })
+
+        Router.post('/body-check', ({ req, res }) => {
+            res.json({
+                hasGetBody: typeof req.getBody === 'function',
+                body: req.getBody(),
+            })
+        })
+
+        await setupApp()
+
+        const getRes = await request(app).get('/body-check')
+        expect(getRes.status).toBe(200)
+        expect(getRes.body).toEqual({
+            hasGetBody: true,
+            body: {},
+        })
+
+        const payload = { foo: 'bar' }
+        const postRes = await request(app).post('/body-check').send(payload)
+        expect(postRes.status).toBe(200)
+        expect(postRes.body).toEqual({
+            hasGetBody: true,
+            body: payload,
+        })
+    })
 })

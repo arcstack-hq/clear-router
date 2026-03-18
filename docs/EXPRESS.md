@@ -115,6 +115,26 @@ Disable override behavior:
 Router.configure({ methodOverride: { enabled: false } });
 ```
 
+### Request Body Access via `req.getBody()`
+
+clear-router patches Express requests with `req.getBody()` so body access is consistent in handlers and controllers.
+
+- Always available in route handlers.
+- Returns parsed request body when present.
+- Returns `{}` when the request has no body.
+
+```javascript
+Router.post('/users', ({ req, res }) => {
+  const body = req.getBody();
+  res.json({ hasName: Boolean(body.name) });
+});
+
+Router.get('/status', ({ req, res }) => {
+  // Safe even for GET requests without a body
+  res.json({ body: req.getBody() }); // {}
+});
+```
+
 ### Controller Binding
 
 ```javascript
@@ -178,7 +198,7 @@ Router.post('/users', ({ req, res }, clearRequest) => {
 
 For controller instance handlers (`[ControllerClass, 'method']`), router hydration includes:
 
-- `this.body` (request body)
+- `this.body` (from `req.getBody()`)
 - `this.query` (request query)
 - `this.params` (route params)
 - `this.clearRequest` (normalized request wrapper)

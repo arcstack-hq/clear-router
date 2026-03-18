@@ -108,10 +108,24 @@ export class Router {
 
     private static async readBodyCached (ctx: HttpContext): Promise<any> {
         if (this.bodyCache.has(ctx)) {
-            return this.bodyCache.get(ctx)
+            const cached = this.bodyCache.get(ctx)
+            ctx.req.getBody = () => cached
+
+            return cached
         }
 
-        const body = await readBody(ctx) ?? {}
+        let body: Record<string, any> = {}
+
+        if (ctx.req.headers.get('content-type')?.includes('multipart/form-data')) {
+            (await ctx.req.formData()).forEach((value, key) => {
+                body[key] = value
+            })
+        } else {
+            body = await readBody(ctx) ?? {}
+        }
+
+        ctx.req.getBody = () => body
+
         this.bodyCache.set(ctx, body)
 
         return body
@@ -464,7 +478,7 @@ export class Router {
 
                 app[method](route.path, async (event) => {
                     try {
-                        const ctx: HttpContext = event
+                        const ctx = event as HttpContext
                         const reqBody = await Router.readBodyCached(ctx)
                         const override = Router.resolveMethodOverride(ctx.req.method, ctx.req.headers, reqBody)
                         if (method === 'post' && override && override !== 'post') {
@@ -486,7 +500,7 @@ export class Router {
                 if (['put', 'patch', 'delete'].includes(method)) {
                     app.post(route.path, async (event) => {
                         try {
-                            const ctx: HttpContext = event
+                            const ctx = event as HttpContext
                             const reqBody = await Router.readBodyCached(ctx)
                             const override = Router.resolveMethodOverride(ctx.req.method, ctx.req.headers, reqBody)
                             if (override !== method) {

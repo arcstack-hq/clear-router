@@ -57,6 +57,9 @@
     "scripts": {
         "test": "vitest",
         "lint": "eslint",
+        "docs:dev": "vitepress dev docs",
+        "docs:build": "vitepress build docs",
+        "docs:preview": "vitepress preview docs",
         "test:esm": "vitest tests/esm.test.ts",
         "test:ts": "vitest tests/typescript.test.ts",
         "test:coverage": "vitest run --coverage",
@@ -92,6 +95,7 @@
         "typescript": "^5.3.3",
         "typescript-eslint": "^8.56.1",
         "vite-tsconfig-paths": "^6.1.1",
+        "vitepress": "^1.6.4",
         "vitest": "^4.0.18"
     },
     "engines": {
