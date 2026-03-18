@@ -4,10 +4,11 @@ Laravel-style routing for Express and H3 with support for CommonJS, ESM, and Typ
 
 ## Documentation
 
-- [Using with Express](./EXPRESS.md)
-- [Using with H3](./H3.md)
-- [API Reference](./API.md)
-- [Testing Guide](./TESTING.md)
+- [Using with Express](./express)
+- [Using with H3](./h3)
+- [Adapter Authoring Guide](./adapters)
+- [API Reference](./api)
+- [Testing Guide](./testing)
 
 ## Quick Links
 

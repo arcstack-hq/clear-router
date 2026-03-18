@@ -60,15 +60,15 @@ yarn add clear-router express
 
 ### Express JS
 
-See the [Express JS documentation](./docs/EXPRESS.md) for details.
+See the [Express JS documentation](https://arkstack-hq.github.io/clear-router/express) for details.
 
 ### H3
 
-See the [H3 documentation](./docs/H3.md) for details.
+See the [H3 documentation](https://arkstack-hq.github.io/clear-router/h3) for details.
 
 ## API Reference
 
-See [API.md](./docs/API.md) for complete API documentation.
+See [API.md](https://arkstack-hq.github.io/clear-router/api) for complete API documentation.
 
 ## Middleware Execution Order
 
@@ -92,7 +92,7 @@ npm run test:esm      # Test ESM
 npm run test:ts       # Test TypeScript
 ```
 
-See [TESTING.md](./docs/TESTING.md) for a detailed testing guide.
+See [TESTING.md](https://arkstack-hq.github.io/clear-router/TESTING.md) for a detailed testing guide.
 
 ## Examples
 

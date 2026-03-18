@@ -17,7 +17,7 @@ export default defineConfig([
     clean: true,
     exports: true,
     tsconfig: 'tsconfig.json',
-    entry: ['src/express/index.ts', 'src/h3/index.ts'],
+    entry: ['src/core/index.ts', 'src/express/index.ts', 'src/h3/index.ts'],
     platform: 'node',
     outDir: 'dist',
     format: ['esm', 'cjs'],

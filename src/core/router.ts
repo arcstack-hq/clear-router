@@ -1,0 +1,534 @@
+import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
+
+import { AsyncLocalStorage } from 'node:async_hooks'
+import { ClearRequest } from 'src/ClearRequest'
+import { Controller } from 'src/Controller'
+import { Route } from 'src/Route'
+
+/**
+ * @class clear-router CoreRouter
+ * @description Core routing logic for clear-router, shared between all supported adapters (Express.js, H3, etc.)
+ * @author 3m1n3nc3
+ * @repository https://github.com/toneflix/clear-router
+ */
+export abstract class CoreRouter {
+    static config: RouterConfig = {
+        methodOverride: {
+            enabled: true,
+            bodyKeys: ['_method'],
+            headerKeys: ['x-http-method'],
+        },
+    }
+
+    protected static groupContext = new AsyncLocalStorage<{
+        prefix: string
+        groupMiddlewares: any[]
+    }>()
+
+    static routes: Array<Route<any, any, any>> = []
+    static routesByPathMethod: Record<string, Route<any, any, any>> = {}
+    static routesByMethod: { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> } = {}
+
+    static prefix = ''
+    static groupMiddlewares: any[] = []
+    static globalMiddlewares: any[] = []
+
+    protected static ensureState (this: any): void {
+        if (!Object.prototype.hasOwnProperty.call(this, 'config')) {
+            this.config = {
+                methodOverride: {
+                    enabled: true,
+                    bodyKeys: ['_method'],
+                    headerKeys: ['x-http-method'],
+                },
+            }
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(this, 'groupContext')) {
+            this.groupContext = new AsyncLocalStorage<{
+                prefix: string
+                groupMiddlewares: any[]
+            }>()
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(this, 'routes')) {
+            this.routes = []
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(this, 'routesByPathMethod')) {
+            this.routesByPathMethod = {}
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(this, 'routesByMethod')) {
+            this.routesByMethod = {}
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(this, 'prefix')) {
+            this.prefix = ''
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(this, 'groupMiddlewares')) {
+            this.groupMiddlewares = []
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(this, 'globalMiddlewares')) {
+            this.globalMiddlewares = []
+        }
+    }
+
+    /**
+     * Normalizes a path by ensuring it starts with a single slash and does not have trailing 
+     * slashes, while preserving dynamic segments and parameters.
+     * 
+     * @param path  The path to normalize.
+     * @returns     The normalized path.
+     */
+    static normalizePath (path: string): string {
+        return '/' + path
+            .split('/')
+            .filter(Boolean)
+            .join('/')
+    }
+
+    /**
+     * Configures the router with the given options, such as method override settings.
+     * 
+     * @param this 
+     * @param options 
+     * @returns 
+     */
+    static configure (this: any, options?: RouterConfig): void {
+        this.ensureState()
+
+        if (!this.config.methodOverride) {
+            this.config.methodOverride = {
+                enabled: true,
+                bodyKeys: ['_method'],
+                headerKeys: ['x-http-method'],
+            }
+        }
+
+        const override = options?.methodOverride
+        if (!override) return
+
+        if (typeof override.enabled === 'boolean') {
+            this.config.methodOverride.enabled = override.enabled
+        }
+
+        const bodyKeys = override.bodyKeys
+        if (typeof bodyKeys !== 'undefined') {
+            this.config.methodOverride.bodyKeys = (Array.isArray(bodyKeys)
+                ? bodyKeys
+                : [bodyKeys])
+                .map(e => String(e).trim())
+                .filter(Boolean)
+        }
+
+        const headerKeys = override.headerKeys
+        if (typeof headerKeys !== 'undefined') {
+            this.config.methodOverride.headerKeys = (Array.isArray(headerKeys)
+                ? headerKeys
+                : [headerKeys])
+                .map(e => String(e).trim().toLowerCase())
+                .filter(Boolean)
+        }
+    }
+
+    protected static resolveMethodOverride (
+        this: any,
+        method: string,
+        headers: Headers | Record<string, any>,
+        body: unknown
+    ): HttpMethod | null {
+        this.ensureState()
+
+        if (!this.config.methodOverride?.enabled || method.toLowerCase() !== 'post') {
+            return null
+        }
+
+        let override: unknown
+
+        const headerValueFor = (key: string): unknown => {
+            if (typeof (headers as Headers).get === 'function') {
+                return (headers as Headers).get(key)
+            }
+
+            const value = (headers as Record<string, any>)?.[key]
+
+            return Array.isArray(value) ? value[0] : value
+        }
+
+        for (const key of this.config.methodOverride?.headerKeys || []) {
+            const value = headerValueFor(key)
+            if (value) {
+                override = value
+                break
+            }
+        }
+
+        if (!override && body && typeof body === 'object') {
+            for (const key of this.config.methodOverride?.bodyKeys || []) {
+                const value = (body as Record<string, unknown>)[key]
+                if (typeof value !== 'undefined' && value !== null && value !== '') {
+                    override = value
+                    break
+                }
+            }
+        }
+
+        const normalized = String(override || '').trim().toLowerCase()
+        if (!normalized) return null
+
+        if (['put', 'patch', 'delete', 'post'].includes(normalized)) {
+            return normalized as HttpMethod
+        }
+
+        return null
+    }
+
+    /**
+     * Adds a new route to the router with the specified methods, path, handler, and middlewares.
+     * 
+     * @param this 
+     * @param methods 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
+    static add (
+        this: any,
+        methods: HttpMethod | HttpMethod[],
+        path: string,
+        handler: any,
+        middlewares?: any[] | any
+    ): void {
+        this.ensureState()
+
+        const context = this.groupContext.getStore()
+        const activePrefix = context?.prefix ?? this.prefix
+        const activeGroupMiddlewares = context?.groupMiddlewares ?? this.groupMiddlewares
+
+        methods = Array.isArray(methods) ? methods : [methods]
+        middlewares = middlewares
+            ? (Array.isArray(middlewares) ? middlewares : [middlewares])
+            : undefined
+
+        const fullPath = this.normalizePath(`${activePrefix}/${path}`)
+
+        const route = new Route(
+            methods.includes('options') ? methods : methods.concat('options'),
+            fullPath,
+            handler,
+            [...this.globalMiddlewares, ...activeGroupMiddlewares, ...(middlewares || [])]
+        )
+
+        if (
+            !methods.includes('options') &&
+            !this.routesByPathMethod[`OPTIONS ${fullPath}`]
+        ) {
+            this.options(path, ({ res }: any) => {
+                if (res?.headers?.set) {
+                    res.headers.set('Allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+                    res.status = 204
+
+                    return
+                }
+
+                if (res?.set) {
+                    res.set('Allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+                    res.sendStatus(204)
+                }
+            })
+        }
+
+        this.routes.push(route)
+
+        for (const method of methods.map(m => m.toUpperCase() as Uppercase<HttpMethod>)) {
+            this.routesByPathMethod[`${method} ${fullPath}`] = route
+            if (!this.routesByMethod[method]) {
+                this.routesByMethod[method] = []
+            }
+            this.routesByMethod[method].push(route)
+        }
+    }
+
+    /**
+     * Adds a new API resource route to the router for the specified base path and controller, with 
+     * options to include/exclude specific actions and apply middlewares.
+     * 
+     * @param this 
+     * @param basePath 
+     * @param controller 
+     * @param options 
+     */
+    static apiResource (
+        this: any,
+        basePath: string,
+        controller: any,
+        options?: {
+            only?: ControllerAction[]
+            except?: ControllerAction[]
+            middlewares?: ApiResourceMiddleware<any>
+        }
+    ): void {
+        const actions = {
+            index: { method: 'get', path: '/' },
+            show: { method: 'get', path: '/:id' },
+            create: { method: 'post', path: '/' },
+            update: { method: 'put', path: '/:id' },
+            destroy: { method: 'delete', path: '/:id' },
+        } as const
+
+        const only = options?.only || Object.keys(actions) as ControllerAction[]
+        const except = options?.except || []
+
+        const preController = typeof controller === 'function' ? new controller() : controller
+
+        for (const action of only) {
+            if (except.includes(action)) continue
+            if (typeof preController[action] === 'function') {
+                const { method, path } = actions[action]
+                const actionMiddlewares = typeof options?.middlewares === 'object' && !Array.isArray(options.middlewares)
+                    ? options.middlewares[action]
+                    : options?.middlewares
+
+                this.add(
+                    method,
+                    `${basePath}${path}`,
+                    [controller, action],
+                    Array.isArray(actionMiddlewares)
+                        ? actionMiddlewares
+                        : actionMiddlewares ? [actionMiddlewares] : undefined
+                )
+            }
+        }
+    }
+
+    /**
+     * Adds a new GET route to the router with the specified path, handler, and optional middlewares.
+     * 
+     * @param this          The router instance.
+     * @param path          The path for the GET route.
+     * @param handler       The handler function for the GET route.
+     * @param middlewares   Optional middlewares to apply to the GET route.
+     */
+    static get (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+        this.add('get', path, handler, middlewares)
+    }
+
+    /**
+     * Adds a new POST route to the router with the specified path, handler, and optional middlewares.
+     * 
+     * @param this 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
+    static post (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+        this.add('post', path, handler, middlewares)
+    }
+
+    /**
+     * Adds a new PUT route to the router with the specified path, handler, and optional middlewares.
+     * 
+     * @param this 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
+    static put (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+        this.add('put', path, handler, middlewares)
+    }
+
+    /**
+     * Adds a new DELETE route to the router with the specified path, handler, and optional middlewares.
+     * 
+     * @param this 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
+    static delete (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+        this.add('delete', path, handler, middlewares)
+    }
+
+    /**
+     * Adds a new PATCH route to the router with the specified path, handler, and optional middlewares.
+     * 
+     * @param this 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
+    static patch (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+        this.add('patch', path, handler, middlewares)
+    }
+
+    /**
+     * Adds a new OPTIONS route to the router with the specified path, handler, and optional middlewares.
+     * 
+     * @param this 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
+    static options (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+        this.add('options', path, handler, middlewares)
+    }
+
+    /**
+     * Adds a new HEAD route to the router with the specified path, handler, and optional middlewares.
+     * 
+     * @param this 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
+    static head (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+        this.add('head', path, handler, middlewares)
+    }
+
+    /**
+     * Defines a group of routes with a common prefix and optional middlewares, allowing for better 
+     * organization and reuse of route configurations.
+     * 
+     * @param this 
+     * @param prefix 
+     * @param callback 
+     * @param middlewares 
+     */
+    static async group (
+        this: any,
+        prefix: string,
+        callback: () => void | Promise<void>,
+        middlewares?: any[]
+    ): Promise<void> {
+        this.ensureState()
+
+        const context = this.groupContext.getStore()
+        const previousPrefix = context?.prefix ?? this.prefix
+        const previousMiddlewares = context?.groupMiddlewares ?? this.groupMiddlewares
+
+        const fullPrefix = [previousPrefix, prefix]
+            .filter(Boolean)
+            .join('/')
+
+        const nextContext = {
+            prefix: this.normalizePath(fullPrefix),
+            groupMiddlewares: [...previousMiddlewares, ...(middlewares || [])],
+        }
+
+        await this.groupContext.run(nextContext, async () => {
+            await Promise.resolve(callback())
+        })
+    }
+
+    /**
+     * Adds global middlewares to the router, which will be applied to all routes.
+     * 
+     * @param this 
+     * @param middlewares 
+     * @param callback 
+     */
+    static middleware (this: any, middlewares: any[], callback: () => void): void {
+        this.ensureState()
+
+        const prevMiddlewares = this.globalMiddlewares
+        this.globalMiddlewares = [...prevMiddlewares, ...(middlewares || [])]
+
+        callback()
+
+        this.globalMiddlewares = prevMiddlewares
+    }
+
+    /**
+     * Retrieves all registered routes in the router, optionally organized by path or method 
+     * for easier access and management.
+     * 
+     * @param this 
+     */
+    static allRoutes (this: any): Array<Route<any, any, any>>
+    static allRoutes (this: any, type: 'path'): Record<string, Route<any, any, any>>
+    static allRoutes (this: any, type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> }
+    static allRoutes (this: any, type?: 'method' | 'path'):
+        Array<Route<any, any, any>> |
+        Record<string, Route<any, any, any>> |
+        Record<string, Array<Route<any, any, any>>> {
+        this.ensureState()
+
+        if (type === 'method') {
+            return this.routesByMethod
+        }
+
+        if (type === 'path') {
+            return this.routesByPathMethod
+        }
+
+        return this.routes.filter((e: Route<any, any, any>) => e.methods.length > 1 || e.methods[0] !== 'options')
+    }
+
+    protected static resolveHandler (route: Route<any, any, any>): {
+        handlerFunction: ((ctx: any, req: ClearRequest) => any | Promise<any>) | null
+        instance: Controller<any> | null
+    } {
+        let handlerFunction: ((ctx: any, req: ClearRequest) => any | Promise<any>) | null
+        let instance: Controller<any> | null = null
+
+        if (typeof route.handler === 'function') {
+            handlerFunction = route.handler.bind(route)
+        } else if (
+            Array.isArray(route.handler) &&
+            route.handler.length === 2
+        ) {
+            const [ControllerType, method] = route.handler
+
+            if (
+                ['function', 'object'].includes(typeof ControllerType) &&
+                typeof ControllerType[method] === 'function'
+            ) {
+                instance = ControllerType
+                handlerFunction = ControllerType[method].bind(ControllerType)
+            } else if (typeof ControllerType === 'function') {
+                instance = new ControllerType()
+                if (typeof instance![method] === 'function') {
+                    handlerFunction = instance![method].bind(instance)
+                } else {
+                    throw new Error(
+                        `Method "${method}" not found in controller instance "${ControllerType.name}"`
+                    )
+                }
+            } else {
+                throw new Error(`Invalid controller type for route: ${route.path}`)
+            }
+        } else {
+            throw new Error(`Invalid handler format for route: ${route.path}`)
+        }
+
+        return { handlerFunction, instance }
+    }
+
+    protected static bindRequestToInstance (
+        ctx: any,
+        instance: Controller<any> | Route<any, any, any> | null,
+        route: Route<any, any, any>,
+        payload: {
+            body: Record<string, any>
+            query: Record<string, any>
+            params: Record<string, any>
+        }
+    ): void {
+        if (!instance) return
+
+        instance.ctx = ctx
+        instance.body = payload.body
+        instance.query = payload.query
+        instance.params = payload.params
+        instance.clearRequest = new ClearRequest({
+            ctx,
+            route,
+            body: instance.body,
+            query: instance.query,
+            params: instance.params,
+        })
+    }
+}

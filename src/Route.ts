@@ -1,10 +1,10 @@
-import { Middleware as HMiddleware, Handler } from 'types/h3'
 import { HttpMethod, RequestData } from 'types'
 
 import { ClearRequest } from './ClearRequest'
 import { Middleware as EMiddleware } from 'types/express'
+import { Middleware as HMiddleware } from 'types/h3'
 
-export class Route<X = any, M = HMiddleware | EMiddleware> {
+export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
     ctx!: X
     body: RequestData = {}
     query: RequestData = {}
@@ -13,7 +13,7 @@ export class Route<X = any, M = HMiddleware | EMiddleware> {
 
     methods: HttpMethod[]
     path: string
-    handler: Handler
+    handler: H
     middlewares: M[]
     controllerName?: string
     actionName?: string
@@ -23,7 +23,7 @@ export class Route<X = any, M = HMiddleware | EMiddleware> {
     constructor(
         methods: HttpMethod[],
         path: string,
-        handler: Handler,
+        handler: H,
         middlewares: M[] = []
     ) {
         this.methods = methods

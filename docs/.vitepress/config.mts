@@ -8,20 +8,22 @@ export default defineConfig({
     themeConfig: {
         nav: [
             { text: 'Guide', link: '/index' },
-            { text: 'Express', link: '/EXPRESS' },
-            { text: 'H3', link: '/H3' },
-            { text: 'API', link: '/API' },
-            { text: 'Testing', link: '/TESTING' },
+            { text: 'Express', link: '/express' },
+            { text: 'H3', link: '/h3' },
+            { text: 'Adapters', link: '/adapters' },
+            { text: 'API', link: '/api' },
+            { text: 'Testing', link: '/testing' },
         ],
         sidebar: [
             {
                 text: 'Documentation',
                 items: [
                     { text: 'Overview', link: '/index' },
-                    { text: 'Using with Express', link: '/EXPRESS' },
-                    { text: 'Using with H3', link: '/H3' },
-                    { text: 'API Reference', link: '/API' },
-                    { text: 'Testing Guide', link: '/TESTING' },
+                    { text: 'Using with Express', link: '/express' },
+                    { text: 'Using with H3', link: '/h3' },
+                    { text: 'Adapter Authoring Guide', link: '/adapters' },
+                    { text: 'API Reference', link: '/api' },
+                    { text: 'Testing Guide', link: '/testing' },
                 ],
             },
         ],

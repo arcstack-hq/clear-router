@@ -291,7 +291,7 @@ console.log(allRoutes);
 
 ## API Reference
 
-See [API.md](API.md) for complete API documentation.
+See [API](./api.md) for complete API documentation.
 
 ## Error Handling
 
@@ -326,7 +326,7 @@ npm run test:esm      # Test ESM
 npm run test:ts       # Test TypeScript
 ```
 
-See [TESTING.md](./TESTING.md) for detailed testing guide.
+See [Testing](./testing.md) for detailed testing guide.
 
 ## Examples
 

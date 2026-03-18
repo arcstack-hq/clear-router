@@ -1,10 +1,10 @@
 import '../example/h3/web'
 
-import { H3App, HttpContext } from 'types/h3'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { Controller } from 'src'
 import { H3 } from 'h3'
+import { H3App } from 'types/h3'
 import Router from '../src/h3/router'
 
 describe('H3 App (JS)', () => {
