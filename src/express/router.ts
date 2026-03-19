@@ -13,6 +13,8 @@ import { Route } from 'src/Route'
  * @repository https://github.com/toneflix/clear-router
  */
 export class Router extends CoreRouter {
+    protected static routerStateNamespace = 'clear-router:express'
+
     private static ensureRequestBodyAccessor (req: any): void {
         if (typeof req.getBody !== 'function') {
             req.getBody = () => req.body ?? {}

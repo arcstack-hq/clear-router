@@ -12,6 +12,8 @@ import { H3App, Handler, HttpContext, Middleware, RouteHandler } from 'types/h3'
  * @repository https://github.com/toneflix/clear-router
  */
 export class Router extends CoreRouter {
+    protected static routerStateNamespace = 'clear-router:h3'
+
     private static readonly bodyCache = new WeakMap<HttpContext, any>()
 
     private static async readBodyCached (ctx: HttpContext): Promise<Record<string, any>> {

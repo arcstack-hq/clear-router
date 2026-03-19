@@ -12,6 +12,103 @@ import { Route } from 'src/Route'
  * @repository https://github.com/toneflix/clear-router
  */
 export abstract class CoreRouter {
+    protected static routerStateNamespace = 'clear-router:core'
+
+    private static readonly stateStoreKey = Symbol.for('clear-router:router-state')
+    private static readonly stateBoundKey = Symbol.for('clear-router:router-state-bound')
+
+    protected static resolveStateNamespace (this: any): string {
+        return String(this.routerStateNamespace || this.name || 'clear-router:core')
+    }
+
+    protected static getStateStore (): Record<string, any> {
+        const g = globalThis as Record<PropertyKey, any>
+
+        if (!g[this.stateStoreKey]) {
+            g[this.stateStoreKey] = Object.create(null)
+        }
+
+        return g[this.stateStoreKey] as Record<string, any>
+    }
+
+    protected static createDefaultState () {
+        return {
+            config: {
+                methodOverride: {
+                    enabled: true,
+                    bodyKeys: ['_method'],
+                    headerKeys: ['x-http-method'],
+                },
+            },
+            groupContext: new AsyncLocalStorage<{
+                prefix: string
+                groupMiddlewares: any[]
+            }>(),
+            routes: [] as Array<Route<any, any, any>>,
+            routesByPathMethod: {} as Record<string, Route<any, any, any>>,
+            routesByMethod: {} as { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> },
+            prefix: '',
+            groupMiddlewares: [] as any[],
+            globalMiddlewares: [] as any[],
+        }
+    }
+
+    protected static bindStateAccessors (this: any): void {
+        if (Object.prototype.hasOwnProperty.call(this, this.stateBoundKey)) {
+            return
+        }
+
+        const namespace = this.resolveStateNamespace()
+        const store = this.getStateStore()
+
+        if (!store[namespace]) {
+            store[namespace] = this.createDefaultState()
+        }
+
+        for (const key of [
+            'config',
+            'groupContext',
+            'routes',
+            'routesByPathMethod',
+            'routesByMethod',
+            'prefix',
+            'groupMiddlewares',
+            'globalMiddlewares',
+        ]) {
+            Object.defineProperty(this, key, {
+                get () {
+                    const ns = this.resolveStateNamespace()
+                    const registry = this.getStateStore()
+
+                    if (!registry[ns]) {
+                        registry[ns] = this.createDefaultState()
+                    }
+
+                    return registry[ns][key]
+                },
+                set (value) {
+                    const ns = this.resolveStateNamespace()
+                    const registry = this.getStateStore()
+
+                    if (!registry[ns]) {
+                        registry[ns] = this.createDefaultState()
+                    }
+
+                    registry[ns][key] = value
+                },
+                configurable: true,
+                enumerable: true,
+            })
+        }
+
+        Object.defineProperty(this, this.stateBoundKey, {
+            value: true,
+            configurable: false,
+            enumerable: false,
+            writable: false,
+        })
+    }
+
     protected static createDefaultOptionsHandler (): any {
         return (ctx: any) => {
             const allow = 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD'
@@ -68,7 +165,9 @@ export abstract class CoreRouter {
     static globalMiddlewares: any[] = []
 
     protected static ensureState (this: any): void {
-        if (!Object.prototype.hasOwnProperty.call(this, 'config')) {
+        this.bindStateAccessors()
+
+        if (!this.config) {
             this.config = {
                 methodOverride: {
                     enabled: true,
@@ -78,34 +177,34 @@ export abstract class CoreRouter {
             }
         }
 
-        if (!Object.prototype.hasOwnProperty.call(this, 'groupContext')) {
+        if (!this.groupContext) {
             this.groupContext = new AsyncLocalStorage<{
                 prefix: string
                 groupMiddlewares: any[]
             }>()
         }
 
-        if (!Object.prototype.hasOwnProperty.call(this, 'routes')) {
+        if (!Array.isArray(this.routes)) {
             this.routes = []
         }
 
-        if (!Object.prototype.hasOwnProperty.call(this, 'routesByPathMethod')) {
+        if (!this.routesByPathMethod || typeof this.routesByPathMethod !== 'object') {
             this.routesByPathMethod = {}
         }
 
-        if (!Object.prototype.hasOwnProperty.call(this, 'routesByMethod')) {
+        if (!this.routesByMethod || typeof this.routesByMethod !== 'object') {
             this.routesByMethod = {}
         }
 
-        if (!Object.prototype.hasOwnProperty.call(this, 'prefix')) {
+        if (typeof this.prefix !== 'string') {
             this.prefix = ''
         }
 
-        if (!Object.prototype.hasOwnProperty.call(this, 'groupMiddlewares')) {
+        if (!Array.isArray(this.groupMiddlewares)) {
             this.groupMiddlewares = []
         }
 
-        if (!Object.prototype.hasOwnProperty.call(this, 'globalMiddlewares')) {
+        if (!Array.isArray(this.globalMiddlewares)) {
             this.globalMiddlewares = []
         }
     }
