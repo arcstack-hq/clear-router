@@ -1,6 +1,6 @@
 {
     "name": "clear-router",
-    "version": "2.3.1",
+    "version": "2.3.2",
     "description": "Laravel-style routing for Node.js with support for Express, H3, Fastify, and Hono, including CommonJS, ESM, and TypeScript support.",
     "keywords": [
         "h3",
