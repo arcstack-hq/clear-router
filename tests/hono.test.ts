@@ -80,4 +80,45 @@ describe('Hono App (JS)', () => {
             body: payload,
         })
     })
+
+    it('supports POST _method override for PUT routes', async () => {
+        Router.put('/api/users/:id', (ctx) => {
+            return ctx.json({
+                method: ctx.req.method,
+                id: ctx.req.param('id'),
+            })
+        })
+
+        setupApp()
+
+        const res = await app.fetch(new Request('http://localhost/api/users/123', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({ _method: 'PUT' }),
+        }))
+
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({
+            method: 'POST',
+            id: '123',
+        })
+    })
+
+    it('returns 404 for POST to PUT route when _method override is missing', async () => {
+        Router.put('/api/users/:id', () => 'updated')
+
+        setupApp()
+
+        const res = await app.fetch(new Request('http://localhost/api/users/123', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({}),
+        }))
+
+        expect(res.status).toBe(404)
+    })
 })

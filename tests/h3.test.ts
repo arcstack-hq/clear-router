@@ -69,6 +69,22 @@ describe('H3 App (JS)', () => {
         expect(await res.text()).toBe('Received file: hello.txt')
     })
 
+    it('returns 404 for POST to PUT route when _method override is missing', async () => {
+        Router.put('/api/users/:id', () => 'updated')
+
+        await setupApp()
+
+        const res = await router.fetch(new global.Request(new URL('http://localhost/api/users/123'), {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({}),
+        }))
+
+        expect(res.status).toBe(404)
+    })
+
     it('should always expose req.getBody in handlers', async () => {
         Router.get('/body-check', (ctx) => {
             return JSON.stringify({

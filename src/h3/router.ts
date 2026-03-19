@@ -274,9 +274,7 @@ export class Router extends CoreRouter {
                             const reqBody = await Router.readBodyCached(ctx)
                             const override = Router.resolveMethodOverride(ctx.req.method, ctx.req.headers, reqBody)
 
-                            if (override !== method) {
-                                return
-                            }
+                            if (override !== method) return Symbol.for('h3.notFound')
 
                             const inst = instance ?? route
                             Router.bindRequestToInstance(ctx, inst, route, {

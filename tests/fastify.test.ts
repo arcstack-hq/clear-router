@@ -79,4 +79,41 @@ describe('Fastify App (JS)', () => {
             body: payload,
         })
     })
+
+    it('supports POST _method override for PUT routes', async () => {
+        Router.put('/api/users/:id', ({ req }) => {
+            return {
+                method: req.method,
+                id: (req.params as Record<string, string>).id,
+            }
+        })
+
+        await setupApp()
+
+        const res = await app.inject({
+            method: 'POST',
+            url: '/api/users/123',
+            payload: { _method: 'PUT' },
+        })
+
+        expect(res.statusCode).toBe(200)
+        expect(res.json()).toEqual({
+            method: 'POST',
+            id: '123',
+        })
+    })
+
+    it('returns 404 for POST to PUT route when _method override is missing', async () => {
+        Router.put('/api/users/:id', () => 'updated')
+
+        await setupApp()
+
+        const res = await app.inject({
+            method: 'POST',
+            url: '/api/users/123',
+            payload: {},
+        })
+
+        expect(res.statusCode).toBe(404)
+    })
 })

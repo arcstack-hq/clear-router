@@ -77,4 +77,37 @@ describe('Express App (JS)', () => {
             body: payload,
         })
     })
+
+    it('supports POST _method override for PUT routes', async () => {
+        Router.put('/api/users/:id', ({ req, res }) => {
+            res.json({
+                method: req.method,
+                id: req.params.id,
+            })
+        })
+
+        await setupApp()
+
+        const res = await request(app)
+            .post('/api/users/123')
+            .send({ _method: 'PUT' })
+
+        expect(res.statusCode).toBe(200)
+        expect(res.body).toEqual({
+            method: 'PUT',
+            id: '123',
+        })
+    })
+
+    it('returns 404 for POST to PUT route when _method override is missing', async () => {
+        Router.put('/api/users/:id', ({ res }) => res.send('updated'))
+
+        await setupApp()
+
+        const res = await request(app)
+            .post('/api/users/123')
+            .send({})
+
+        expect(res.statusCode).toBe(404)
+    })
 })
