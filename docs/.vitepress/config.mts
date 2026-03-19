@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
+    base: '/clear-router/',
     title: 'clear-router',
     description: 'Laravel-style routing for Express, H3, Fastify, and Hono',
     lang: 'en-US',
