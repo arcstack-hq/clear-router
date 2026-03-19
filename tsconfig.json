@@ -19,8 +19,12 @@
       "clear-router/core/*": ["src/core/*"],
       "clear-router/express": ["src/express/index.ts"],
       "clear-router/express/*": ["src/express/*"],
+      "clear-router/fastify": ["src/fastify/index.ts"],
+      "clear-router/fastify/*": ["src/fastify/*"],
       "clear-router/h3": ["src/h3/index.ts"],
-      "clear-router/h3/*": ["src/h3/*"]
+      "clear-router/h3/*": ["src/h3/*"],
+      "clear-router/hono": ["src/hono/index.ts"],
+      "clear-router/hono/*": ["src/hono/*"]
     }
   },
   "include": [

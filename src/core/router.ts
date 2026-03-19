@@ -12,6 +12,40 @@ import { Route } from 'src/Route'
  * @repository https://github.com/toneflix/clear-router
  */
 export abstract class CoreRouter {
+    protected static createDefaultOptionsHandler (): any {
+        return (ctx: any) => {
+            const allow = 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD'
+
+            if (ctx?.header && ctx?.status && ctx?.body) {
+                ctx.header('Allow', allow)
+                ctx.status(204)
+
+                return ctx.body(null)
+            }
+
+            if (ctx?.res?.headers?.set) {
+                ctx.res.headers.set('Allow', allow)
+                ctx.res.status = 204
+
+                return
+            }
+
+            if (ctx?.res?.set) {
+                ctx.res.set('Allow', allow)
+                ctx.res.sendStatus(204)
+
+                return
+            }
+
+            if (ctx?.reply?.header) {
+                ctx.reply.header('Allow', allow)
+                ctx.reply.code(204).send()
+
+                return
+            }
+        }
+    }
+
     static config: RouterConfig = {
         methodOverride: {
             enabled: true,
@@ -226,19 +260,7 @@ export abstract class CoreRouter {
             !methods.includes('options') &&
             !this.routesByPathMethod[`OPTIONS ${fullPath}`]
         ) {
-            this.options(path, ({ res }: any) => {
-                if (res?.headers?.set) {
-                    res.headers.set('Allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
-                    res.status = 204
-
-                    return
-                }
-
-                if (res?.set) {
-                    res.set('Allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
-                    res.sendStatus(204)
-                }
-            })
+            this.options(path, this.createDefaultOptionsHandler())
         }
 
         this.routes.push(route)
@@ -448,7 +470,15 @@ export abstract class CoreRouter {
      * @param this 
      */
     static allRoutes (this: any): Array<Route<any, any, any>>
+    /**
+     * @param this  
+     * @param type  - 'path' to get routes organized by path
+     */
     static allRoutes (this: any, type: 'path'): Record<string, Route<any, any, any>>
+    /**
+     * @param this  
+     * @param type  - 'method' to get routes organized by method
+     */
     static allRoutes (this: any, type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> }
     static allRoutes (this: any, type?: 'method' | 'path'):
         Array<Route<any, any, any>> |

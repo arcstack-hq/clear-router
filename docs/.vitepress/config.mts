@@ -2,15 +2,17 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
     title: 'clear-router',
-    description: 'Laravel-style routing for Express and H3',
+    description: 'Laravel-style routing for Express, H3, Fastify, and Hono',
     lang: 'en-US',
     cleanUrls: true,
     themeConfig: {
         nav: [
             { text: 'Guide', link: '/index' },
-            { text: 'Express', link: '/express' },
-            { text: 'H3', link: '/h3' },
-            { text: 'Adapters', link: '/adapters' },
+            { text: 'Express', link: '/guide/express' },
+            { text: 'Fastify', link: '/guide/fastify' },
+            { text: 'H3', link: '/guide/h3' },
+            { text: 'Hono', link: '/guide/hono' },
+            { text: 'Adapters', link: '/guide/adapters' },
             { text: 'API', link: '/api' },
             { text: 'Testing', link: '/testing' },
         ],
@@ -19,9 +21,11 @@ export default defineConfig({
                 text: 'Documentation',
                 items: [
                     { text: 'Overview', link: '/index' },
-                    { text: 'Using with Express', link: '/express' },
-                    { text: 'Using with H3', link: '/h3' },
-                    { text: 'Adapter Authoring Guide', link: '/adapters' },
+                    { text: 'Using with Express', link: '/guide/express' },
+                    { text: 'Using with Fastify', link: '/guide/fastify' },
+                    { text: 'Using with H3', link: '/guide/h3' },
+                    { text: 'Using with Hono', link: '/guide/hono' },
+                    { text: 'Adapter Authoring Guide', link: '/guide/adapters' },
                     { text: 'API Reference', link: '/api' },
                     { text: 'Testing Guide', link: '/testing' },
                 ],
