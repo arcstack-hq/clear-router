@@ -6,7 +6,7 @@
 [![Publish to NPM](https://github.com/arkstack-hq/clear-router/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/arkstack-hq/clear-router/actions/workflows/npm-publish.yml)
 [![Run Tests](https://github.com/arkstack-hq/clear-router/actions/workflows/ci.yml/badge.svg)](https://github.com/arkstack-hq/clear-router/actions/workflows/ci.yml)
 
-Laravel-style routing system for H3 and Express.js, with clean route definitions, middleware support, controller bindings and full TypeScript support.
+Laravel-style routing for Node.js with support for Express, H3, Fastify, and Hono, including CommonJS, ESM, and TypeScript support.
 
 ## Installation
 
@@ -51,20 +51,30 @@ yarn add clear-router express
 - `clearRequest` is passed as second handler argument for controller handlers
 - Auto-binds controller methods
 - Full CommonJS, ESM, and TypeScript support
-- Error handling delegated to Express | H3
+- Error handling delegated to Express | H3 | Fastify | Hono
 - Route inspection with the `allRoutes` method
 - Fully Express-compatible
 - Fully H3-compatible
+- Fully Fastify-compatible
+- Fully Hono-compatible
 
 ## Quick Start
 
 ### Express JS
 
-See the [Express JS documentation](https://arkstack-hq.github.io/clear-router/express) for details.
+See the [Express JS documentation](https://arkstack-hq.github.io/clear-router/guide/express) for details.
 
 ### H3
 
-See the [H3 documentation](https://arkstack-hq.github.io/clear-router/h3) for details.
+See the [H3 documentation](https://arkstack-hq.github.io/clear-router/guide/h3) for details.
+
+### Fastify
+
+See the [Fastify documentation](https://arkstack-hq.github.io/clear-router/guide/fastify) for details.
+
+### Hono
+
+See the [Hono documentation](https://arkstack-hq.github.io/clear-router/guide/hono) for details.
 
 ## API Reference
 
@@ -92,7 +102,7 @@ npm run test:esm      # Test ESM
 npm run test:ts       # Test TypeScript
 ```
 
-See [TESTING.md](https://arkstack-hq.github.io/clear-router/TESTING.md) for a detailed testing guide.
+See [TESTING.md](https://arkstack-hq.github.io/clear-router/testing) for a detailed testing guide.
 
 ## Examples
 
