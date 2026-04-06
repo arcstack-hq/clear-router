@@ -12,6 +12,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./",
+    "baseUrl": "./",
     "types": ["node", "vitest", "express"],
     "paths": {
       "clear-router/core": ["src/core/index.ts"],
