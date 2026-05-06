@@ -3,7 +3,7 @@ import type { EventHandlerRequest, H3, H3Event, TypedServerRequest } from 'h3'
 import { ClearRequest } from 'src/ClearRequest'
 import type { ControllerHandler } from './basic'
 
-export type H3App = Omit<H3['fetch'], 'fetch'> & {
+export type H3App = Omit<H3, 'fetch'> & {
     fetch: (request: TypedServerRequest<EventHandlerRequest>) => Promise<Response>
 }
 
