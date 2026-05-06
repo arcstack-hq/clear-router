@@ -140,6 +140,12 @@ export abstract class CoreRouter {
 
                 return
             }
+
+            if (ctx?.set && 'status' in ctx) {
+                ctx.set('Allow', allow)
+                ctx.status = 204
+                ctx.body = null
+            }
         }
     }
 

@@ -1,14 +1,13 @@
-import '../example/express/web'
-
 import { beforeEach, describe, expect, it } from 'vitest'
-import express, { Router as ExRouter } from 'express'
 
-import Router from '../src/express/router'
+import Koa from 'koa'
+import KoaRouter from '@koa/router'
+import Router from '../src/koa/router'
 import request from 'parasito'
 
-describe('Express App (JS)', () => {
-    let app: express.Application
-    let router: ExRouter
+describe('Koa App (JS)', () => {
+    let app: Koa
+    let router: KoaRouter
 
     beforeEach(() => {
         Router.routes = []
@@ -18,22 +17,24 @@ describe('Express App (JS)', () => {
         Router.routesByPathMethod = {}
         Router.routesByMethod = {}
 
-        app = express()
-        router = ExRouter()
-        app.use(express.json())
+        app = new Koa()
+        router = new KoaRouter()
     })
 
-    const setupApp = async (): Promise<void> => {
+    const setupApp = (): void => {
         Router.apply(router)
-        app.use(router)
+        app.use(router.routes())
+        app.use(router.allowedMethods())
     }
 
     it('GET / should return 200', async () => {
-        Router.get('/directly', ({ res }) => res.send('Hello World'))
-        await setupApp()
-        const res = await request(app).get('/directly')
+        Router.get('/directly', () => 'Hello World')
+        setupApp()
+
+        const res = await request(app.callback()).get('/directly')
+
         expect(res.statusCode).toBe(200)
-        expect(res.text || res.body).toBeDefined()
+        expect(res.text).toBe('Hello World')
     })
 
     it('supports direct primitive, object, and Response returns', async () => {
@@ -46,66 +47,69 @@ describe('Express App (JS)', () => {
             headers: { 'content-type': 'text/custom' },
         }))
 
-        await setupApp()
+        setupApp()
 
-        const html = await request(app).get('/html')
+        const html = await request(app.callback()).get('/html')
         expect(html.statusCode).toBe(200)
         expect(html.header['content-type']).toContain('text/html')
         expect(html.text).toBe('<h1>Hello</h1>')
 
-        const xhr = await request(app).get('/api/text').set('x-requested-with', 'XMLHttpRequest')
+        const xhr = await request(app.callback())
+            .get('/api/text')
+            .set('x-requested-with', 'XMLHttpRequest')
         expect(xhr.header['content-type']).toContain('text/plain')
 
-        const created = await request(app).post('/created')
+        const created = await request(app.callback()).post('/created')
         expect(created.statusCode).toBe(201)
         expect(created.text).toBe('true')
 
-        const payload = await request(app).get('/payload')
+        const payload = await request(app.callback()).get('/payload')
         expect(payload.header['content-type']).toContain('application/json')
         expect(payload.body).toEqual({ ok: true })
 
-        const fetchResponse = await request(app).get('/fetch-response')
+        const fetchResponse = await request(app.callback()).get('/fetch-response')
         expect(fetchResponse.statusCode).toBe(202)
         expect(fetchResponse.header['content-type']).toContain('text/custom')
         expect(fetchResponse.text).toBe('accepted')
     })
 
     it('should create options route for non-OPTIONS method routes', async () => {
-        Router.get('/peeps/:id', ({ res }) => res.send('Hello'))
-        await setupApp()
-        const res = await request(app).options('/peeps/123')
+        Router.get('/peeps/:id', () => 'Hello')
+        setupApp()
 
-        expect(res.status).toBe(204)
+        const res = await request(app.callback()).options('/peeps/123')
+
+        expect(res.statusCode).toBe(204)
         expect(res.header['allow']).toBe('GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
     })
 
-    it('should always expose req.getBody in handlers', async () => {
-        Router.get('/body-check', ({ req, res }) => {
-            res.json({
-                hasGetBody: typeof req.getBody === 'function',
-                body: req.getBody(),
-            })
+    it('should always expose request.getBody in handlers', async () => {
+        Router.get('/body-check', (ctx) => {
+            return {
+                hasGetBody: typeof ctx.request.getBody === 'function',
+                body: ctx.request.getBody(),
+            }
         })
 
-        Router.post('/body-check', ({ req, res }) => {
-            res.json({
-                hasGetBody: typeof req.getBody === 'function',
-                body: req.getBody(),
-            })
+        Router.post('/body-check', (ctx) => {
+            return {
+                hasGetBody: typeof ctx.request.getBody === 'function',
+                body: ctx.request.getBody(),
+            }
         })
 
-        await setupApp()
+        setupApp()
 
-        const getRes = await request(app).get('/body-check')
-        expect(getRes.status).toBe(200)
+        const getRes = await request(app.callback()).get('/body-check')
+        expect(getRes.statusCode).toBe(200)
         expect(getRes.body).toEqual({
             hasGetBody: true,
             body: {},
         })
 
         const payload = { foo: 'bar' }
-        const postRes = await request(app).post('/body-check').send(payload)
-        expect(postRes.status).toBe(200)
+        const postRes = await request(app.callback()).post('/body-check').send(payload)
+        expect(postRes.statusCode).toBe(201)
         expect(postRes.body).toEqual({
             hasGetBody: true,
             body: payload,
@@ -113,32 +117,31 @@ describe('Express App (JS)', () => {
     })
 
     it('supports POST _method override for PUT routes', async () => {
-        Router.put('/api/users/:id', ({ req, res }) => {
-            res.json({
-                method: req.method,
-                id: req.params.id,
-            })
+        Router.put('/api/users/:id', (ctx) => {
+            return {
+                method: ctx.method,
+                id: ctx.params.id,
+            }
         })
 
-        await setupApp()
+        setupApp()
 
-        const res = await request(app)
+        const res = await request(app.callback())
             .post('/api/users/123')
             .send({ _method: 'PUT' })
 
         expect(res.statusCode).toBe(200)
         expect(res.body).toEqual({
-            method: 'PUT',
+            method: 'POST',
             id: '123',
         })
     })
 
     it('returns 404 for POST to PUT route when _method override is missing', async () => {
-        Router.put('/api/users/:id', ({ res }) => res.send('updated'))
+        Router.put('/api/users/:id', () => 'updated')
+        setupApp()
 
-        await setupApp()
-
-        const res = await request(app)
+        const res = await request(app.callback())
             .post('/api/users/123')
             .send({})
 

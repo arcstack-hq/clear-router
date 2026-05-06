@@ -23,6 +23,7 @@ export default defineConfig([
       'src/fastify/index.ts',
       'src/h3/index.ts',
       'src/hono/index.ts',
+      'src/koa/index.ts',
     ],
     platform: 'node',
     outDir: 'dist',

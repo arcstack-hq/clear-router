@@ -8,7 +8,7 @@ import { NextFunction as H3NextFunction } from '../types/h3'
 import H3Router from '../src/h3/router'
 import { HttpContext } from 'types/express'
 import Router from '../src/express/router'
-import request from 'supertest'
+import request from 'parasito'
 
 // Import the actual CommonJS implementation
 

@@ -5,7 +5,7 @@ import { H3App } from 'types/h3'
 import H3Router from '../src/h3/router'
 import Router from '../src/express/router'
 import express from 'express'
-import request from 'supertest'
+import request from 'parasito'
 
 describe('Express Routing - ESM', () => {
     let app: express.Application
