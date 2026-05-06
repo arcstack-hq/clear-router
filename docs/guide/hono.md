@@ -46,6 +46,20 @@ Router.get('/hello', () => {
 });
 ```
 
+### Direct Return Values
+
+Hono handlers can return response values directly. You can still return Hono responses from helpers such as `ctx.text()`, `ctx.json()`, and `ctx.body()` when you need explicit control.
+
+```javascript
+Router.get('/hello', () => 'Hello World');
+Router.get('/page', () => '<h1>Hello</h1>');
+Router.get('/users', () => [{ id: 1, name: 'Ada' }]);
+Router.post('/users', (ctx) => ({ id: 1, ...ctx.req.getBody() }));
+Router.get('/accepted', () => new Response('Accepted', { status: 202 }));
+```
+
+Direct `POST` returns default to `201`; other methods default to `200`. HTML-like strings are sent as `text/html`, API/XHR string responses as `text/plain`, and objects/arrays as JSON.
+
 ### With Middleware
 
 ```javascript

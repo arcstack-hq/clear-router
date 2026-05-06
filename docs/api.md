@@ -44,6 +44,48 @@ Middleware functions currently applied at the global level.
 
 ## Static Methods
 
+## Direct Response Returns
+
+Route handlers may either use the framework response object directly or return a response value.
+
+This works across Express, Fastify, Hono, and H3 adapters.
+
+Supported direct return values include:
+
+- `string`
+- `number`
+- `boolean`
+- plain objects and arrays
+- `Response`
+- H3 `HTTPResponse`
+- framework-native response objects
+- thenable response objects such as Resora resources
+
+```javascript
+Router.get('/html', () => '<h1>Hello</h1>');
+Router.get('/api/users', () => [{ id: 1, name: 'Ada' }]);
+Router.post('/users', ({ req }) => ({ id: 1, ...req.getBody() }));
+Router.get('/custom', () => new Response('Accepted', { status: 202 }));
+```
+
+Default response behavior:
+
+- Returned objects and arrays are sent as JSON.
+- HTML-like strings are sent as `text/html` for normal page requests.
+- String responses for API/XHR-style requests are sent as `text/plain`.
+- Returned numbers and booleans are sent as `text/plain`.
+- Direct `POST` returns default to status `201`.
+- Other direct returns default to status `200`.
+- Native `Response` and H3 `HTTPResponse` values preserve their own status and headers.
+
+Manual framework responses still work:
+
+```javascript
+Router.get('/legacy', ({ res }) => {
+  res.status(200).send('Hello');
+});
+```
+
 ### normalizePath(path)
 
 Normalize a path by removing duplicate slashes and ensuring a leading slash.
@@ -415,6 +457,8 @@ Router.post('/users', ({ req, res }) => {
 `ctx` is always the first argument:
 
 - Express: `{ req, res, next }`
+- Fastify: `{ req, reply }`
+- Hono: Hono context
 - H3: `H3Event`
 
 `clearRequest` is passed as second argument and is guaranteed for controller handlers.

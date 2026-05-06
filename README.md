@@ -49,6 +49,7 @@ yarn add clear-router express
 - Function handlers always receive context as first argument
 - Controller handlers receive hydrated `this.body`, `this.query`, `this.params`, and `this.clearRequest`
 - `clearRequest` is passed as second handler argument for controller handlers
+- Route handlers can return response values directly across Express, Fastify, Hono, and H3
 - Auto-binds controller methods
 - Full CommonJS, ESM, and TypeScript support
 - Error handling delegated to Express | H3 | Fastify | Hono
