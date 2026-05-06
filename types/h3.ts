@@ -1,20 +1,24 @@
-import type { H3, H3Event, TypedServerRequest } from 'h3'
+import type { EventHandlerRequest, H3, H3Event, TypedServerRequest } from 'h3'
 
 import { ClearRequest } from 'src/ClearRequest'
 import type { ControllerHandler } from './basic'
 
-export type H3App = Omit<H3['fetch'], 'fetch'> & { fetch: (request: TypedServerRequest) => Promise<Response> }
+export type H3App = Omit<H3['fetch'], 'fetch'> & {
+    fetch: (request: TypedServerRequest<EventHandlerRequest>) => Promise<Response>
+}
 
 export type MaybePromise<T = unknown> = T | Promise<T>;
 
-export type HttpRequest = H3Event['req'] & {
-    getBody: () => Record<string, any>
-}
+export interface HttpRequest extends TypedServerRequest<EventHandlerRequest> {
+    getBody: () => Record<string, any>;
+};
+
+type RequestlessH3Event = Omit<H3Event, 'req'>
 
 /**
  * HTTP context passed to route handlers
  */
-export type HttpContext = Omit<H3Event, 'req'> & {
+export interface HttpContext extends RequestlessH3Event {
     req: HttpRequest
 }
 

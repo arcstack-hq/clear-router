@@ -13,6 +13,7 @@
     "outDir": "./dist",
     "rootDir": "./",
     "baseUrl": "./",
+    "ignoreDeprecations": "6.0",
     "types": ["node", "vitest", "express"],
     "paths": {
       "clear-router/core": ["src/core/index.ts"],
