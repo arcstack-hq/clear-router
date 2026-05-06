@@ -35,6 +35,42 @@ describe('H3 App (JS)', () => {
         expect(await res.text()).toBeDefined()
     })
 
+    it('supports direct primitive, object, and Response returns', async () => {
+        Router.get('/html', () => '<h1>Hello</h1>')
+        Router.get('/api/text', () => '<h1>Hello</h1>')
+        Router.post('/created', () => true)
+        Router.get('/payload', () => ({ ok: true }))
+        Router.get('/fetch-response', () => new Response('accepted', {
+            status: 202,
+            headers: { 'content-type': 'text/custom' },
+        }))
+
+        await setupApp()
+
+        const html = await router.fetch(new Request(new URL('http://localhost/html')))
+        expect(html.status).toBe(200)
+        expect(html.headers.get('content-type')).toContain('text/html')
+        expect(await html.text()).toBe('<h1>Hello</h1>')
+
+        const xhr = await router.fetch(new Request(new URL('http://localhost/api/text'), {
+            headers: { 'x-requested-with': 'XMLHttpRequest' },
+        }))
+        expect(xhr.headers.get('content-type')).toContain('text/plain')
+
+        const created = await router.fetch(new Request(new URL('http://localhost/created'), { method: 'POST' }))
+        expect(created.status).toBe(201)
+        expect(await created.text()).toBe('true')
+
+        const payload = await router.fetch(new Request(new URL('http://localhost/payload')))
+        expect(payload.headers.get('content-type')).toContain('application/json')
+        expect(await payload.json()).toEqual({ ok: true })
+
+        const fetchResponse = await router.fetch(new Request(new URL('http://localhost/fetch-response')))
+        expect(fetchResponse.status).toBe(202)
+        expect(fetchResponse.headers.get('content-type')).toContain('text/custom')
+        expect(await fetchResponse.text()).toBe('accepted')
+    })
+
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', () => 'Hello')
         await setupApp()
@@ -65,7 +101,7 @@ describe('H3 App (JS)', () => {
             body: formData,
         }))
 
-        expect(res.status).toBe(200)
+        expect(res.status).toBe(201)
         expect(await res.text()).toBe('Received file: hello.txt')
     })
 
@@ -117,7 +153,7 @@ describe('H3 App (JS)', () => {
             },
             body: JSON.stringify(payload),
         }))
-        expect(postRes.status).toBe(200)
+        expect(postRes.status).toBe(201)
         expect(await postRes.json()).toEqual({
             hasGetBody: true,
             body: payload,

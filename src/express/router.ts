@@ -1,8 +1,10 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
+import { Router as ExpressRouter } from 'express'
 import { Handler, HttpContext, Middleware, RouteHandler } from 'types/express'
+import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
+import type { Request, Response } from 'express'
 
 import { CoreRouter } from 'src/core/router'
-import { Router as ExpressRouter } from 'express'
 import { Route } from 'src/Route'
 
 /**
@@ -19,6 +21,50 @@ export class Router extends CoreRouter {
         if (typeof req.getBody !== 'function') {
             req.getBody = () => req.body ?? {}
         }
+    }
+
+    private static async sendReturnValue (
+        req: Request,
+        res: Response,
+        value: any,
+        method: HttpMethod,
+        path: string
+    ): Promise<void> {
+        if (responseWasSent(res) || value === res || responseWasSent(value)) return
+
+        const meta = resolveResponseMeta(value, {
+            headers: req.headers,
+            method,
+            path,
+        })
+
+        if (!meta) return
+
+        res.status(meta.status)
+
+        if (isFetchResponse(meta.body)) {
+            meta.body.headers.forEach((headerValue, key) => {
+                res.setHeader(key, headerValue)
+            })
+
+            res.status(meta.body.status)
+            const body = Buffer.from(await meta.body.arrayBuffer())
+            res.send(body)
+
+            return
+        }
+
+        if (meta.contentType && !res.getHeader('Content-Type')) {
+            res.setHeader('Content-Type', meta.contentType)
+        }
+
+        if (meta.isEmpty) {
+            res.sendStatus(meta.status)
+
+            return
+        }
+
+        res.send(meta.body)
     }
 
     /**
@@ -252,7 +298,8 @@ export class Router extends CoreRouter {
                             })
 
                             const result = handlerFunction(ctx, inst.clearRequest)
-                            await Promise.resolve(result)
+                            const resolved = await Promise.resolve(result)
+                            await Router.sendReturnValue(req, res, resolved, method, route.path)
                         } catch (error: any) {
                             next(error)
                         }
@@ -292,7 +339,8 @@ export class Router extends CoreRouter {
                                 })
 
                                 const result = handlerFunction(ctx, inst.clearRequest)
-                                await Promise.resolve(result)
+                                const resolved = await Promise.resolve(result)
+                                await Router.sendReturnValue(req, res, resolved, method, route.path)
                             } catch (error: any) {
                                 next(error)
                             }

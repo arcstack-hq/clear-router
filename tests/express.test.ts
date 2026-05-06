@@ -36,6 +36,40 @@ describe('Express App (JS)', () => {
         expect(res.text || res.body).toBeDefined()
     })
 
+    it('supports direct primitive, object, and Response returns', async () => {
+        Router.get('/html', () => '<h1>Hello</h1>')
+        Router.get('/api/text', () => '<h1>Hello</h1>')
+        Router.post('/created', () => true)
+        Router.get('/payload', () => ({ ok: true }))
+        Router.get('/fetch-response', () => new Response('accepted', {
+            status: 202,
+            headers: { 'content-type': 'text/custom' },
+        }))
+
+        await setupApp()
+
+        const html = await request(app).get('/html')
+        expect(html.statusCode).toBe(200)
+        expect(html.headers['content-type']).toContain('text/html')
+        expect(html.text).toBe('<h1>Hello</h1>')
+
+        const xhr = await request(app).get('/api/text').set('x-requested-with', 'XMLHttpRequest')
+        expect(xhr.headers['content-type']).toContain('text/plain')
+
+        const created = await request(app).post('/created')
+        expect(created.statusCode).toBe(201)
+        expect(created.text).toBe('true')
+
+        const payload = await request(app).get('/payload')
+        expect(payload.headers['content-type']).toContain('application/json')
+        expect(payload.body).toEqual({ ok: true })
+
+        const fetchResponse = await request(app).get('/fetch-response')
+        expect(fetchResponse.statusCode).toBe(202)
+        expect(fetchResponse.headers['content-type']).toContain('text/custom')
+        expect(fetchResponse.text).toBe('accepted')
+    })
+
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', ({ res }) => res.send('Hello'))
         await setupApp()

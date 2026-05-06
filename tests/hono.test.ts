@@ -30,6 +30,42 @@ describe('Hono App (JS)', () => {
         expect(await res.text()).toBe('Hello World')
     })
 
+    it('supports direct primitive, object, and Response returns', async () => {
+        Router.get('/html', () => '<h1>Hello</h1>')
+        Router.get('/api/text', () => '<h1>Hello</h1>')
+        Router.post('/created', () => false)
+        Router.get('/payload', () => ({ ok: true }))
+        Router.get('/fetch-response', () => new Response('accepted', {
+            status: 202,
+            headers: { 'content-type': 'text/custom' },
+        }))
+
+        setupApp()
+
+        const html = await app.fetch(new Request('http://localhost/html'))
+        expect(html.status).toBe(200)
+        expect(html.headers.get('content-type')).toContain('text/html')
+        expect(await html.text()).toBe('<h1>Hello</h1>')
+
+        const xhr = await app.fetch(new Request('http://localhost/api/text', {
+            headers: { 'x-requested-with': 'XMLHttpRequest' },
+        }))
+        expect(xhr.headers.get('content-type')).toContain('text/plain')
+
+        const created = await app.fetch(new Request('http://localhost/created', { method: 'POST' }))
+        expect(created.status).toBe(201)
+        expect(await created.text()).toBe('false')
+
+        const payload = await app.fetch(new Request('http://localhost/payload'))
+        expect(payload.headers.get('content-type')).toContain('application/json')
+        expect(await payload.json()).toEqual({ ok: true })
+
+        const fetchResponse = await app.fetch(new Request('http://localhost/fetch-response'))
+        expect(fetchResponse.status).toBe(202)
+        expect(fetchResponse.headers.get('content-type')).toContain('text/custom')
+        expect(await fetchResponse.text()).toBe('accepted')
+    })
+
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', () => 'Hello')
         setupApp()

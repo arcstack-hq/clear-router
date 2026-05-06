@@ -32,6 +32,44 @@ describe('Fastify App (JS)', () => {
         expect(res.body).toBe('Hello World')
     })
 
+    it('supports direct primitive, object, and Response returns', async () => {
+        Router.get('/html', () => '<h1>Hello</h1>')
+        Router.get('/api/text', () => '<h1>Hello</h1>')
+        Router.post('/created', () => 42)
+        Router.get('/payload', () => ({ ok: true }))
+        Router.get('/fetch-response', () => new Response('accepted', {
+            status: 202,
+            headers: { 'content-type': 'text/custom' },
+        }))
+
+        await setupApp()
+
+        const html = await app.inject({ method: 'GET', url: '/html' })
+        expect(html.statusCode).toBe(200)
+        expect(html.headers['content-type']).toContain('text/html')
+        expect(html.body).toBe('<h1>Hello</h1>')
+
+        const xhr = await app.inject({
+            method: 'GET',
+            url: '/api/text',
+            headers: { 'x-requested-with': 'XMLHttpRequest' },
+        })
+        expect(xhr.headers['content-type']).toContain('text/plain')
+
+        const created = await app.inject({ method: 'POST', url: '/created' })
+        expect(created.statusCode).toBe(201)
+        expect(created.body).toBe('42')
+
+        const payload = await app.inject({ method: 'GET', url: '/payload' })
+        expect(payload.headers['content-type']).toContain('application/json')
+        expect(payload.json()).toEqual({ ok: true })
+
+        const fetchResponse = await app.inject({ method: 'GET', url: '/fetch-response' })
+        expect(fetchResponse.statusCode).toBe(202)
+        expect(fetchResponse.headers['content-type']).toContain('text/custom')
+        expect(fetchResponse.body).toBe('accepted')
+    })
+
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', () => 'Hello')
 
@@ -73,7 +111,7 @@ describe('Fastify App (JS)', () => {
             url: '/body-check',
             payload,
         })
-        expect(postRes.statusCode).toBe(200)
+        expect(postRes.statusCode).toBe(201)
         expect(postRes.json()).toEqual({
             hasGetBody: true,
             body: payload,

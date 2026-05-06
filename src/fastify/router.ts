@@ -3,6 +3,7 @@ import { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from 'type
 
 import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'
+import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
 
 /**
  * @class clear-router Fastify Router
@@ -17,6 +18,40 @@ export class Router extends CoreRouter {
         if (typeof req.getBody !== 'function') {
             req.getBody = () => req.body ?? {}
         }
+    }
+
+    private static async sendReturnValue (req: any, reply: any, value: any, method: HttpMethod, path: string): Promise<any> {
+        if (responseWasSent(reply) || value === reply || responseWasSent(value)) return value
+
+        const meta = resolveResponseMeta(value, {
+            headers: req.headers,
+            method,
+            path,
+        })
+
+        if (!meta) return undefined
+
+        reply.code(meta.status)
+
+        if (isFetchResponse(meta.body)) {
+            meta.body.headers.forEach((headerValue, key) => {
+                reply.header(key, headerValue)
+            })
+
+            reply.code(meta.body.status)
+
+            return reply.send(Buffer.from(await meta.body.arrayBuffer()))
+        }
+
+        if (meta.contentType) {
+            reply.type(meta.contentType)
+        }
+
+        if (meta.isEmpty) {
+            return reply.send()
+        }
+
+        return reply.send(meta.body)
     }
 
     /**
@@ -227,8 +262,9 @@ export class Router extends CoreRouter {
                         })
 
                         const result = handlerFunction(ctx, inst.clearRequest)
+                        const resolved = await Promise.resolve(result)
 
-                        return await Promise.resolve(result)
+                        return Router.sendReturnValue(req, reply, resolved, method, route.path)
                     },
                 })
 
@@ -257,8 +293,9 @@ export class Router extends CoreRouter {
                             })
 
                             const result = handlerFunction(ctx, inst.clearRequest)
+                            const resolved = await Promise.resolve(result)
 
-                            return await Promise.resolve(result)
+                            return Router.sendReturnValue(req, reply, resolved, method, route.path)
                         },
                     })
                 }

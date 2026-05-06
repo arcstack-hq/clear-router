@@ -4,6 +4,7 @@ import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'
 import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
 import { H3App, Handler, HttpContext, Middleware, RouteHandler } from 'types/h3'
+import { resolveResponseMeta } from 'src/core/responses'
 
 /**
  * @class clear-router H3 Router
@@ -15,6 +16,31 @@ export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:h3'
 
     private static readonly bodyCache = new WeakMap<HttpContext, any>()
+
+    private static toResponse (ctx: HttpContext, value: any, method: HttpMethod, path: string): any {
+        const meta = resolveResponseMeta(value, {
+            headers: ctx.req.headers,
+            method,
+            path,
+            status: typeof ctx.res.status === 'number' && ctx.res.status !== 200
+                ? ctx.res.status
+                : undefined,
+        })
+
+        if (!meta) return undefined
+        if (meta.isNativeResponse) return meta.body
+
+        if (meta.contentType?.startsWith('application/json')) {
+            return Response.json(meta.body, { status: meta.status })
+        }
+
+        return new Response(meta.isEmpty ? null : meta.body, {
+            status: meta.status,
+            headers: meta.contentType
+                ? { 'Content-Type': meta.contentType }
+                : undefined,
+        })
+    }
 
     private static async readBodyCached (ctx: HttpContext): Promise<Record<string, any>> {
         if (this.bodyCache.has(ctx)) {
@@ -258,8 +284,9 @@ export class Router extends CoreRouter {
                         })
 
                         const result = handlerFunction(ctx, inst.clearRequest)
+                        const resolved = await Promise.resolve(result)
 
-                        return await Promise.resolve(result)
+                        return Router.toResponse(ctx, resolved, method, route.path)
                     } catch (error: any) {
                         return error
                     }
@@ -284,8 +311,9 @@ export class Router extends CoreRouter {
                             })
 
                             const result = handlerFunction(ctx, inst.clearRequest)
+                            const resolved = await Promise.resolve(result)
 
-                            return await Promise.resolve(result)
+                            return Router.toResponse(ctx, resolved, method, route.path)
                         } catch (error: any) {
                             return error
                         }

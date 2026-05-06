@@ -3,6 +3,7 @@ import { Handler, HonoApp, HttpContext, Middleware, RouteHandler } from 'types/h
 
 import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'
+import { resolveResponseMeta } from 'src/core/responses'
 
 /**
  * @class clear-router Hono Router
@@ -15,14 +16,25 @@ export class Router extends CoreRouter {
 
     private static readonly bodyCache = new WeakMap<HttpContext, Record<string, any>>()
 
-    private static toResponse (ctx: HttpContext, value: any): Response | undefined {
-        if (value instanceof Response) return value
-        if (typeof value === 'undefined') return undefined
-        if (value === null) return ctx.body(null)
-        if (typeof value === 'string') return ctx.text(value)
-        if (typeof value === 'object') return ctx.json(value)
+    private static toResponse (ctx: HttpContext, value: any, method: HttpMethod, path: string): Response | undefined {
+        const meta = resolveResponseMeta(value, {
+            headers: ctx.req.header() as Record<string, any>,
+            method,
+            path,
+        })
 
-        return ctx.text(String(value))
+        if (!meta) return undefined
+        if (meta.isNativeResponse) return meta.body
+
+        if (meta.isEmpty) return ctx.body(null, meta.status as any)
+
+        if (meta.contentType?.startsWith('application/json')) {
+            return ctx.json(meta.body, meta.status as any)
+        }
+
+        return ctx.body(meta.body, meta.status as any, meta.contentType
+            ? { 'Content-Type': meta.contentType }
+            : undefined)
     }
 
     private static getParams (ctx: HttpContext): Record<string, any> {
@@ -270,7 +282,7 @@ export class Router extends CoreRouter {
                         const result = handlerFunction(ctx, inst.clearRequest)
                         const resolved = await Promise.resolve(result)
 
-                        return Router.toResponse(ctx, resolved)
+                        return Router.toResponse(ctx, resolved, method, route.path)
                     }
                 )
 
@@ -297,7 +309,7 @@ export class Router extends CoreRouter {
                             const result = handlerFunction(ctx, inst.clearRequest)
                             const resolved = await Promise.resolve(result)
 
-                            return Router.toResponse(ctx, resolved)
+                            return Router.toResponse(ctx, resolved, method, route.path)
                         }
                     )
                 }
