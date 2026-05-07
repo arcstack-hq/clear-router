@@ -1,6 +1,6 @@
 {
     "name": "clear-router",
-    "version": "2.5.1",
+    "version": "2.5.2",
     "description": "Laravel-style routing for Node.js with support for Express, H3, Fastify, Hono, and Koa, including CommonJS, ESM, and TypeScript support.",
     "keywords": [
         "h3",
@@ -17,7 +17,7 @@
         "commonjs",
         "h3ravel"
     ],
-    "homepage": "https://github.com/toneflix/clear-router",
+    "homepage": "https://arkstack-hq.github.io/clear-router",
     "bugs": {
         "url": "https://github.com/toneflix/clear-router/issues"
     },
