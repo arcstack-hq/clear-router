@@ -67,7 +67,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new route to the router with the specified HTTP methods, path, handler, and optional middlewares.
+     * Adds a new route to the router.
      * 
      * @param methods 
      * @param path 
@@ -84,8 +84,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new API resource route to the router for a given base path and controller, with options 
-     * to specify included/excluded actions and middlewares.
+     * Define a resourceful API controller with standard CRUD routes
      * 
      * @param basePath 
      * @param controller 
@@ -170,7 +169,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new HEAD route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new HEAD route to the router.
      * 
      * @param path 
      * @param handler 
@@ -181,8 +180,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Defines a group of routes with a common prefix and optional middlewares, allowing for better 
-     * organization and reuse of route configurations.
+     * Defines a group of routes with a common prefix.
      * 
      * @param prefix 
      * @param callback 

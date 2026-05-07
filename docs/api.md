@@ -48,7 +48,7 @@ Middleware functions currently applied at the global level.
 
 Route handlers may either use the framework response object directly or return a response value.
 
-This works across Express, Fastify, Hono, and H3 adapters.
+This works across Express, Fastify, Hono, H3, and Koa adapters.
 
 Supported direct return values include:
 
@@ -460,6 +460,7 @@ Router.post('/users', ({ req, res }) => {
 - Fastify: `{ req, reply }`
 - Hono: Hono context
 - H3: `H3Event`
+- Koa: Koa context
 
 `clearRequest` is passed as second argument and is guaranteed for controller handlers.
 

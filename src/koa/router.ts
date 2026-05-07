@@ -1,9 +1,9 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
 import { Handler, HttpContext, KoaRouterApp, Middleware, RouteHandler } from 'types/koa'
+import { isFetchResponse, resolveResponseMeta } from 'src/core/responses'
 
 import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'
-import { isFetchResponse, resolveResponseMeta } from 'src/core/responses'
 
 /**
  * @class clear-router Koa Router
@@ -95,7 +95,12 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new route to the router with the specified HTTP methods, path, handler, and optional middlewares.
+     * Adds a new route to the router.
+     *
+     * @param methods
+     * @param path
+     * @param handler
+     * @param middlewares
      */
     static add (
         methods: HttpMethod | HttpMethod[],
@@ -107,7 +112,11 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new API resource route to the router for the specified base path and controller.
+     * Define a resourceful API controller with standard CRUD routes
+     *
+     * @param basePath
+     * @param controller
+     * @param options
      */
     static apiResource (
         basePath: string,
@@ -121,34 +130,91 @@ export class Router extends CoreRouter {
         super.apiResource(basePath, controller, options)
     }
 
+    /**
+     * Define a GET route
+     *
+     * @param path
+     * @param handler
+     * @param middlewares
+     */
     static get (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
         super.get(path, handler, middlewares)
     }
 
+    /**
+     * Define a POST route
+     *
+     * @param path
+     * @param handler
+     * @param middlewares
+     */
     static post (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
         super.post(path, handler, middlewares)
     }
 
+    /**
+     * Define a PUT route
+     *
+     * @param path
+     * @param handler
+     * @param middlewares
+     */
     static put (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
         super.put(path, handler, middlewares)
     }
 
+    /**
+     * Define a DELETE route
+     *
+     * @param path
+     * @param handler
+     * @param middlewares
+     */
     static delete (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
         super.delete(path, handler, middlewares)
     }
 
+    /**
+     * Define a PATCH route 
+     * 
+     * @param path 
+     * @param handler 
+     * @param middlewares 
+     */
     static patch (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
         super.patch(path, handler, middlewares)
     }
 
+    /**
+     * Define an OPTIONS route
+     *
+     * @param path
+     * @param handler
+     * @param middlewares
+     */
     static options (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
         super.options(path, handler, middlewares)
     }
 
+    /**
+     * Adds a new HEAD route to the router.
+     *
+     * @param this
+     * @param path
+     * @param handler
+     * @param middlewares
+     */
     static head (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
         super.head(path, handler, middlewares)
     }
 
+    /**
+     * Defines a group of routes with a common prefix.
+     *
+     * @param prefix
+     * @param callback
+     * @param middlewares
+     */
     static async group (
         prefix: string,
         callback: () => void | Promise<void>,
@@ -157,12 +223,27 @@ export class Router extends CoreRouter {
         await super.group(prefix, callback, middlewares)
     }
 
+    /**
+     * Apply middlewares to a group of routes defined within the callback
+     * 
+     * @param middlewares  - Middleware or array of middlewares to apply
+     * @param callback     - Function that defines the routes to which the middlewares will be applied
+     */
     static middleware (middlewares: Middleware[], callback: () => void): void {
         super.middleware(middlewares, callback)
     }
 
+    /**
+     * Get all defined routes, optionally organized by path or method
+     */
     static allRoutes (): Array<Route<HttpContext, Middleware, Handler>>
+    /**
+     * @param type  - 'path' to get routes organized by path
+     */
     static allRoutes (type: 'path'): Record<string, Route<HttpContext, Middleware, Handler>>
+    /**
+     * @param type  - 'method' to get routes organized by method 
+     */
     static allRoutes (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<HttpContext, Middleware, Handler>> }
     static allRoutes (type?: 'method' | 'path'):
         Array<Route<HttpContext, Middleware, Handler>> |
@@ -172,7 +253,10 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Applies the registered routes to a @koa/router instance.
+     * Apply the defined routes to a @koa/router instance
+     * 
+     * @param router  @koa/router instance
+     * @returns    The  @koa/router instance with the applied routes
      */
     static apply (router: KoaRouterApp): KoaRouterApp {
         for (const route of this.routes) {
@@ -198,7 +282,7 @@ export class Router extends CoreRouter {
                     throw new Error(`Invalid HTTP method: ${method} for route: ${route.path}`)
                 }
 
-                ;(router[method] as any)(
+                ; (router[method] as any)(
                     route.path,
                     ...(route.middlewares || []),
                     async (context: any, next: any) => {

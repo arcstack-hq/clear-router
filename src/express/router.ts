@@ -1,10 +1,10 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
-import { Router as ExpressRouter } from 'express'
 import { Handler, HttpContext, Middleware, RouteHandler } from 'types/express'
-import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
 import type { Request, Response } from 'express'
+import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
 
 import { CoreRouter } from 'src/core/router'
+import { Router as ExpressRouter } from 'express'
 import { Route } from 'src/Route'
 
 /**
@@ -68,7 +68,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new route to the router with the specified HTTP methods, path, handler, and optional middlewares.
+     * Adds a new route to the router.
      * 
      * @param methods 
      * @param path 
@@ -85,8 +85,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new API resource route to the router for the specified base path and controller, with 
-     * optional configuration for included/excluded actions and middlewares.
+     * Define a resourceful API controller with standard CRUD routes
      * 
      * @param basePath 
      * @param controller 
@@ -105,7 +104,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new GET route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new GET route to the router.
      * 
      * @param path 
      * @param handler 
@@ -116,7 +115,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new POST route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new POST route to the router.
      * 
      * @param path 
      * @param handler 
@@ -127,7 +126,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new PUT route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new PUT route to the router.
      * 
      * @param path 
      * @param handler 
@@ -138,7 +137,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new DELETE route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new DELETE route to the router.
      * 
      * @param path 
      * @param handler 
@@ -149,7 +148,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new PATCH route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new PATCH route to the router.
      * 
      * @param path 
      * @param handler 
@@ -160,7 +159,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new OPTIONS route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new OPTIONS route to the router.
      * 
      * @param path 
      * @param handler 
@@ -171,7 +170,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Adds a new HEAD route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new HEAD route to the router.
      * 
      * @param path 
      * @param handler 
@@ -182,8 +181,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Defines a group of routes with a common prefix and optional middlewares, allowing for better 
-     * organization and reuse of route configurations.
+     * Defines a group of routes with a common prefix.
      * 
      * @param prefix 
      * @param callback 

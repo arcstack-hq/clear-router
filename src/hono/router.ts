@@ -74,7 +74,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Resolve method override from query, headers, or body
+     * Adds a new route to the router.
      * 
      * @param methods 
      * @param path 
@@ -187,7 +187,7 @@ export class Router extends CoreRouter {
     }
 
     /**
-     * Define a group of routes with a common prefix and optional middlewares
+     * Defines a group of routes with a common prefix.
      * 
      * @param prefix 
      * @param callback 

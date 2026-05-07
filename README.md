@@ -6,7 +6,7 @@
 [![Publish to NPM](https://github.com/arkstack-hq/clear-router/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/arkstack-hq/clear-router/actions/workflows/npm-publish.yml)
 [![Run Tests](https://github.com/arkstack-hq/clear-router/actions/workflows/ci.yml/badge.svg)](https://github.com/arkstack-hq/clear-router/actions/workflows/ci.yml)
 
-Laravel-style routing for Node.js with support for Express, H3, Fastify, and Hono, including CommonJS, ESM, and TypeScript support.
+Laravel-style routing for Node.js with support for Express, H3, Fastify, Hono, and Koa, including CommonJS, ESM, and TypeScript support.
 
 ## Installation
 
@@ -49,15 +49,16 @@ yarn add clear-router express
 - Function handlers always receive context as first argument
 - Controller handlers receive hydrated `this.body`, `this.query`, `this.params`, and `this.clearRequest`
 - `clearRequest` is passed as second handler argument for controller handlers
-- Route handlers can return response values directly across Express, Fastify, Hono, and H3
+- Route handlers can return response values directly across Express, Fastify, Hono, H3, and Koa
 - Auto-binds controller methods
 - Full CommonJS, ESM, and TypeScript support
-- Error handling delegated to Express | H3 | Fastify | Hono
+- Error handling delegated to Express | H3 | Fastify | Hono | Koa
 - Route inspection with the `allRoutes` method
 - Fully Express-compatible
 - Fully H3-compatible
 - Fully Fastify-compatible
 - Fully Hono-compatible
+- Fully Koa-compatible
 
 ## Quick Start
 
@@ -77,6 +78,10 @@ See the [Fastify documentation](https://arkstack-hq.github.io/clear-router/guide
 
 See the [Hono documentation](https://arkstack-hq.github.io/clear-router/guide/hono) for details.
 
+### Koa
+
+See the [Koa documentation](https://arkstack-hq.github.io/clear-router/guide/koa) for details.
+
 ## API Reference
 
 See [API.md](https://arkstack-hq.github.io/clear-router/api) for complete API documentation.
@@ -91,7 +96,7 @@ See [API.md](https://arkstack-hq.github.io/clear-router/api) for complete API do
 
 - If function: executed directly
 - If [Controller, 'method']: auto-instantiated (if needed), method is called
-- First handler arg is always context (`{ req, res, next }` for Express, H3 event for H3)
+- First handler arg is always context (`{ req, res, next }` for Express, H3 event for H3, Koa context for Koa)
 - Second handler arg is `clearRequest` for controller handlers
 
 ## Testing
@@ -122,7 +127,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 ## Requirements
 
 - Node.js >= 14.0.0
-- Express >= 5.0.0 | H3 >= 2.0.1
+- Express >= 5.0.0 | H3 >= 2.0.1 | Fastify >= 5.0.0 | Hono >= 4.0.0 | Koa >= 3.0.0
 
 ## License
 

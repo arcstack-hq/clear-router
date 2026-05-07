@@ -25,7 +25,9 @@
       "clear-router/h3": ["src/h3/index.ts"],
       "clear-router/h3/*": ["src/h3/*"],
       "clear-router/hono": ["src/hono/index.ts"],
-      "clear-router/hono/*": ["src/hono/*"]
+      "clear-router/hono/*": ["src/hono/*"],
+      "clear-router/koa": ["src/koa/index.ts"],
+      "clear-router/koa/*": ["src/koa/*"]
     }
   },
   "include": [

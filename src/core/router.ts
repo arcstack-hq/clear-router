@@ -326,7 +326,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new route to the router with the specified methods, path, handler, and middlewares.
+     * Adds a new route to the router.
      * 
      * @param this 
      * @param methods 
@@ -380,8 +380,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new API resource route to the router for the specified base path and controller, with 
-     * options to include/exclude specific actions and apply middlewares.
+     * Define a resourceful API controller with standard CRUD routes.
      * 
      * @param this 
      * @param basePath 
@@ -432,7 +431,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new GET route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new GET route to the router.
      * 
      * @param this          The router instance.
      * @param path          The path for the GET route.
@@ -444,7 +443,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new POST route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new POST route to the router.
      * 
      * @param this 
      * @param path 
@@ -456,7 +455,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new PUT route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new PUT route to the router.
      * 
      * @param this 
      * @param path 
@@ -468,7 +467,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new DELETE route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new DELETE route to the router.
      * 
      * @param this 
      * @param path 
@@ -480,7 +479,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new PATCH route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new PATCH route to the router.
      * 
      * @param this 
      * @param path 
@@ -492,7 +491,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new OPTIONS route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new OPTIONS route to the router.
      * 
      * @param this 
      * @param path 
@@ -504,7 +503,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Adds a new HEAD route to the router with the specified path, handler, and optional middlewares.
+     * Adds a new HEAD route to the router.
      * 
      * @param this 
      * @param path 
@@ -516,8 +515,7 @@ export abstract class CoreRouter {
     }
 
     /**
-     * Defines a group of routes with a common prefix and optional middlewares, allowing for better 
-     * organization and reuse of route configurations.
+     * Defines a group of routes with a common prefix.
      * 
      * @param this 
      * @param prefix 

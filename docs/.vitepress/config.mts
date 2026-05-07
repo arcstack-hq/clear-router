@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
     base: '/clear-router/',
     title: 'clear-router',
-    description: 'Laravel-style routing for Node.js with support for Express, H3, Fastify, and Hono, including CommonJS, ESM, and TypeScript support.',
+    description: 'Laravel-style routing for Node.js with support for Express, H3, Fastify, Hono, and Koa, including CommonJS, ESM, and TypeScript support.',
     lang: 'en-US',
     cleanUrls: true,
     themeConfig: {
@@ -13,6 +13,7 @@ export default defineConfig({
             { text: 'Fastify', link: '/guide/fastify' },
             { text: 'H3', link: '/guide/h3' },
             { text: 'Hono', link: '/guide/hono' },
+            { text: 'Koa', link: '/guide/koa' },
             { text: 'Adapters', link: '/guide/adapters' },
             { text: 'API', link: '/api' },
             { text: 'Testing', link: '/testing' },
@@ -26,6 +27,7 @@ export default defineConfig({
                     { text: 'Using with Fastify', link: '/guide/fastify' },
                     { text: 'Using with H3', link: '/guide/h3' },
                     { text: 'Using with Hono', link: '/guide/hono' },
+                    { text: 'Using with Koa', link: '/guide/koa' },
                     { text: 'Adapter Authoring Guide', link: '/guide/adapters' },
                     { text: 'API Reference', link: '/api' },
                     { text: 'Testing Guide', link: '/testing' },

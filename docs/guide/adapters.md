@@ -172,4 +172,5 @@ Use these adapters as references:
 - Fastify adapter: `src/fastify/router.ts`
 - H3 adapter: `src/h3/router.ts`
 - Hono adapter: `src/hono/router.ts`
+- Koa adapter: `src/koa/router.ts`
 - Core implementation: `src/core/router.ts`

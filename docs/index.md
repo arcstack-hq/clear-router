@@ -1,6 +1,6 @@
 # clear-router
 
-Laravel-style routing for Express, H3, Fastify, and Hono with support for CommonJS, ESM, and TypeScript.
+Laravel-style routing for Express, H3, Fastify, Hono, and Koa with support for CommonJS, ESM, and TypeScript.
 
 ## Documentation
 
@@ -8,6 +8,7 @@ Laravel-style routing for Express, H3, Fastify, and Hono with support for Common
 - [Using with Fastify](./guide/fastify)
 - [Using with H3](./guide/h3)
 - [Using with Hono](./guide/hono)
+- [Using with Koa](./guide/koa)
 - [Adapter Authoring Guide](./guide/adapters)
 - [API Reference](./api)
 - [Testing Guide](./testing)
