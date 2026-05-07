@@ -46,7 +46,10 @@ export function isApiRequest (headers: HeaderSource, path?: string): boolean {
     return Boolean(
         requestedWith === 'xmlhttprequest' ||
         accept.includes('application/json') ||
-        accept.includes('application/xml') ||
+        (accept.includes('application/xml') &&
+            !accept.includes('application/xhtml') &&
+            !accept.includes('text/html')
+        ) ||
         path?.startsWith('/api/')
     )
 }
