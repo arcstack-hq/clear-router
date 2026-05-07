@@ -63,7 +63,7 @@ describe('H3 App (JS)', () => {
         await request(app).get('/payload')
             .set('x-requested-with', 'XMLHttpRequest')
             .expect(200)
-            .expect('content-type', 'application/json')
+            .expect('content-type', 'application/json; charset=utf-8')
             .expect({ ok: true })
 
         await request(app).get('/fetch-response')

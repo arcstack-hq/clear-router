@@ -1,4 +1,4 @@
-import { getQuery, getRouterParams, readBody, type H3 } from 'h3'
+import { HTTPResponse, getQuery, getRouterParams, readBody, type H3 } from 'h3'
 
 import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'
@@ -30,11 +30,9 @@ export class Router extends CoreRouter {
         if (!meta) return undefined
         if (meta.isNativeResponse) return meta.body
 
-        if (meta.contentType?.startsWith('application/json')) {
-            return Response.json(meta.body, { status: meta.status })
-        }
-
-        return new Response(meta.isEmpty ? null : meta.body, {
+        return new HTTPResponse(meta.contentType?.startsWith('application/json')
+            ? JSON.stringify(meta.body)
+            : meta.isEmpty ? null : meta.body, {
             status: meta.status,
             headers: meta.contentType
                 ? { 'Content-Type': meta.contentType }
