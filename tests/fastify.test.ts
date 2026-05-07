@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import fastify, { FastifyInstance } from 'fastify'
 
 import Router from '../src/fastify/router'
+import request from 'parasito'
 
 describe('Fastify App (JS)', () => {
     let app: FastifyInstance
@@ -44,30 +45,24 @@ describe('Fastify App (JS)', () => {
 
         await setupApp()
 
-        const html = await app.inject({ method: 'GET', url: '/html' })
-        expect(html.statusCode).toBe(200)
-        expect(html.headers['content-type']).toContain('text/html')
-        expect(html.body).toBe('<h1>Hello</h1>')
+        await request(app).get('/html')
+            .expect(200)
+            .expect('content-type', 'text/html; charset=utf-8')
+            .expect('<h1>Hello</h1>')
 
-        const xhr = await app.inject({
-            method: 'GET',
-            url: '/api/text',
-            headers: { 'x-requested-with': 'XMLHttpRequest' },
-        })
-        expect(xhr.headers['content-type']).toContain('text/plain')
+        await request(app).get('/api/text')
+            .expect(200)
+            .expect('content-type', 'text/plain; charset=utf-8')
 
-        const created = await app.inject({ method: 'POST', url: '/created' })
-        expect(created.statusCode).toBe(201)
-        expect(created.body).toBe('42')
+        await request(app).post('/created').expect(201).expect('42')
 
-        const payload = await app.inject({ method: 'GET', url: '/payload' })
-        expect(payload.headers['content-type']).toContain('application/json')
-        expect(payload.json()).toEqual({ ok: true })
+        await request(app).get('/payload')
+            .expect('content-type', 'application/json; charset=utf-8')
+            .expect({ ok: true })
 
-        const fetchResponse = await app.inject({ method: 'GET', url: '/fetch-response' })
-        expect(fetchResponse.statusCode).toBe(202)
-        expect(fetchResponse.headers['content-type']).toContain('text/custom')
-        expect(fetchResponse.body).toBe('accepted')
+        await request(app).get('/fetch-response')
+            .expect('content-type', 'text/custom')
+            .expect('accepted')
     })
 
     it('should create options route for non-OPTIONS method routes', async () => {
@@ -75,10 +70,9 @@ describe('Fastify App (JS)', () => {
 
         await setupApp()
 
-        const res = await app.inject({ method: 'OPTIONS', url: '/peeps/123' })
-
-        expect(res.statusCode).toBe(204)
-        expect(res.headers['allow']).toBe('GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+        await request(app).options('/peeps/123')
+            .expect(204)
+            .expect('allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
     })
 
     it('should always expose req.getBody in handlers', async () => {

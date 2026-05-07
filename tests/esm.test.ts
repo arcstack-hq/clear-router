@@ -236,25 +236,17 @@ describe('H3 Routing - ESM', () => {
 
         setupApp()
 
-        const response = await router.fetch(new global.Request(new URL('http://localhost/users')))
-        expect(response.status).toBe(200)
-        expect(await response.json()).toEqual({ users: ['Alice', 'Bob'] })
+        await request(app).get('/users').expect(200).expect({
+            users: ['Alice', 'Bob']
+        })
 
-        const showResponse = await router.fetch(new global.Request(new URL('http://localhost/users/1')))
-        expect(showResponse.status).toBe(200)
-        expect(await showResponse.json()).toEqual({ name: 'Alice' })
+        await request(app).get('/users/1').expect(200).expect({ name: 'Alice' })
 
-        const createResponse = await router.fetch(new global.Request(new URL('http://localhost/users'), { method: 'POST' }))
-        expect(createResponse.status).toBe(201)
-        expect(await createResponse.json()).toEqual({ name: 'Alice' })
+        await request(app).post('/users').expect(201).expect({ name: 'Alice' })
 
-        const updateResponse = await router.fetch(new global.Request(new URL('http://localhost/users/1'), { method: 'PUT' }))
-        expect(updateResponse.status).toBe(202)
-        expect(await updateResponse.json()).toEqual({ name: 'Alice' })
+        await request(app).put('/users/1').expect(202).expect({ name: 'Alice' })
 
-        const destroyResponse = await router.fetch(new global.Request(new URL('http://localhost/users/1'), { method: 'DELETE' }))
-        expect(destroyResponse.status).toBe(202)
-        expect(await destroyResponse.json()).toEqual({ name: 'Alice' })
+        await request(app).delete('/users/1').expect(202).expect({ name: 'Alice' })
     })
 
     test('should work with ESM class controllers', async () => {

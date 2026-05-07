@@ -1,15 +1,14 @@
 import '../example/h3/web'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 
 import { Controller } from 'src'
 import { H3 } from 'h3'
-import { H3App } from 'types/h3'
 import Router from '../src/h3/router'
+import request from 'parasito'
 
 describe('H3 App (JS)', () => {
     let app: H3
-    let router: H3App
 
     beforeEach(() => {
         Router.routes = []
@@ -24,15 +23,13 @@ describe('H3 App (JS)', () => {
 
     const setupApp = async (): Promise<void> => {
         Router.apply(app)
-        router = Router.apply(app)
     }
 
     it('GET / should return 200', async () => {
         Router.get('/directly', () => 'Hello World')
         await setupApp()
-        const res = await router.fetch(new Request(new URL('http://localhost/directly')))
-        expect(res.status).toBe(200)
-        expect(await res.text()).toBeDefined()
+
+        await request(app).get('/directly').expect(200).expect('Hello World')
     })
 
     it('supports direct primitive, object, and Response returns', async () => {
@@ -47,40 +44,41 @@ describe('H3 App (JS)', () => {
 
         await setupApp()
 
-        const html = await router.fetch(new Request(new URL('http://localhost/html')))
-        expect(html.status).toBe(200)
-        expect(html.headers.get('content-type')).toContain('text/html')
-        expect(await html.text()).toBe('<h1>Hello</h1>')
+        await request(app).get('/html')
+            .expect(200)
+            .expect('content-type', 'text/html; charset=utf-8')
+            .expect('<h1>Hello</h1>')
 
-        const xhr = await router.fetch(new Request(new URL('http://localhost/api/text'), {
-            headers: { 'x-requested-with': 'XMLHttpRequest' },
-        }))
-        expect(xhr.headers.get('content-type')).toContain('text/plain')
+        await request(app).get('/api/text')
+            .set('x-requested-with', 'XMLHttpRequest')
+            .expect(200)
+            .expect('content-type', 'text/plain; charset=utf-8')
 
-        const created = await router.fetch(new Request(new URL('http://localhost/created'), { method: 'POST' }))
-        expect(created.status).toBe(201)
-        expect(await created.text()).toBe('true')
+        await request(app).post('/created')
+            .set('x-requested-with', 'XMLHttpRequest')
+            .expect(201)
+            .expect('true')
 
-        const payload = await router.fetch(new Request(new URL('http://localhost/payload')))
-        expect(payload.headers.get('content-type')).toContain('application/json')
-        expect(await payload.json()).toEqual({ ok: true })
 
-        const fetchResponse = await router.fetch(new Request(new URL('http://localhost/fetch-response')))
-        expect(fetchResponse.status).toBe(202)
-        expect(fetchResponse.headers.get('content-type')).toContain('text/custom')
-        expect(await fetchResponse.text()).toBe('accepted')
+        await request(app).get('/payload')
+            .set('x-requested-with', 'XMLHttpRequest')
+            .expect(200)
+            .expect('content-type', 'application/json')
+            .expect({ ok: true })
+
+        await request(app).get('/fetch-response')
+            .set('x-requested-with', 'XMLHttpRequest')
+            .expect(202)
+            .expect('content-type', 'text/custom')
+            .expect('accepted')
     })
 
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', () => 'Hello')
         await setupApp()
-        const res = await router
-            .fetch(new global.Request(new URL('http://localhost/peeps/123'), {
-                method: 'OPTIONS',
-            }))
-
-        expect(res.status).toBe(204)
-        expect(res.headers.get('Allow')).toBe('GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+        await request(app).options('/peeps/123')
+            .expect(204)
+            .expect('Allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
     })
 
     it('can parse multipart form data', async () => {
@@ -96,13 +94,10 @@ describe('H3 App (JS)', () => {
         const formData = new FormData()
         formData.append('file', new Blob(['Hello World'], { type: 'text/plain' }), 'hello.txt')
 
-        const res = await router.fetch(new global.Request(new URL('http://localhost/upload'), {
-            method: 'POST',
-            body: formData,
-        }))
-
-        expect(res.status).toBe(201)
-        expect(await res.text()).toBe('Received file: hello.txt')
+        await request(app).post('/upload')
+            .expect(201)
+            .expect('Received file: hello.txt')
+            .send(formData)
     })
 
     it('returns 404 for POST to PUT route when _method override is missing', async () => {
@@ -110,15 +105,10 @@ describe('H3 App (JS)', () => {
 
         await setupApp()
 
-        const res = await router.fetch(new global.Request(new URL('http://localhost/api/users/123'), {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            },
-            body: JSON.stringify({}),
-        }))
-
-        expect(res.status).toBe(404)
+        await request(app).post('/api/users/123')
+            .set('content-type', 'application/json')
+            .expect(404)
+            .send(JSON.stringify({}))
     })
 
     it('should always expose req.getBody in handlers', async () => {
@@ -138,25 +128,22 @@ describe('H3 App (JS)', () => {
 
         await setupApp()
 
-        const getRes = await router.fetch(new global.Request(new URL('http://localhost/body-check')))
-        expect(getRes.status).toBe(200)
-        expect(await getRes.json()).toEqual({
-            hasGetBody: true,
-            body: {},
-        })
+        await request(app).get('/body-check')
+            .expect(200)
+            .expect(JSON.stringify({
+                hasGetBody: true,
+                body: {},
+            }))
 
         const payload = { foo: 'bar' }
-        const postRes = await router.fetch(new global.Request(new URL('http://localhost/body-check'), {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        }))
-        expect(postRes.status).toBe(201)
-        expect(await postRes.json()).toEqual({
-            hasGetBody: true,
-            body: payload,
-        })
+
+        await request(app).post('/body-check')
+            .set('content-type', 'application/json')
+            .send(JSON.stringify(payload))
+            .expect(201)
+            .expect(JSON.stringify({
+                hasGetBody: true,
+                body: payload,
+            }))
     })
 })

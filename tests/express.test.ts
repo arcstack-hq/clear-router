@@ -48,35 +48,42 @@ describe('Express App (JS)', () => {
 
         await setupApp()
 
-        const html = await request(app).get('/html')
-        expect(html.statusCode).toBe(200)
-        expect(html.header['content-type']).toContain('text/html')
-        expect(html.text).toBe('<h1>Hello</h1>')
+        await request(app).get('/html')
+            .expect(200)
+            .expect('content-type', 'text/html; charset=utf-8')
+            .expect('<h1>Hello</h1>')
 
-        const xhr = await request(app).get('/api/text').set('x-requested-with', 'XMLHttpRequest')
-        expect(xhr.header['content-type']).toContain('text/plain')
+        await request(app)
+            .get('/api/text')
+            .set('x-requested-with', 'XMLHttpRequest')
+            .expect('content-type', 'text/plain; charset=utf-8')
 
-        const created = await request(app).post('/created')
-        expect(created.statusCode).toBe(201)
-        expect(created.text).toBe('true')
+        await request(app)
+            .post('/created')
+            .expect(201)
+            .expect('true')
 
-        const payload = await request(app).get('/payload')
-        expect(payload.header['content-type']).toContain('application/json')
-        expect(payload.body).toEqual({ ok: true })
+        await request(app)
+            .get('/payload')
+            .expect(200)
+            .expect('content-type', 'application/json; charset=utf-8')
+            .expect({ ok: true })
 
-        const fetchResponse = await request(app).get('/fetch-response')
-        expect(fetchResponse.statusCode).toBe(202)
-        expect(fetchResponse.header['content-type']).toContain('text/custom')
-        expect(fetchResponse.text).toBe('accepted')
+        await request(app)
+            .get('/fetch-response')
+            .expect(202)
+            .expect('content-type', 'text/custom')
+            .expect('accepted')
     })
 
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', ({ res }) => res.send('Hello'))
         await setupApp()
-        const res = await request(app).options('/peeps/123')
 
-        expect(res.status).toBe(204)
-        expect(res.header['allow']).toBe('GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+        await request(app)
+            .options('/peeps/123')
+            .expect(204)
+            .expect('allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
     })
 
     it('should always expose req.getBody in handlers', async () => {
@@ -96,20 +103,21 @@ describe('Express App (JS)', () => {
 
         await setupApp()
 
-        const getRes = await request(app).get('/body-check')
-        expect(getRes.status).toBe(200)
-        expect(getRes.body).toEqual({
-            hasGetBody: true,
-            body: {},
-        })
+        await request(app)
+            .get('/body-check')
+            .expect(200)
+            .expect({
+                hasGetBody: true,
+                body: {},
+            })
 
         const payload = { foo: 'bar' }
-        const postRes = await request(app).post('/body-check').send(payload)
-        expect(postRes.status).toBe(200)
-        expect(postRes.body).toEqual({
-            hasGetBody: true,
-            body: payload,
-        })
+        await request(app).post('/body-check').send(payload)
+            .expect(200)
+            .expect({
+                hasGetBody: true,
+                body: payload,
+            })
     })
 
     it('supports POST _method override for PUT routes', async () => {
@@ -122,15 +130,14 @@ describe('Express App (JS)', () => {
 
         await setupApp()
 
-        const res = await request(app)
+        await request(app)
             .post('/api/users/123')
             .send({ _method: 'PUT' })
-
-        expect(res.statusCode).toBe(200)
-        expect(res.body).toEqual({
-            method: 'PUT',
-            id: '123',
-        })
+            .expect(200)
+            .expect({
+                method: 'PUT',
+                id: '123',
+            })
     })
 
     it('returns 404 for POST to PUT route when _method override is missing', async () => {
@@ -138,10 +145,9 @@ describe('Express App (JS)', () => {
 
         await setupApp()
 
-        const res = await request(app)
+        await request(app)
             .post('/api/users/123')
             .send({})
-
-        expect(res.statusCode).toBe(404)
+            .expect(404)
     })
 })
