@@ -267,6 +267,7 @@ export abstract class CoreRouter {
             const ctx: ClearRouterPluginContext<Options> = {
                 container: Container,
                 bind: this.createPluginBind(),
+                bindings: Container.bindings(),
                 configure: this.configure.bind(this),
                 configureDefaults: this.configureDefaults.bind(this),
                 get request () {

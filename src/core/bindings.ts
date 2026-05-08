@@ -42,6 +42,10 @@ export class Container {
         return this.registry.has(token)
     }
 
+    static bindings<V = any> (): Record<string, BindValue<V>> {
+        return Object.fromEntries(this.registry.entries())
+    }
+
     static async resolve<T> (token: BindToken<T>, ctx: any, autoDiscover = false): Promise<T | undefined> {
         if ((token as any) === Request) return ctx.clearRequest
         if ((token as any) === Response) return ctx.clearResponse

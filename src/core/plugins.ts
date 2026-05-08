@@ -20,6 +20,7 @@ export type PluginBind = <T>(token: BindToken<T>, value: PluginBindValue<T>) => 
 export interface ClearRouterPluginContext<Options = any> {
     container: typeof Container
     bind: PluginBind
+    bindings: Record<string, BindValue>,
     configure: (options: RouterConfig) => void
     configureDefaults: (options: RouterConfig) => void
     readonly request?: CoreRequest
