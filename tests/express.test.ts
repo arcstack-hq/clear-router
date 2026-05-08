@@ -372,6 +372,57 @@ describe('Express App (JS)', () => {
             .expect({ id: '135', audit: 'async-plugin' })
     })
 
+    it('passes the current Request instance to plugin bindings', async () => {
+        class RequestAuditService {
+            constructor(
+                readonly id: string,
+                readonly method: string,
+            ) { }
+        }
+
+        const requestAuditPlugin = definePlugin({
+            name: 'test-request-aware-plugin',
+            setup ({ bind, getRequest }) {
+                expect(getRequest()).toBeUndefined()
+
+                bind(RequestAuditService, (d: { request: ClearRouterRequest }) => {
+                    return new RequestAuditService(
+                        d.request.param('id'),
+                        d.request.method,
+                    )
+                })
+            },
+        })
+
+        class PluginUsersController {
+            @Bind(RequestAuditService)
+            show (audit: RequestAuditService) {
+                return {
+                    id: audit.id,
+                    method: audit.method,
+                }
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: true,
+            },
+        })
+        Router.use(requestAuditPlugin)
+        Router.put('/api/request-plugin/:id', [PluginUsersController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .put('/api/request-plugin/864')
+            .expect(200)
+            .expect({
+                id: '864',
+                method: 'PUT',
+            })
+    })
+
     it('falls back to the default handler signature when binding is disabled', async () => {
         class BoundUsersController {
             @Bind(ClearRouterRequest)

@@ -1,6 +1,6 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
-import type { ClearRouterPluginContext, ClearRouterPluginInput } from './plugins'
-import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata } from './bindings'
+import type { ClearRouterPluginContext, ClearRouterPluginInput, ClearRouterPluginRequestContext, PluginBind } from './plugins'
+import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata, isClass } from './bindings'
 
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { Controller } from 'src/Controller'
@@ -266,9 +266,17 @@ export abstract class CoreRouter {
         const setup = async (): Promise<void> => {
             const ctx: ClearRouterPluginContext<Options> = {
                 container: Container,
-                bind: Container.bind.bind(Container),
+                bind: this.createPluginBind(),
                 configure: this.configure.bind(this),
                 configureDefaults: this.configureDefaults.bind(this),
+                get request () {
+                    return this.getRequest()
+                },
+                get response () {
+                    return this.getResponse()
+                },
+                getRequest: () => this.getCurrentPluginRequestContext()?.request,
+                getResponse: () => this.getCurrentPluginRequestContext()?.response,
                 options: options as Options,
             }
 
@@ -307,6 +315,7 @@ export abstract class CoreRouter {
         prefix: string
         groupMiddlewares: any[]
     }>()
+    protected static pluginRequestContext = new AsyncLocalStorage<ClearRouterPluginRequestContext>()
 
     static routes: Array<Route<any, any, any>> = []
     static routesByPathMethod: Record<string, Route<any, any, any>> = {}
@@ -315,6 +324,39 @@ export abstract class CoreRouter {
     static prefix = ''
     static groupMiddlewares: any[] = []
     static globalMiddlewares: any[] = []
+
+    protected static getCurrentPluginRequestContext (): ClearRouterPluginRequestContext | undefined {
+        return this.pluginRequestContext.getStore()
+    }
+
+    protected static createPluginRequestContext (ctx: any): ClearRouterPluginRequestContext {
+        const request: CoreRequest = ctx.clearRequest
+        const response: CoreResponse = ctx.clearResponse
+
+        return {
+            ...ctx,
+            ctx,
+            request,
+            response,
+            clearRequest: request,
+            clearResponse: response,
+        }
+    }
+
+    protected static createPluginBind (): PluginBind {
+        const bind: PluginBind = (token, value): void => {
+            if (typeof value === 'function' && !isClass(value)) {
+                const factory = value as (ctx: ClearRouterPluginRequestContext) => any
+                Container.bind(token, (ctx: any) => factory(this.createPluginRequestContext(ctx)))
+
+                return
+            }
+
+            Container.bind(token, value)
+        }
+
+        return bind
+    }
 
     protected static ensureState (this: any): void {
         this.bindStateAccessors()
@@ -818,42 +860,44 @@ export abstract class CoreRouter {
         bindingHandler?: object,
         bindingMetadata?: object
     ): Promise<any> {
-        await this.pluginsReady()
+        return this.pluginRequestContext.run(this.createPluginRequestContext(ctx), async () => {
+            await this.pluginsReady()
 
-        if (!this.config.container?.enabled) {
-            return handlerFunction(ctx, ctx.clearRequest)
-        }
-
-        const metadata = getBindingMetadataFromTargets([
-            { target: bindingTarget, propertyKey: bindingMethod },
-            { target: bindingHandler },
-            { target: bindingTarget, propertyKey: '__class__' },
-        ]) ?? getStandardMetadata(bindingMetadata, bindingMethod)
-            ?? getStandardMetadata(bindingMetadata, '__class__')
-        if (!metadata) {
-            return handlerFunction(ctx, ctx.clearRequest)
-        }
-
-        const designTokens = [
-            ...(bindingTarget ? getDesignParamTypes(bindingTarget, bindingMethod) : []),
-            ...(bindingHandler ? getDesignParamTypes(bindingHandler) : []),
-        ]
-        const tokens = metadata.tokens?.length ? metadata.tokens : designTokens
-        if (!tokens.length) {
-            return handlerFunction(ctx, ctx.clearRequest)
-        }
-
-        const args = []
-        for (const token of tokens) {
-            const resolved = await Container.resolve(token, ctx, Boolean(this.config.container?.autoDiscover))
-            if (typeof resolved === 'undefined') {
+            if (!this.config.container?.enabled) {
                 return handlerFunction(ctx, ctx.clearRequest)
             }
 
-            args.push(resolved)
-        }
+            const metadata = getBindingMetadataFromTargets([
+                { target: bindingTarget, propertyKey: bindingMethod },
+                { target: bindingHandler },
+                { target: bindingTarget, propertyKey: '__class__' },
+            ]) ?? getStandardMetadata(bindingMetadata, bindingMethod)
+                ?? getStandardMetadata(bindingMetadata, '__class__')
+            if (!metadata) {
+                return handlerFunction(ctx, ctx.clearRequest)
+            }
 
-        return (handlerFunction as any)(...args)
+            const designTokens = [
+                ...(bindingTarget ? getDesignParamTypes(bindingTarget, bindingMethod) : []),
+                ...(bindingHandler ? getDesignParamTypes(bindingHandler) : []),
+            ]
+            const tokens = metadata.tokens?.length ? metadata.tokens : designTokens
+            if (!tokens.length) {
+                return handlerFunction(ctx, ctx.clearRequest)
+            }
+
+            const args = []
+            for (const token of tokens) {
+                const resolved = await Container.resolve(token, ctx, Boolean(this.config.container?.autoDiscover))
+                if (typeof resolved === 'undefined') {
+                    return handlerFunction(ctx, ctx.clearRequest)
+                }
+
+                args.push(resolved)
+            }
+
+            return (handlerFunction as any)(...args)
+        })
     }
 
     protected static bindRequestToInstance (
