@@ -1,11 +1,12 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
+import type { ClearRouterPluginContext, ClearRouterPluginInput } from './plugins'
+import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata } from './bindings'
 
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { Controller } from 'src/Controller'
 import { Request as CoreRequest } from './Request'
 import { Response as CoreResponse } from './Response'
 import { Route } from 'src/Route'
-import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata } from './bindings'
 
 /**
  * @class clear-router CoreRouter
@@ -19,6 +20,7 @@ export abstract class CoreRouter {
     private static readonly stateStoreKey = Symbol.for('clear-router:router-state')
     private static readonly stateBoundKey = Symbol.for('clear-router:router-state-bound')
     private static readonly defaultConfigKey = Symbol.for('clear-router:default-config')
+    private static readonly pluginStoreKey = Symbol.for('clear-router:plugins')
 
     protected static createBaseConfig (): RouterConfig {
         return {
@@ -79,6 +81,16 @@ export abstract class CoreRouter {
         }
 
         return g[this.stateStoreKey] as Record<string, any>
+    }
+
+    protected static getPluginStore (): Set<string> {
+        const g = globalThis as Record<PropertyKey, any>
+
+        if (!g[this.pluginStoreKey]) {
+            g[this.pluginStoreKey] = new Set<string>()
+        }
+
+        return g[this.pluginStoreKey] as Set<string>
     }
 
     protected static createDefaultState () {
@@ -213,6 +225,45 @@ export abstract class CoreRouter {
         const store = this.getStateStore()
         for (const state of Object.values(store) as Array<{ config?: RouterConfig }>) {
             state.config = this.mergeConfig(state.config || this.createBaseConfig(), options)
+        }
+    }
+
+    /**
+     * Use a registered plugin
+     * 
+     * @param this 
+     * @param plugin 
+     * @param options 
+     * @returns 
+     */
+    static use<Options = any> (
+        this: any,
+        plugin: ClearRouterPluginInput<Options>,
+        options?: Options
+    ): void {
+        const name = typeof plugin === 'function'
+            ? plugin.name
+            : plugin.name
+        const store = this.getPluginStore()
+
+        if (name && store.has(name)) return
+
+        const ctx: ClearRouterPluginContext<Options> = {
+            container: Container,
+            bind: Container.bind.bind(Container),
+            configure: this.configure.bind(this),
+            configureDefaults: this.configureDefaults.bind(this),
+            options: options as Options,
+        }
+
+        if (typeof plugin === 'function') {
+            plugin(ctx)
+        } else {
+            plugin.setup(ctx)
+        }
+
+        if (name) {
+            store.add(name)
         }
     }
 

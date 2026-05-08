@@ -51,6 +51,7 @@ yarn add clear-router express
 - `clearRequest` is passed as second handler argument for controller handlers
 - Route handlers can return response values directly across Express, Fastify, Hono, H3, and Koa
 - Optional decorated container binding for controller method arguments
+- Plugin API for registering container bindings from external packages
 - Supports TS 5.2+ standard decorators with explicit `@Bind(...)` tokens
 - Optional `clear-router/decorators/setup` entry imports `reflect-metadata` and enables container binding defaults
 - Auto-binds controller methods

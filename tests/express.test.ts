@@ -4,6 +4,7 @@ import { Bind, Container } from '../src/decorators'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
 
+import { definePlugin } from '../src/core/plugins'
 import { Request as ClearRouterRequest } from '../src/core/Request'
 import { Response as ClearRouterResponse } from '../src/core/Response'
 import Router from '../src/express/router'
@@ -292,6 +293,44 @@ describe('Express App (JS)', () => {
             .get('/api/bound/321')
             .expect(200)
             .expect({ id: '321', audit: 'bound' })
+    })
+
+    it('supports plugins registering container bindings', async () => {
+        class AuditService {
+            constructor (readonly name: string) {}
+        }
+
+        const auditPlugin = definePlugin<{ name: string }>({
+            name: 'test-audit-plugin',
+            setup ({ bind, options }) {
+                bind(AuditService, () => new AuditService(options.name))
+            },
+        })
+
+        class PluginUsersController {
+            @Bind(ClearRouterRequest, AuditService)
+            show (request: ClearRouterRequest, audit: AuditService) {
+                return {
+                    id: request.param('id'),
+                    audit: audit.name,
+                }
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: true,
+            },
+        })
+        Router.use(auditPlugin, { name: 'plugin' })
+        Router.get('/api/plugin/:id', [PluginUsersController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/plugin/246')
+            .expect(200)
+            .expect({ id: '246', audit: 'plugin' })
     })
 
     it('falls back to the default handler signature when binding is disabled', async () => {

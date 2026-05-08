@@ -334,6 +334,29 @@ import 'clear-router/decorators/setup';
 
 The setup entry imports `reflect-metadata` and enables container binding defaults for all adapters.
 
+### use(plugin, options)
+
+Install a Clear Router plugin.
+
+Plugins can register container bindings or adjust shared router defaults.
+
+```javascript
+import { definePlugin } from 'clear-router/core';
+
+class AuditService {}
+
+const auditPlugin = definePlugin({
+  name: 'audit',
+  setup({ bind }) {
+    bind(AuditService, () => new AuditService());
+  },
+});
+
+Router.use(auditPlugin);
+```
+
+Named plugins are installed once per process. Pass `options` as the second argument when a plugin needs configuration.
+
 ### middleware(middlewares, callback)
 
 Apply global middlewares to all routes defined within the callback.
