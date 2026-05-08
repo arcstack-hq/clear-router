@@ -4,8 +4,8 @@ Clear Router can optionally resolve handler arguments from a small built-in cont
 
 ```ts
 Router.get('/users/:id', (ctx, clearRequest) => {
-  return clearRequest.param('id')
-})
+  return clearRequest.param('id');
+});
 ```
 
 Enable binding when you want decorated controller methods to receive resolved arguments directly.
@@ -20,7 +20,7 @@ Router.configure({
     enabled: true,
     autoDiscover: true,
   },
-})
+});
 ```
 
 - `enabled` turns decorated method binding on.
@@ -33,7 +33,7 @@ If binding is disabled, or if a decorated method cannot be resolved, Clear Route
 For legacy decorator metadata inference, import the setup entry once before your controllers are loaded:
 
 ```ts
-import 'clear-router/decorators/setup'
+import 'clear-router/decorators/setup';
 ```
 
 This imports `reflect-metadata` and applies:
@@ -44,7 +44,7 @@ Router.configure({
     enabled: true,
     autoDiscover: true,
   },
-})
+});
 ```
 
 You still need these TypeScript options for inferred parameter types:
@@ -61,32 +61,32 @@ You still need these TypeScript options for inferred parameter types:
 ## Core Request And Response
 
 ```ts
-import { Request, Response } from 'clear-router/core'
-import { Bind } from 'clear-router/decorators'
+import { Request, Response } from 'clear-router/core';
+import { Bind } from 'clear-router/decorators';
 
 class UsersController {
   @Bind(Request, Response)
-  update (request: Request, response: Response) {
+  update(request: Request, response: Response) {
     return response.status(202).json({
       id: request.param('id'),
       name: request.input('name'),
-    })
+    });
   }
 }
 
-Router.put('/api/users/:id', [UsersController, 'update'])
+Router.put('/api/users/:id', [UsersController, 'update']);
 ```
 
 The core `Request` exposes normalized data across all adapters:
 
 ```ts
-request.body
-request.query
-request.params
-request.param('id')
-request.input('name')
-request.header('accept')
-request.is('put')
+request.body;
+request.query;
+request.params;
+request.param('id');
+request.input('name');
+request.header('accept');
+request.is('put');
 ```
 
 The core `Response` can be returned or used as a side effect:
@@ -94,8 +94,8 @@ The core `Response` can be returned or used as a side effect:
 ```ts
 class UsersController {
   @Bind(Request, Response)
-  store (request: Request, response: Response) {
-    response.status(201).json({ name: request.input('name') })
+  store(request: Request, response: Response) {
+    response.status(201).json({ name: request.input('name') });
   }
 }
 ```
@@ -105,24 +105,24 @@ class UsersController {
 Use `Container.bind()` for explicit service bindings:
 
 ```ts
-import { Bind, Container } from 'clear-router/decorators'
-import { Request } from 'clear-router/core'
+import { Bind, Container } from 'clear-router/decorators';
+import { Request } from 'clear-router/core';
 
 class AuditService {
-  label () {
-    return 'audit'
+  label() {
+    return 'audit';
   }
 }
 
-Container.bind(AuditService, () => new AuditService())
+Container.bind(AuditService, () => new AuditService());
 
 class UsersController {
   @Bind(Request, AuditService)
-  show (request: Request, audit: AuditService) {
+  show(request: Request, audit: AuditService) {
     return {
       id: request.param('id'),
       source: audit.label(),
-    }
+    };
   }
 }
 ```
@@ -135,15 +135,15 @@ When `autoDiscover` is enabled, Clear Router tries to instantiate unknown class 
 
 ```ts
 class AuditService {
-  label () {
-    return 'discovered'
+  label() {
+    return 'discovered';
   }
 }
 
 class UsersController {
   @Bind(Request, AuditService)
-  show (request: Request, audit: AuditService) {
-    return { id: request.param('id'), source: audit.label() }
+  show(request: Request, audit: AuditService) {
+    return { id: request.param('id'), source: audit.label() };
   }
 }
 ```
@@ -157,13 +157,13 @@ Clear Router supports standard decorators and TypeScript 5.2+ decorator metadata
 Use explicit tokens with `@Bind(...)`:
 
 ```ts
-import { Bind } from 'clear-router/decorators'
-import { Request, Response } from 'clear-router/core'
+import { Bind } from 'clear-router/decorators';
+import { Request, Response } from 'clear-router/core';
 
 class UsersController {
   @Bind(Request, Response)
-  index (request: Request, response: Response) {
-    return response.json({ params: request.params })
+  index(request: Request, response: Response) {
+    return response.json({ params: request.params });
   }
 }
 ```
@@ -173,8 +173,8 @@ Standard decorators do not expose runtime parameter types, so Clear Router canno
 ```ts
 class UsersController {
   @Bind()
-  index (request: Request) {
-    return request.params
+  index(request: Request) {
+    return request.params;
   }
 }
 ```
@@ -186,14 +186,29 @@ Use explicit tokens for the no-setup TS 5.2+ path.
 If your app imports `clear-router/decorators/setup`, or otherwise imports `reflect-metadata` before controllers load, `@Bind()` can read TypeScript design-time parameter metadata:
 
 ```ts
-import 'clear-router/decorators/setup'
-import { Bind } from 'clear-router/decorators'
-import { Request } from 'clear-router/core'
+import 'clear-router/decorators/setup';
+import { Bind } from 'clear-router/decorators';
+import { Request } from 'clear-router/core';
 
 class UsersController {
   @Bind()
-  index (request: Request) {
-    return request.params
+  index(request: Request) {
+    return request.params;
+  }
+}
+```
+
+You can also decorate the whole controller class.
+
+```ts
+@Bind()
+class UsersController {
+  index(request: Request) {
+    return request.params;
+  }
+
+  show(audit: AuditService, request: Request) {
+    return { id: request.param('id'), source: audit.label() };
   }
 }
 ```

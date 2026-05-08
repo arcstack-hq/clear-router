@@ -4,10 +4,16 @@ import { Response } from './Response'
 export type BindToken<T = any> = abstract new (...args: any[]) => T
 export type BindFactory<T = any> = (ctx: any) => T | Promise<T>
 export type BindValue<T = any> = T | BindFactory<T> | BindToken<T>
-export type BindDecorator = MethodDecorator & (<This, Value extends (this: This, ...args: any[]) => any>(
-    value: Value,
-    context: ClassMethodDecoratorContext<This, Value>
-) => void | Value)
+export type BindDecorator = MethodDecorator & ClassDecorator & {
+    <This, Value extends (this: This, ...args: any[]) => any> (
+        value: Value,
+        context: ClassMethodDecoratorContext<This, Value>
+    ): void | Value
+    <Value extends abstract new (...args: any[]) => any> (
+        value: Value,
+        context: ClassDecoratorContext<Value>
+    ): void | Value
+}
 
 type BindingMetadata = {
     tokens?: BindToken[]
@@ -74,13 +80,26 @@ export class Container {
 }
 
 export function Bind (...tokens: BindToken[]): BindDecorator {
-    return ((target: object, propertyKeyOrContext: PropertyKey | ClassMethodDecoratorContext) => {
+    return ((target: object, propertyKeyOrContext?: PropertyKey | ClassMethodDecoratorContext | ClassDecoratorContext) => {
+        if (isStandardClassContext(propertyKeyOrContext)) {
+            setClassBindingMetadata(target, tokens)
+            setStandardMetadata(propertyKeyOrContext.metadata, '__class__', { tokens })
+
+            return
+        }
+
         if (isStandardMethodContext(propertyKeyOrContext)) {
             const method = propertyKeyOrContext.name
             const metadata = { tokens, method }
 
             setBindingMetadata(target, '__route_handler__', metadata)
             setStandardMetadata(propertyKeyOrContext.metadata, method, metadata)
+
+            return
+        }
+
+        if (typeof propertyKeyOrContext === 'undefined') {
+            setClassBindingMetadata(target, tokens)
 
             return
         }
@@ -124,6 +143,24 @@ function isStandardMethodContext (value: any): value is ClassMethodDecoratorCont
     )
 }
 
+function isStandardClassContext (value: any): value is ClassDecoratorContext {
+    return Boolean(
+        value &&
+        typeof value === 'object' &&
+        value.kind === 'class' &&
+        typeof value.name !== 'undefined'
+    )
+}
+
+function setClassBindingMetadata (target: object, tokens: BindToken[]): void {
+    setBindingMetadata(target, '__class__', { tokens })
+
+    const prototype = (target as { prototype?: object }).prototype
+    if (prototype) {
+        setBindingMetadata(prototype, '__class__', { tokens })
+    }
+}
+
 export function getBindingMetadataFromTargets (
     targets: Array<{ target?: object, propertyKey?: PropertyKey }>
 ): BindingMetadata | undefined {
@@ -141,13 +178,20 @@ export function getBindingMetadataFromTargets (
     }
 }
 
-export function getBindingMetadata (target: object, propertyKey?: PropertyKey): BindingMetadata | undefined {
+export function getBindingMetadata (
+    target: object,
+    propertyKey?: PropertyKey
+): BindingMetadata | undefined {
     if (propertyKey) return bindings.get(target)?.get(propertyKey)
 
     return bindings.get(target)?.get('__route_handler__')
 }
 
-export function setBindingMetadata (target: object, propertyKey: PropertyKey, metadata: BindingMetadata): void {
+export function setBindingMetadata (
+    target: object,
+    propertyKey: PropertyKey,
+    metadata: BindingMetadata
+): void {
     const map = bindings.get(target) ?? new Map<PropertyKey, BindingMetadata>()
     map.set(propertyKey, metadata)
     bindings.set(target, map)

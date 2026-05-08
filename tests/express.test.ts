@@ -1,9 +1,9 @@
 import '../example/express/web'
 
+import { Bind, Container } from '../src/decorators'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
 
-import { Bind, Container } from '../src/decorators'
 import { Request as ClearRouterRequest } from '../src/core/Request'
 import { Response as ClearRouterResponse } from '../src/core/Response'
 import Router from '../src/express/router'
@@ -152,7 +152,7 @@ describe('Express App (JS)', () => {
         }
 
         const metadata = {}
-        ;(Bind(ClearRouterRequest, AuditService) as any)(
+        Bind(ClearRouterRequest, AuditService)(
             StandardUsersController.prototype.update,
             {
                 kind: 'method',
@@ -166,8 +166,9 @@ describe('Express App (JS)', () => {
                 metadata,
                 addInitializer: () => undefined,
             } as ClassMethodDecoratorContext<StandardUsersController>
-        )
-        ;(StandardUsersController as any)[(Symbol as any).metadata] = metadata
+        );
+
+        (StandardUsersController as any)[(Symbol as any).metadata] = metadata
 
         Router.configure({
             container: {
@@ -202,6 +203,59 @@ describe('Express App (JS)', () => {
             .get('/api/setup/999')
             .expect(200)
             .expect({ id: '999' })
+    })
+
+    it('supports tokenless @Bind() with design param metadata', async () => {
+        class AuditService {
+            name = 'metadata'
+        }
+
+        @Bind()
+        class MetadataController {
+            show (request: ClearRouterRequest, audit: AuditService) {
+                return {
+                    id: request.param('id'),
+                    audit: audit.name,
+                }
+            }
+            audit (audit: AuditService, request: ClearRouterRequest) {
+                return {
+                    id: request.param('id'),
+                    audit: audit.name,
+                }
+            }
+        }
+
+        await import('reflect-metadata')
+        Router.configure({
+            container: {
+                enabled: true,
+                autoDiscover: true,
+            },
+        })
+        Reflect.defineMetadata('design:paramtypes', [
+            ClearRouterRequest,
+            AuditService,
+        ], MetadataController.prototype, 'show')
+        Reflect.defineMetadata('design:paramtypes', [
+            AuditService,
+            ClearRouterRequest,
+        ], MetadataController.prototype, 'audit')
+
+        Router.get('/api/metadata/:id', [MetadataController, 'show'])
+        Router.get('/api/audit/:id', [MetadataController, 'audit'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/metadata/111')
+            .expect(200)
+            .expect({ id: '111', audit: 'metadata' })
+
+        await request(app)
+            .get('/api/audit/111')
+            .expect(200)
+            .expect({ id: '111', audit: 'metadata' })
     })
 
     it('uses explicit container bindings when available', async () => {

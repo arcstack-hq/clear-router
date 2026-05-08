@@ -738,12 +738,17 @@ export abstract class CoreRouter {
         const metadata = getBindingMetadataFromTargets([
             { target: bindingTarget, propertyKey: bindingMethod },
             { target: bindingHandler },
+            { target: bindingTarget, propertyKey: '__class__' },
         ]) ?? getStandardMetadata(bindingMetadata, bindingMethod)
+            ?? getStandardMetadata(bindingMetadata, '__class__')
         if (!metadata) {
             return handlerFunction(ctx, ctx.clearRequest)
         }
 
-        const designTokens = bindingTarget ? getDesignParamTypes(bindingTarget, bindingMethod) : []
+        const designTokens = [
+            ...(bindingTarget ? getDesignParamTypes(bindingTarget, bindingMethod) : []),
+            ...(bindingHandler ? getDesignParamTypes(bindingHandler) : []),
+        ]
         const tokens = metadata.tokens?.length ? metadata.tokens : designTokens
         if (!tokens.length) {
             return handlerFunction(ctx, ctx.clearRequest)
