@@ -30,6 +30,7 @@ export default defineConfig({
                     { text: 'Using with Hono', link: '/guide/hono' },
                     { text: 'Using with Koa', link: '/guide/koa' },
                     { text: 'Container Binding', link: '/guide/container-binding' },
+                    { text: 'Plugins', link: '/guide/plugins' },
                     { text: 'Adapter Authoring Guide', link: '/guide/adapters' },
                     { text: 'API Reference', link: '/api' },
                     { text: 'Testing Guide', link: '/testing' },
