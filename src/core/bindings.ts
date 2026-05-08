@@ -132,7 +132,6 @@ export class Container {
         if (tokenProps.length !== registeredProps.length) {
             return false
         }
-        console.log(token, registered)
 
         for (const prop of tokenProps) {
             if (!registeredProps.includes(prop)) {
