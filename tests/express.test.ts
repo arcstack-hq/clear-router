@@ -4,10 +4,10 @@ import { Bind, Container } from '../src/decorators'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
 
-import { definePlugin } from '../src/core/plugins'
 import { Request as ClearRouterRequest } from '../src/core/Request'
 import { Response as ClearRouterResponse } from '../src/core/Response'
 import Router from '../src/express/router'
+import { definePlugin } from '../src/core/plugins'
 import request from 'parasito'
 
 describe('Express App (JS)', () => {
@@ -297,7 +297,7 @@ describe('Express App (JS)', () => {
 
     it('supports plugins registering container bindings', async () => {
         class AuditService {
-            constructor (readonly name: string) {}
+            constructor(readonly name: string) { }
         }
 
         const auditPlugin = definePlugin<{ name: string }>({
@@ -335,7 +335,7 @@ describe('Express App (JS)', () => {
 
     it('waits for async plugins before resolving container bindings', async () => {
         class AsyncAuditService {
-            constructor (readonly name: string) {}
+            constructor(readonly name: string) { }
         }
 
         const asyncAuditPlugin = definePlugin<{ name: string }>({
