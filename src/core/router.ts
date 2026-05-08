@@ -1,5 +1,12 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
-import type { ClearRouterPluginContext, ClearRouterPluginInput, ClearRouterPluginRequestContext, PluginBind } from './plugins'
+import type {
+    ClearRouterPluginArgumentsContext,
+    ClearRouterPluginContext,
+    ClearRouterPluginInput,
+    ClearRouterPluginRequestContext,
+    PluginArgumentsResolver,
+    PluginBind,
+} from './plugins'
 import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata, isClass } from './bindings'
 
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -22,6 +29,7 @@ export abstract class CoreRouter {
     private static readonly defaultConfigKey = Symbol.for('clear-router:default-config')
     private static readonly pluginStoreKey = Symbol.for('clear-router:plugins')
     private static readonly pluginPendingKey = Symbol.for('clear-router:plugin-promises')
+    private static readonly pluginArgumentResolversKey = Symbol.for('clear-router:plugin-argument-resolvers')
 
     protected static createBaseConfig (): RouterConfig {
         return {
@@ -102,6 +110,16 @@ export abstract class CoreRouter {
         }
 
         return g[this.pluginPendingKey] as Set<Promise<void>>
+    }
+
+    protected static getPluginArgumentResolvers (): Set<PluginArgumentsResolver> {
+        const g = globalThis as Record<PropertyKey, any>
+
+        if (!g[this.pluginArgumentResolversKey]) {
+            g[this.pluginArgumentResolversKey] = new Set<PluginArgumentsResolver>()
+        }
+
+        return g[this.pluginArgumentResolversKey] as Set<PluginArgumentsResolver>
     }
 
     protected static createDefaultState () {
@@ -267,6 +285,9 @@ export abstract class CoreRouter {
             const ctx: ClearRouterPluginContext<Options> = {
                 container: Container,
                 bind: this.createPluginBind(),
+                resolveArguments: (resolver) => {
+                    this.getPluginArgumentResolvers().add(resolver)
+                },
                 bindings: Container.bindings(),
                 configure: this.configure.bind(this),
                 configureDefaults: this.configureDefaults.bind(this),
@@ -339,8 +360,7 @@ export abstract class CoreRouter {
             ctx,
             request,
             response,
-            clearRequest: request,
-            clearResponse: response,
+            getBindings: () => Container.bindings(),
         }
     }
 
@@ -357,6 +377,28 @@ export abstract class CoreRouter {
         }
 
         return bind
+    }
+
+    protected static async resolvePluginArguments (
+        this: any,
+        ctx: any,
+        routeContext: Omit<ClearRouterPluginArgumentsContext, keyof ClearRouterPluginRequestContext>
+    ): Promise<any[] | undefined> {
+        const resolvers = Array.from(this.getPluginArgumentResolvers()) as PluginArgumentsResolver[]
+        if (!resolvers.length) return undefined
+
+        const requestContext = this.createPluginRequestContext(ctx)
+        const pluginContext: ClearRouterPluginArgumentsContext = {
+            ...requestContext,
+            ...routeContext,
+        }
+
+        for (const resolver of resolvers) {
+            const args = await resolver(pluginContext)
+            if (Array.isArray(args)) {
+                return args
+            }
+        }
     }
 
     protected static ensureState (this: any): void {
@@ -868,21 +910,33 @@ export abstract class CoreRouter {
                 return handlerFunction(ctx, ctx.clearRequest)
             }
 
+            const designTokens = [
+                ...(bindingTarget ? getDesignParamTypes(bindingTarget, bindingMethod) : []),
+                ...(bindingHandler ? getDesignParamTypes(bindingHandler) : []),
+            ]
             const metadata = getBindingMetadataFromTargets([
                 { target: bindingTarget, propertyKey: bindingMethod },
                 { target: bindingHandler },
                 { target: bindingTarget, propertyKey: '__class__' },
             ]) ?? getStandardMetadata(bindingMetadata, bindingMethod)
                 ?? getStandardMetadata(bindingMetadata, '__class__')
+            const tokens = metadata?.tokens?.length ? metadata.tokens : designTokens
+            const pluginArgs = await this.resolvePluginArguments(ctx, {
+                target: bindingTarget,
+                method: bindingMethod,
+                handler: bindingHandler,
+                metadata: bindingMetadata,
+                tokens,
+                designTokens,
+            })
+            if (pluginArgs) {
+                return (handlerFunction as any)(...pluginArgs)
+            }
+
             if (!metadata) {
                 return handlerFunction(ctx, ctx.clearRequest)
             }
 
-            const designTokens = [
-                ...(bindingTarget ? getDesignParamTypes(bindingTarget, bindingMethod) : []),
-                ...(bindingHandler ? getDesignParamTypes(bindingHandler) : []),
-            ]
-            const tokens = metadata.tokens?.length ? metadata.tokens : designTokens
             if (!tokens.length) {
                 return handlerFunction(ctx, ctx.clearRequest)
             }

@@ -462,6 +462,65 @@ describe('Express App (JS)', () => {
             })
     })
 
+    it('allows plugins to replace all controller method arguments', async () => {
+        class BoundUser {
+            constructor(
+                readonly id: string,
+                readonly source: string
+            ) { }
+        }
+
+        const routeModelPlugin = definePlugin({
+            name: 'test-replace-arguments-plugin',
+            setup ({ resolveArguments }) {
+                resolveArguments(({ method, request }) => {
+                    if (method !== 'showPluginArguments') return undefined
+
+                    return [
+                        new BoundUser(request.param('id'), 'plugin'),
+                        request,
+                        { touched: true },
+                    ]
+                })
+            },
+        })
+
+        class PluginArgumentsController {
+            showPluginArguments (
+                user: BoundUser,
+                request: ClearRouterRequest,
+                meta: { touched: boolean }
+            ) {
+                return {
+                    id: user.id,
+                    source: user.source,
+                    requestId: request.param('id'),
+                    touched: meta.touched,
+                }
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: true,
+            },
+        })
+        Router.use(routeModelPlugin)
+        Router.get('/api/plugin-arguments/:id', [PluginArgumentsController, 'showPluginArguments'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/plugin-arguments/579')
+            .expect(200)
+            .expect({
+                id: '579',
+                source: 'plugin',
+                requestId: '579',
+                touched: true,
+            })
+    })
+
     it('falls back to the default handler signature when binding is disabled', async () => {
         class BoundUsersController {
             @Bind(ClearRouterRequest)

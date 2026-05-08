@@ -10,16 +10,30 @@ export interface ClearRouterPluginRequestContext {
     ctx: any
     request: CoreRequest
     response: CoreResponse
+    getBindings: () => Record<string, BindValue>,
     [key: string]: any
+}
+
+export interface ClearRouterPluginArgumentsContext extends ClearRouterPluginRequestContext {
+    target?: object
+    method?: PropertyKey
+    handler?: object
+    metadata?: object
+    tokens: BindToken[]
+    designTokens: BindToken[]
 }
 
 export type PluginBindFactory<T = any> = (ctx: ClearRouterPluginRequestContext) => T | Promise<T>
 export type PluginBindValue<T = any> = BindValue<T> | PluginBindFactory<T>
 export type PluginBind = <T>(token: BindToken<T>, value: PluginBindValue<T>) => void
+export type PluginArgumentsResolver = (
+    ctx: ClearRouterPluginArgumentsContext
+) => any[] | undefined | Promise<any[] | undefined>
 
 export interface ClearRouterPluginContext<Options = any> {
     container: typeof Container
     bind: PluginBind
+    resolveArguments: (resolver: PluginArgumentsResolver) => void
     bindings: Record<string, BindValue>,
     configure: (options: RouterConfig) => void
     configureDefaults: (options: RouterConfig) => void
