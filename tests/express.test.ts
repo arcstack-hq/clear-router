@@ -295,6 +295,45 @@ describe('Express App (JS)', () => {
             .expect({ id: '321', audit: 'bound' })
     })
 
+    it('resolves bindings for equivalent class tokens from different loaders', async () => {
+        class Model { }
+
+        const LoadedUser = class User extends Model {
+            source = 'loaded'
+        }
+        const ImportedUser = class User extends Model { }
+
+        class LoaderSplitController {
+            @Bind(ImportedUser)
+            show (user: InstanceType<typeof LoadedUser>) {
+                return {
+                    source: user.source,
+                    loadedInstance: user instanceof LoadedUser,
+                    importedInstance: user instanceof ImportedUser,
+                }
+            }
+        }
+
+        Container.bind(LoadedUser, () => new LoadedUser())
+        Router.configure({
+            container: {
+                enabled: true,
+            },
+        })
+        Router.get('/api/loader-split', [LoaderSplitController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/loader-split')
+            .expect(200)
+            .expect({
+                source: 'loaded',
+                loadedInstance: true,
+                importedInstance: false,
+            })
+    })
+
     it('supports plugins registering container bindings', async () => {
         class AuditService {
             constructor(readonly name: string) { }

@@ -39,7 +39,7 @@ export class Container {
     }
 
     static has<T> (token: BindToken<T>): boolean {
-        return this.registry.has(token)
+        return this.registry.has(token) || Boolean(this.findEquivalentToken(token))
     }
 
     static bindings<V = any> (): Record<string, BindValue<V>> {
@@ -50,8 +50,9 @@ export class Container {
         if ((token as any) === Request) return ctx.clearRequest
         if ((token as any) === Response) return ctx.clearResponse
 
-        if (this.registry.has(token)) {
-            return this.resolveBinding(this.registry.get(token), ctx, autoDiscover)
+        const binding = this.getBinding(token)
+        if (binding) {
+            return this.resolveBinding(binding, ctx, autoDiscover)
         }
 
         if (autoDiscover && typeof token === 'function') {
@@ -59,6 +60,94 @@ export class Container {
         }
 
         return undefined
+    }
+
+    private static getBinding<T> (token: BindToken<T>): BindValue<T> | undefined {
+        if (this.registry.has(token)) {
+            return this.registry.get(token) as BindValue<T> | undefined
+        }
+
+        const equivalent = this.findEquivalentToken(token)
+
+        return equivalent
+            ? this.registry.get(equivalent) as BindValue<T> | undefined
+            : undefined
+    }
+
+    private static findEquivalentToken<T> (token: BindToken<T>): BindToken | undefined {
+        const name = token.name
+
+        if (!name) {
+            return undefined
+        }
+
+        const tokenParent = Object.getPrototypeOf(token)
+        const tokenProps = this.getComparableStaticProps(token)
+
+        for (const registered of this.registry.keys()) {
+            if (registered === token) {
+                continue
+            }
+
+            if (registered.name !== name) {
+                continue
+            }
+
+            const registeredParent = Object.getPrototypeOf(registered)
+
+            if (tokenParent && registeredParent && tokenParent.name !== registeredParent.name) {
+                continue
+            }
+
+            const registeredProps = this.getComparableStaticProps(registered)
+
+            if (!this.staticPropsMatch(token, registered, tokenProps, registeredProps)) {
+                continue
+            }
+
+            return registered
+        }
+
+        return undefined
+    }
+
+    private static getComparableStaticProps (token: BindToken): string[] {
+        return Object.getOwnPropertyNames(token).filter((prop) => {
+            return ![
+                'length',
+                'name',
+                'prototype',
+                'arguments',
+                'caller',
+            ].includes(prop)
+        })
+    }
+
+    private static staticPropsMatch (
+        token: BindToken,
+        registered: BindToken,
+        tokenProps: string[],
+        registeredProps: string[],
+    ): boolean {
+        if (tokenProps.length !== registeredProps.length) {
+            return false
+        }
+        console.log(token, registered)
+
+        for (const prop of tokenProps) {
+            if (!registeredProps.includes(prop)) {
+                return false
+            }
+
+            const tokenValue = Reflect.get(token, prop)
+            const registeredValue = Reflect.get(registered, prop)
+
+            if (tokenValue !== registeredValue) {
+                return false
+            }
+        }
+
+        return true
     }
 
     private static async resolveBinding<T> (
