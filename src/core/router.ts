@@ -21,6 +21,7 @@ export abstract class CoreRouter {
     private static readonly stateBoundKey = Symbol.for('clear-router:router-state-bound')
     private static readonly defaultConfigKey = Symbol.for('clear-router:default-config')
     private static readonly pluginStoreKey = Symbol.for('clear-router:plugins')
+    private static readonly pluginPendingKey = Symbol.for('clear-router:plugin-promises')
 
     protected static createBaseConfig (): RouterConfig {
         return {
@@ -91,6 +92,16 @@ export abstract class CoreRouter {
         }
 
         return g[this.pluginStoreKey] as Set<string>
+    }
+
+    protected static getPluginPendingStore (): Set<Promise<void>> {
+        const g = globalThis as Record<PropertyKey, any>
+
+        if (!g[this.pluginPendingKey]) {
+            g[this.pluginPendingKey] = new Set<Promise<void>>()
+        }
+
+        return g[this.pluginPendingKey] as Set<Promise<void>>
     }
 
     protected static createDefaultState () {
@@ -236,11 +247,11 @@ export abstract class CoreRouter {
      * @param options 
      * @returns 
      */
-    static use<Options = any> (
+    static async use<Options = any> (
         this: any,
         plugin: ClearRouterPluginInput<Options>,
         options?: Options
-    ): void {
+    ): Promise<void> {
         const name = typeof plugin === 'function'
             ? plugin.name
             : plugin.name
@@ -248,23 +259,48 @@ export abstract class CoreRouter {
 
         if (name && store.has(name)) return
 
-        const ctx: ClearRouterPluginContext<Options> = {
-            container: Container,
-            bind: Container.bind.bind(Container),
-            configure: this.configure.bind(this),
-            configureDefaults: this.configureDefaults.bind(this),
-            options: options as Options,
-        }
-
-        if (typeof plugin === 'function') {
-            plugin(ctx)
-        } else {
-            plugin.setup(ctx)
-        }
-
         if (name) {
             store.add(name)
         }
+
+        const setup = async (): Promise<void> => {
+            const ctx: ClearRouterPluginContext<Options> = {
+                container: Container,
+                bind: Container.bind.bind(Container),
+                configure: this.configure.bind(this),
+                configureDefaults: this.configureDefaults.bind(this),
+                options: options as Options,
+            }
+
+            if (typeof plugin === 'function') {
+                await plugin(ctx)
+            } else {
+                await plugin.setup(ctx)
+            }
+        }
+
+        const pending = this.getPluginPendingStore()
+        const promise = setup()
+        pending.add(promise)
+
+        try {
+            await promise
+        } catch (error) {
+            if (name) {
+                store.delete(name)
+            }
+
+            throw error
+        } finally {
+            pending.delete(promise)
+        }
+    }
+
+    protected static async pluginsReady (this: any): Promise<void> {
+        const pending = Array.from(this.getPluginPendingStore())
+        if (!pending.length) return
+
+        await Promise.all(pending)
     }
 
     protected static groupContext = new AsyncLocalStorage<{
@@ -782,6 +818,8 @@ export abstract class CoreRouter {
         bindingHandler?: object,
         bindingMetadata?: object
     ): Promise<any> {
+        await this.pluginsReady()
+
         if (!this.config.container?.enabled) {
             return handlerFunction(ctx, ctx.clearRequest)
         }

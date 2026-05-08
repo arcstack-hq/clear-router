@@ -1,7 +1,7 @@
 import { BindToken, BindValue, Container } from './bindings'
 import type { RouterConfig } from 'types/basic'
 
-export type PluginSetupResult = void
+export type PluginSetupResult = void | Promise<void>
 
 export type PluginBind = <T>(token: BindToken<T>, value: BindValue<T>) => void
 

@@ -333,6 +333,45 @@ describe('Express App (JS)', () => {
             .expect({ id: '246', audit: 'plugin' })
     })
 
+    it('waits for async plugins before resolving container bindings', async () => {
+        class AsyncAuditService {
+            constructor (readonly name: string) {}
+        }
+
+        const asyncAuditPlugin = definePlugin<{ name: string }>({
+            name: 'test-async-audit-plugin',
+            async setup ({ bind, options }) {
+                await new Promise(resolve => setTimeout(resolve, 10))
+                bind(AsyncAuditService, () => new AsyncAuditService(options.name))
+            },
+        })
+
+        class PluginUsersController {
+            @Bind(ClearRouterRequest, AsyncAuditService)
+            show (request: ClearRouterRequest, audit: AsyncAuditService) {
+                return {
+                    id: request.param('id'),
+                    audit: audit.name,
+                }
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: true,
+            },
+        })
+        Router.use(asyncAuditPlugin, { name: 'async-plugin' })
+        Router.get('/api/async-plugin/:id', [PluginUsersController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/async-plugin/135')
+            .expect(200)
+            .expect({ id: '135', audit: 'async-plugin' })
+    })
+
     it('falls back to the default handler signature when binding is disabled', async () => {
         class BoundUsersController {
             @Bind(ClearRouterRequest)
