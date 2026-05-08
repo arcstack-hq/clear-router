@@ -1,4 +1,5 @@
 import type { HttpMethod } from 'types/basic'
+import { Response as CoreResponse } from './Response'
 
 type HeaderSource = Record<string, any> | Headers | undefined
 
@@ -6,12 +7,17 @@ export type ResponseMeta = {
     body: any
     status: number
     contentType?: string
+    headers?: Headers
     isEmpty: boolean
     isNativeResponse: boolean
 }
 
-export function isFetchResponse (value: any): value is Response {
-    return typeof Response !== 'undefined' && value instanceof Response
+export function isFetchResponse (value: any): value is globalThis.Response {
+    return typeof globalThis.Response !== 'undefined' && value instanceof globalThis.Response
+}
+
+export function isCoreResponse (value: any): value is CoreResponse {
+    return value instanceof CoreResponse
 }
 
 export function isH3Response (value: any): boolean {
@@ -23,6 +29,8 @@ export function isH3Response (value: any): boolean {
 }
 
 export function responseWasSent (target: any): boolean {
+    if (isCoreResponse(target)) return false
+
     return Boolean(target?.headersSent || target?.sent || target?.raw?.headersSent)
 }
 
@@ -64,6 +72,19 @@ export function resolveResponseMeta (
     } = {}
 ): ResponseMeta | undefined {
     if (typeof value === 'undefined') return undefined
+
+    if (isCoreResponse(value)) {
+        const contentType = value.headers.get('content-type') || undefined
+
+        return {
+            body: value.body,
+            status: value.statusCode,
+            contentType,
+            headers: value.headers,
+            isEmpty: value.body === null || typeof value.body === 'undefined',
+            isNativeResponse: false,
+        }
+    }
 
     if (isFetchResponse(value) || isH3Response(value)) {
         return {
@@ -116,6 +137,10 @@ export function resolveResponseMeta (
 }
 
 function getStatus (value: any, method?: string, explicitStatus?: number): number {
+    if (typeof value?.statusCode === 'number' && value.statusCode >= 100 && value.statusCode <= 999) {
+        return value.statusCode
+    }
+
     if (typeof value?.status === 'number' && value.status >= 100 && value.status <= 999) {
         return value.status
     }

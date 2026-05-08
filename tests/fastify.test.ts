@@ -38,6 +38,16 @@ describe('Fastify App (JS)', () => {
         Router.get('/api/text', () => '<h1>Hello</h1>')
         Router.post('/created', () => 42)
         Router.get('/payload', () => ({ ok: true }))
+        Router.put('/api/users/:id', ({ clearRequest, clearResponse }) => {
+            return clearResponse
+                .status(202)
+                .setHeader('x-user-id', clearRequest.param('id'))
+                .json({
+                    id: clearRequest.param('id'),
+                    name: clearRequest.input('name'),
+                    method: clearRequest.method,
+                })
+        })
         Router.get('/fetch-response', () => new Response('accepted', {
             status: 202,
             headers: { 'content-type': 'text/custom' },
@@ -59,6 +69,13 @@ describe('Fastify App (JS)', () => {
         await request(app).get('/payload')
             .expect('content-type', 'application/json; charset=utf-8')
             .expect({ ok: true })
+
+        await request(app).put('/api/users/123')
+            .send({ name: 'Ada' })
+            .expect(202)
+            .expect('content-type', 'application/json; charset=utf-8')
+            .expect('x-user-id', '123')
+            .expect({ id: '123', name: 'Ada', method: 'PUT' })
 
         await request(app).get('/fetch-response')
             .expect('content-type', 'text/custom')

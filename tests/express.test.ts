@@ -41,6 +41,16 @@ describe('Express App (JS)', () => {
         Router.get('/api/text', () => '<h1>Hello</h1>')
         Router.post('/created', () => true)
         Router.get('/payload', () => ({ ok: true }))
+        Router.put('/api/users/:id', ({ clearRequest, clearResponse }) => {
+            clearResponse
+                .status(202)
+                .setHeader('x-user-id', clearRequest.param('id'))
+                .json({
+                    id: clearRequest.param('id'),
+                    name: clearRequest.input('name'),
+                    method: clearRequest.method,
+                })
+        })
         Router.get('/fetch-response', () => new Response('accepted', {
             status: 202,
             headers: { 'content-type': 'text/custom' },
@@ -68,6 +78,14 @@ describe('Express App (JS)', () => {
             .expect(200)
             .expect('content-type', 'application/json; charset=utf-8')
             .expect({ ok: true })
+
+        await request(app)
+            .put('/api/users/123')
+            .send({ name: 'Ada' })
+            .expect(202)
+            .expect('content-type', 'application/json; charset=utf-8')
+            .expect('x-user-id', '123')
+            .expect({ id: '123', name: 'Ada', method: 'PUT' })
 
         await request(app)
             .get('/fetch-response')

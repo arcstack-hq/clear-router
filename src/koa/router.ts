@@ -74,6 +74,10 @@ export class Router extends CoreRouter {
 
         ctx.status = meta.status
 
+        meta.headers?.forEach((headerValue, key) => {
+            ctx.set(key, headerValue)
+        })
+
         if (isFetchResponse(meta.body)) {
             meta.body.headers.forEach((headerValue, key) => {
                 ctx.set(key, headerValue)
@@ -299,12 +303,16 @@ export class Router extends CoreRouter {
                             body: reqBody,
                             query: ctx.query as Record<string, any>,
                             params: (ctx.params as Record<string, any>) ?? {},
+                            method,
                         })
 
-                        const result = handlerFunction(ctx, inst.clearRequest)
+                        const result = handlerFunction(ctx, ctx.clearRequest)
                         const resolved = await Promise.resolve(result)
+                        const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                            ? ctx.clearResponse
+                            : resolved
 
-                        return Router.sendReturnValue(ctx, resolved, method, route.path)
+                        return Router.sendReturnValue(ctx, outgoing, method, route.path)
                     }
                 )
 
@@ -326,12 +334,16 @@ export class Router extends CoreRouter {
                                 body: reqBody,
                                 query: ctx.query as Record<string, any>,
                                 params: (ctx.params as Record<string, any>) ?? {},
+                                method,
                             })
 
-                            const result = handlerFunction(ctx, inst.clearRequest)
+                            const result = handlerFunction(ctx, ctx.clearRequest)
                             const resolved = await Promise.resolve(result)
+                            const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                                ? ctx.clearResponse
+                                : resolved
 
-                            return Router.sendReturnValue(ctx, resolved, method, route.path)
+                            return Router.sendReturnValue(ctx, outgoing, method, route.path)
                         }
                     )
                 }

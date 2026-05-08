@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
-import { ClearRequest } from 'src/ClearRequest'
+import { Request as CoreRequest } from 'src/core/Request'
+import { Response as CoreResponse } from 'src/core/Response'
 import type { ControllerHandler } from './basic'
 
 export interface RequestWithGetBody extends Request {
@@ -14,6 +15,8 @@ export interface HttpContext {
     req: RequestWithGetBody;
     res: Response;
     next: NextFunction;
+    clearRequest: CoreRequest;
+    clearResponse: CoreResponse;
 }
 
 /**
@@ -27,7 +30,7 @@ export type RouteHandler = (
     /**
      * ClearRequest instance
      */
-    req: ClearRequest
+    req: CoreRequest
 ) => any | Promise<any>;
 
 /**

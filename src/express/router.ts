@@ -1,6 +1,5 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
 import { Handler, HttpContext, Middleware, RouteHandler } from 'types/express'
-import type { Request, Response } from 'express'
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
 
 import { CoreRouter } from 'src/core/router'
@@ -24,12 +23,13 @@ export class Router extends CoreRouter {
     }
 
     private static async sendReturnValue (
-        req: Request,
-        res: Response,
+        ctx: HttpContext,
         value: any,
         method: HttpMethod,
         path: string
     ): Promise<void> {
+        const { req, res } = ctx
+
         if (responseWasSent(res) || value === res || responseWasSent(value)) return
 
         const meta = resolveResponseMeta(value, {
@@ -41,6 +41,10 @@ export class Router extends CoreRouter {
         if (!meta) return
 
         res.status(meta.status)
+
+        meta.headers?.forEach((headerValue, key) => {
+            res.setHeader(key, headerValue)
+        })
 
         if (isFetchResponse(meta.body)) {
             meta.body.headers.forEach((headerValue, key) => {
@@ -282,22 +286,26 @@ export class Router extends CoreRouter {
                         try {
                             Router.ensureRequestBodyAccessor(req)
 
-                            const ctx: HttpContext = {
+                            const ctx = {
                                 req: req as HttpContext['req'],
                                 res,
                                 next,
-                            }
+                            } as HttpContext
 
                             const inst = instance ?? route
                             Router.bindRequestToInstance(ctx, inst, route, {
                                 body: ctx.req.getBody(),
                                 query: ctx.req.query as Record<string, any>,
                                 params: ctx.req.params as Record<string, any>,
+                                method,
                             })
 
-                            const result = handlerFunction(ctx, inst.clearRequest)
+                            const result = handlerFunction(ctx, ctx.clearRequest)
                             const resolved = await Promise.resolve(result)
-                            await Router.sendReturnValue(req, res, resolved, method, route.path)
+                            const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                                ? ctx.clearResponse
+                                : resolved
+                            await Router.sendReturnValue(ctx, outgoing, method, route.path)
                         } catch (error: any) {
                             next(error)
                         }
@@ -323,22 +331,26 @@ export class Router extends CoreRouter {
                             try {
                                 Router.ensureRequestBodyAccessor(req)
 
-                                const ctx: HttpContext = {
+                                const ctx = {
                                     req: req as HttpContext['req'],
                                     res,
                                     next,
-                                }
+                                } as HttpContext
 
                                 const inst = instance ?? route
                                 Router.bindRequestToInstance(ctx, inst, route, {
                                     body: ctx.req.getBody(),
                                     query: ctx.req.query as Record<string, any>,
                                     params: ctx.req.params as Record<string, any>,
+                                    method,
                                 })
 
-                                const result = handlerFunction(ctx, inst.clearRequest)
+                                const result = handlerFunction(ctx, ctx.clearRequest)
                                 const resolved = await Promise.resolve(result)
-                                await Router.sendReturnValue(req, res, resolved, method, route.path)
+                                const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                                    ? ctx.clearResponse
+                                    : resolved
+                                await Router.sendReturnValue(ctx, outgoing, method, route.path)
                             } catch (error: any) {
                                 next(error)
                             }

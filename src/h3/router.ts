@@ -30,13 +30,21 @@ export class Router extends CoreRouter {
         if (!meta) return undefined
         if (meta.isNativeResponse) return meta.body
 
+        const headers = meta.headers
+            ? {} as Record<string, string>
+            : meta.contentType
+                ? { 'Content-Type': meta.contentType }
+                : undefined
+
+        meta.headers?.forEach((headerValue, key) => {
+            if (headers) headers[key] = headerValue
+        })
+
         return new HTTPResponse(meta.contentType?.startsWith('application/json')
             ? JSON.stringify(meta.body)
             : meta.isEmpty ? null : meta.body, {
             status: meta.status,
-            headers: meta.contentType
-                ? { 'Content-Type': meta.contentType }
-                : undefined,
+            headers,
         })
     }
 
@@ -277,12 +285,16 @@ export class Router extends CoreRouter {
                             body: reqBody,
                             query: getQuery(ctx) as Record<string, any>,
                             params: getRouterParams(ctx, { decode: true }) as Record<string, any>,
+                            method,
                         })
 
-                        const result = handlerFunction(ctx, inst.clearRequest)
+                        const result = handlerFunction(ctx, ctx.clearRequest)
                         const resolved = await Promise.resolve(result)
+                        const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                            ? ctx.clearResponse
+                            : resolved
 
-                        return Router.toResponse(ctx, resolved, method, route.path)
+                        return Router.toResponse(ctx, outgoing, method, route.path)
                     } catch (error: any) {
                         return error
                     }
@@ -304,12 +316,16 @@ export class Router extends CoreRouter {
                                 body: reqBody,
                                 query: getQuery(ctx) as Record<string, any>,
                                 params: getRouterParams(ctx, { decode: true }) as Record<string, any>,
+                                method,
                             })
 
-                            const result = handlerFunction(ctx, inst.clearRequest)
+                            const result = handlerFunction(ctx, ctx.clearRequest)
                             const resolved = await Promise.resolve(result)
+                            const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                                ? ctx.clearResponse
+                                : resolved
 
-                            return Router.toResponse(ctx, resolved, method, route.path)
+                            return Router.toResponse(ctx, outgoing, method, route.path)
                         } catch (error: any) {
                             return error
                         }

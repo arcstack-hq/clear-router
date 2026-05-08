@@ -49,6 +49,7 @@ export default defineConfig([
       for (const n of ['ClearRequest', 'Route']) {
         cpSync(rsc.outDir + `/src/${n}.d.mts`, rsc.outDir + `/types/${n}.d.mts`)
       }
+      cpSync(rsc.outDir + '/src/core', rsc.outDir + '/types/core', { recursive: true })
       for (const d of Object.keys(rsc.entry)) {
         const p = d.replace('types', `${rsc.outDir}/types`) + '.d.mts'
         const code = readFileSync(p, 'utf-8')

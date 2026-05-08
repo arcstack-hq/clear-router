@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 
 import { Hono } from 'hono'
 import Router from '../src/hono/router'
+import request from 'parasito'
 
 describe('Hono App (JS)', () => {
     let app: Hono
@@ -25,9 +26,9 @@ describe('Hono App (JS)', () => {
         Router.get('/directly', () => 'Hello World')
         setupApp()
 
-        const res = await app.fetch(new Request('http://localhost/directly'))
-        expect(res.status).toBe(200)
-        expect(await res.text()).toBe('Hello World')
+        await request(app).get('/directly')
+            .expect(200)
+            .expect('Hello World')
     })
 
     it('supports direct primitive, object, and Response returns', async () => {
@@ -35,6 +36,16 @@ describe('Hono App (JS)', () => {
         Router.get('/api/text', () => '<h1>Hello</h1>')
         Router.post('/created', () => false)
         Router.get('/payload', () => ({ ok: true }))
+        Router.put('/api/users/:id', ({ clearRequest, clearResponse }) => {
+            clearResponse
+                .status(202)
+                .setHeader('x-user-id', clearRequest.param('id'))
+                .json({
+                    id: clearRequest.param('id'),
+                    name: clearRequest.input('name'),
+                    method: clearRequest.method,
+                })
+        })
         Router.get('/fetch-response', () => new Response('accepted', {
             status: 202,
             headers: { 'content-type': 'text/custom' },
@@ -42,40 +53,44 @@ describe('Hono App (JS)', () => {
 
         setupApp()
 
-        const html = await app.fetch(new Request('http://localhost/html'))
-        expect(html.status).toBe(200)
-        expect(html.headers.get('content-type')).toContain('text/html')
-        expect(await html.text()).toBe('<h1>Hello</h1>')
+        await request(app).get('/html')
+            .expect(200)
+            .expect('content-type', 'text/html; charset=utf-8')
+            .expect('<h1>Hello</h1>')
 
-        const xhr = await app.fetch(new Request('http://localhost/api/text', {
-            headers: { 'x-requested-with': 'XMLHttpRequest' },
-        }))
-        expect(xhr.headers.get('content-type')).toContain('text/plain')
+        await request(app).get('/api/text')
+            .set('x-requested-with', 'XMLHttpRequest')
+            .expect('content-type', 'text/plain; charset=utf-8')
 
-        const created = await app.fetch(new Request('http://localhost/created', { method: 'POST' }))
-        expect(created.status).toBe(201)
-        expect(await created.text()).toBe('false')
+        await request(app).post('/created')
+            .expect(201)
+            .expect('false')
 
-        const payload = await app.fetch(new Request('http://localhost/payload'))
-        expect(payload.headers.get('content-type')).toContain('application/json')
-        expect(await payload.json()).toEqual({ ok: true })
+        await request(app).get('/payload')
+            .expect('content-type', 'application/json; charset=utf-8')
+            .expect({ ok: true })
 
-        const fetchResponse = await app.fetch(new Request('http://localhost/fetch-response'))
-        expect(fetchResponse.status).toBe(202)
-        expect(fetchResponse.headers.get('content-type')).toContain('text/custom')
-        expect(await fetchResponse.text()).toBe('accepted')
+        await request(app).put('/api/users/123')
+            .set('content-type', 'application/json')
+            .send({ name: 'Ada' })
+            .expect(202)
+            .expect('x-user-id', '123')
+            .expect('content-type', 'application/json; charset=utf-8')
+            .expect({ id: '123', name: 'Ada', method: 'PUT' })
+
+        await request(app).get('/fetch-response')
+            .expect('content-type', 'text/custom')
+            .expect(202)
+            .expect('accepted')
     })
 
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', () => 'Hello')
         setupApp()
 
-        const res = await app.fetch(new Request('http://localhost/peeps/123', {
-            method: 'OPTIONS',
-        }))
-
-        expect(res.status).toBe(204)
-        expect(res.headers.get('Allow')).toBe('GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+        await request(app).options('/peeps/123')
+            .expect(204)
+            .expect('Allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
     })
 
     it('should always expose req.getBody in handlers', async () => {
@@ -95,26 +110,23 @@ describe('Hono App (JS)', () => {
 
         setupApp()
 
-        const getRes = await app.fetch(new Request('http://localhost/body-check'))
-        expect(getRes.status).toBe(200)
-        expect(await getRes.json()).toEqual({
-            hasGetBody: true,
-            body: {},
-        })
+        await request(app).get('/body-check')
+            .expect(200)
+            .expect({
+                hasGetBody: true,
+                body: {},
+            })
 
         const payload = { foo: 'bar' }
-        const postRes = await app.fetch(new Request('http://localhost/body-check', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        }))
-        expect(postRes.status).toBe(200)
-        expect(await postRes.json()).toEqual({
-            hasGetBody: true,
-            body: payload,
-        })
+
+        await request(app).post('/body-check')
+            .set('content-type', 'application/json')
+            .send(payload)
+            .expect(200)
+            .expect({
+                hasGetBody: true,
+                body: payload,
+            })
     })
 
     it('supports POST _method override for PUT routes', async () => {
@@ -127,19 +139,14 @@ describe('Hono App (JS)', () => {
 
         setupApp()
 
-        const res = await app.fetch(new Request('http://localhost/api/users/123', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            },
-            body: JSON.stringify({ _method: 'PUT' }),
-        }))
-
-        expect(res.status).toBe(200)
-        expect(await res.json()).toEqual({
-            method: 'POST',
-            id: '123',
-        })
+        await request(app).post('/api/users/123')
+            .set('content-type', 'application/json')
+            .send({ _method: 'PUT' })
+            .expect(200)
+            .expect({
+                method: 'POST',
+                id: '123',
+            })
     })
 
     it('returns 404 for POST to PUT route when _method override is missing', async () => {
@@ -147,14 +154,8 @@ describe('Hono App (JS)', () => {
 
         setupApp()
 
-        const res = await app.fetch(new Request('http://localhost/api/users/123', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-            },
-            body: JSON.stringify({}),
-        }))
-
-        expect(res.status).toBe(404)
+        await request(app).post('/api/users/123')
+            .set('content-type', 'application/json')
+            .expect(404)
     })
 })

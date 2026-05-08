@@ -33,6 +33,10 @@ export class Router extends CoreRouter {
 
         reply.code(meta.status)
 
+        meta.headers?.forEach((headerValue, key) => {
+            reply.header(key, headerValue)
+        })
+
         if (isFetchResponse(meta.body)) {
             meta.body.headers.forEach((headerValue, key) => {
                 reply.header(key, headerValue)
@@ -249,22 +253,26 @@ export class Router extends CoreRouter {
                             return reply.code(404).send()
                         }
 
-                        const ctx: HttpContext = {
+                        const ctx = {
                             req: req as HttpContext['req'],
                             reply,
-                        }
+                        } as HttpContext
 
                         const inst = instance ?? route
                         Router.bindRequestToInstance(ctx, inst, route, {
                             body: ctx.req.getBody(),
                             query: (ctx.req.query as Record<string, any>) ?? {},
                             params: (ctx.req.params as Record<string, any>) ?? {},
+                            method,
                         })
 
-                        const result = handlerFunction(ctx, inst.clearRequest)
+                        const result = handlerFunction(ctx, ctx.clearRequest)
                         const resolved = await Promise.resolve(result)
+                        const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                            ? ctx.clearResponse
+                            : resolved
 
-                        return Router.sendReturnValue(req, reply, resolved, method, route.path)
+                        return Router.sendReturnValue(req, reply, outgoing, method, route.path)
                     },
                 })
 
@@ -280,22 +288,26 @@ export class Router extends CoreRouter {
                                 return reply.code(404).send()
                             }
 
-                            const ctx: HttpContext = {
+                            const ctx = {
                                 req: req as HttpContext['req'],
                                 reply,
-                            }
+                            } as HttpContext
 
                             const inst = instance ?? route
                             Router.bindRequestToInstance(ctx, inst, route, {
                                 body: ctx.req.getBody(),
                                 query: (ctx.req.query as Record<string, any>) ?? {},
                                 params: (ctx.req.params as Record<string, any>) ?? {},
+                                method,
                             })
 
-                            const result = handlerFunction(ctx, inst.clearRequest)
+                            const result = handlerFunction(ctx, ctx.clearRequest)
                             const resolved = await Promise.resolve(result)
+                            const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                                ? ctx.clearResponse
+                                : resolved
 
-                            return Router.sendReturnValue(req, reply, resolved, method, route.path)
+                            return Router.sendReturnValue(req, reply, outgoing, method, route.path)
                         },
                     })
                 }

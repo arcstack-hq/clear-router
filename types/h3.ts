@@ -1,6 +1,7 @@
 import type { EventHandlerRequest, H3, H3Event, TypedServerRequest } from 'h3'
 
-import { ClearRequest } from 'src/ClearRequest'
+import { Request as CoreRequest } from 'src/core/Request'
+import { Response as CoreResponse } from 'src/core/Response'
 import type { ControllerHandler } from './basic'
 
 export type H3App = Omit<H3, 'fetch'> & {
@@ -20,6 +21,8 @@ type RequestlessH3Event = Omit<H3Event, 'req'>
  */
 export interface HttpContext extends RequestlessH3Event {
     req: HttpRequest
+    clearRequest: CoreRequest
+    clearResponse: CoreResponse
 }
 
 /**
@@ -33,7 +36,7 @@ export type RouteHandler = (
     /**
      * ClearRequest instance
      */
-    req: ClearRequest
+    req: CoreRequest
 ) => any | Promise<any>;
 
 /**

@@ -42,6 +42,16 @@ describe('Koa App (JS)', () => {
         Router.get('/api/text', () => '<h1>Hello</h1>')
         Router.post('/created', () => true)
         Router.get('/payload', () => ({ ok: true }))
+        Router.put('/api/users/:id', ({ clearRequest, clearResponse }) => {
+            clearResponse
+                .status(202)
+                .setHeader('x-user-id', clearRequest.param('id'))
+                .json({
+                    id: clearRequest.param('id'),
+                    name: clearRequest.input('name'),
+                    method: clearRequest.method,
+                })
+        })
         Router.get('/fetch-response', () => new Response('accepted', {
             status: 202,
             headers: { 'content-type': 'text/custom' },
@@ -66,6 +76,12 @@ describe('Koa App (JS)', () => {
         const payload = await request(app.callback()).get('/payload')
         expect(payload.header['content-type']).toContain('application/json')
         expect(payload.body).toEqual({ ok: true })
+
+        const unified = await request(app.callback()).put('/api/users/123').send({ name: 'Ada' })
+        expect(unified.statusCode).toBe(202)
+        expect(unified.header['content-type']).toContain('application/json')
+        expect(unified.header['x-user-id']).toBe('123')
+        expect(unified.body).toEqual({ id: '123', name: 'Ada', method: 'PUT' })
 
         const fetchResponse = await request(app.callback()).get('/fetch-response')
         expect(fetchResponse.statusCode).toBe(202)

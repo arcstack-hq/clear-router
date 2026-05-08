@@ -1,6 +1,7 @@
 import type { Context, HonoRequest, MiddlewareHandler } from 'hono'
 
-import { ClearRequest } from 'src/ClearRequest'
+import { Request as CoreRequest } from 'src/core/Request'
+import { Response as CoreResponse } from 'src/core/Response'
 import type { ControllerHandler } from './basic'
 
 export type RequestWithGetBody = HonoRequest & {
@@ -9,11 +10,13 @@ export type RequestWithGetBody = HonoRequest & {
 
 export type HttpContext = Context & {
     req: RequestWithGetBody
+    clearRequest: CoreRequest
+    clearResponse: CoreResponse
 }
 
 export type RouteHandler = (
     ctx: HttpContext,
-    req: ClearRequest
+    req: CoreRequest
 ) => any | Promise<any>
 
 export type Handler = RouteHandler | ControllerHandler

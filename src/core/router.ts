@@ -1,8 +1,9 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
 
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { ClearRequest } from 'src/ClearRequest'
 import { Controller } from 'src/Controller'
+import { Request as CoreRequest } from './Request'
+import { Response as CoreResponse } from './Response'
 import { Route } from 'src/Route'
 
 /**
@@ -601,10 +602,10 @@ export abstract class CoreRouter {
     }
 
     protected static resolveHandler (route: Route<any, any, any>): {
-        handlerFunction: ((ctx: any, req: ClearRequest) => any | Promise<any>) | null
+        handlerFunction: ((ctx: any, req: CoreRequest) => any | Promise<any>) | null
         instance: Controller<any> | null
     } {
-        let handlerFunction: ((ctx: any, req: ClearRequest) => any | Promise<any>) | null
+        let handlerFunction: ((ctx: any, req: CoreRequest) => any | Promise<any>) | null
         let instance: Controller<any> | null = null
 
         if (typeof route.handler === 'function') {
@@ -648,20 +649,42 @@ export abstract class CoreRouter {
             body: Record<string, any>
             query: Record<string, any>
             params: Record<string, any>
+            method?: HttpMethod | string
         }
     ): void {
+        const clearRequest = ctx.clearRequest instanceof CoreRequest
+            ? ctx.clearRequest
+            : new CoreRequest({
+                ctx,
+                route,
+                body: payload.body,
+                query: payload.query,
+                params: payload.params,
+                method: String(payload.method || ctx.req?.method || ctx.method || 'GET').toUpperCase(),
+                path: String(ctx.path || ctx.req?.path || ctx.req?.url || route.path),
+                url: String(ctx.url || ctx.req?.url || ctx.req?.originalUrl || route.path),
+                headers: ctx.req?.headers || ctx.headers || {},
+                original: ctx.req || ctx.request || ctx,
+            })
+
+        clearRequest.ctx = ctx
+        clearRequest.route = route
+        clearRequest.body = payload.body
+        clearRequest.query = payload.query
+        clearRequest.params = payload.params
+
+        ctx.clearRequest = clearRequest
+
+        if (!(ctx.clearResponse instanceof CoreResponse)) {
+            ctx.clearResponse = new CoreResponse()
+        }
+
         if (!instance) return
 
         instance.ctx = ctx
         instance.body = payload.body
         instance.query = payload.query
         instance.params = payload.params
-        instance.clearRequest = new ClearRequest({
-            ctx,
-            route,
-            body: instance.body,
-            query: instance.query,
-            params: instance.params,
-        })
+        instance.clearRequest = clearRequest
     }
 }

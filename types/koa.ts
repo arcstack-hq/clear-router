@@ -1,7 +1,8 @@
 import type Koa from 'koa'
 import type Router from '@koa/router'
 
-import { ClearRequest } from 'src/ClearRequest'
+import { Request as CoreRequest } from 'src/core/Request'
+import { Response as CoreResponse } from 'src/core/Response'
 import type { ControllerHandler } from './basic'
 
 export interface RequestWithGetBody extends Koa.Request {
@@ -11,13 +12,15 @@ export interface RequestWithGetBody extends Koa.Request {
 
 export interface HttpContext extends Koa.Context {
     request: RequestWithGetBody
+    clearRequest: CoreRequest
+    clearResponse: CoreResponse
     params: Record<string, any>
     query: Record<string, any>
 }
 
 export type RouteHandler = (
     ctx: HttpContext,
-    req: ClearRequest
+    req: CoreRequest
 ) => any | Promise<any>
 
 export type Handler = RouteHandler | ControllerHandler

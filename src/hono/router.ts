@@ -26,15 +26,23 @@ export class Router extends CoreRouter {
         if (!meta) return undefined
         if (meta.isNativeResponse) return meta.body
 
-        if (meta.isEmpty) return ctx.body(null, meta.status as any)
+        const headers = meta.headers
+            ? {} as Record<string, string>
+            : meta.contentType
+                ? { 'Content-Type': meta.contentType }
+                : undefined
+
+        meta.headers?.forEach((headerValue, key) => {
+            if (headers) headers[key] = headerValue
+        })
+
+        if (meta.isEmpty) return ctx.body(null, meta.status as any, headers)
 
         if (meta.contentType?.startsWith('application/json')) {
-            return ctx.json(meta.body, meta.status as any)
+            return ctx.body(JSON.stringify(meta.body), meta.status as any, headers)
         }
 
-        return ctx.body(meta.body, meta.status as any, meta.contentType
-            ? { 'Content-Type': meta.contentType }
-            : undefined)
+        return ctx.body(meta.body, meta.status as any, headers)
     }
 
     private static getParams (ctx: HttpContext): Record<string, any> {
@@ -277,12 +285,16 @@ export class Router extends CoreRouter {
                             body: reqBody,
                             query: ctx.req.query() as Record<string, any>,
                             params: Router.getParams(ctx),
+                            method,
                         })
 
-                        const result = handlerFunction(ctx, inst.clearRequest)
+                        const result = handlerFunction(ctx, ctx.clearRequest)
                         const resolved = await Promise.resolve(result)
+                        const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                            ? ctx.clearResponse
+                            : resolved
 
-                        return Router.toResponse(ctx, resolved, method, route.path)
+                        return Router.toResponse(ctx, outgoing, method, route.path)
                     }
                 )
 
@@ -304,12 +316,16 @@ export class Router extends CoreRouter {
                                 body: reqBody,
                                 query: ctx.req.query() as Record<string, any>,
                                 params: Router.getParams(ctx),
+                                method,
                             })
 
-                            const result = handlerFunction(ctx, inst.clearRequest)
+                            const result = handlerFunction(ctx, ctx.clearRequest)
                             const resolved = await Promise.resolve(result)
+                            const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                                ? ctx.clearResponse
+                                : resolved
 
-                            return Router.toResponse(ctx, resolved, method, route.path)
+                            return Router.toResponse(ctx, outgoing, method, route.path)
                         }
                     )
                 }
