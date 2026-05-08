@@ -37,4 +37,13 @@ export interface RouterConfig {
         /** Keys in the request headers to check for method override */
         headerKeys?: string[] | string
     }
+    /**
+     * Optional method binding / container resolution support. Disabled by default.
+     */
+    container?: {
+        /** Whether decorated handler parameter binding is enabled */
+        enabled?: boolean
+        /** Whether unknown constructor tokens should be instantiated automatically */
+        autoDiscover?: boolean
+    }
 }

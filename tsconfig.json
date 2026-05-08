@@ -9,6 +9,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "declaration": true,
+    "experimentalDecorators": true,
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./",
@@ -18,6 +19,8 @@
     "paths": {
       "clear-router/core": ["src/core/index.ts"],
       "clear-router/core/*": ["src/core/*"],
+      "clear-router/decorators": ["src/decorators/index.ts"],
+      "clear-router/decorators/*": ["src/decorators/*"],
       "clear-router/express": ["src/express/index.ts"],
       "clear-router/express/*": ["src/express/*"],
       "clear-router/fastify": ["src/fastify/index.ts"],

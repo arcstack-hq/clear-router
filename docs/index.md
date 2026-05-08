@@ -9,6 +9,7 @@ Laravel-style routing for Express, H3, Fastify, Hono, and Koa with support for C
 - [Using with H3](./guide/h3)
 - [Using with Hono](./guide/hono)
 - [Using with Koa](./guide/koa)
+- [Container Binding](./guide/container-binding)
 - [Adapter Authoring Guide](./guide/adapters)
 - [API Reference](./api)
 - [Testing Guide](./testing)

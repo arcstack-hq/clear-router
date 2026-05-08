@@ -40,6 +40,14 @@
             "import": "./dist/core/index.mjs",
             "require": "./dist/core/index.cjs"
         },
+        "./decorators": {
+            "import": "./dist/decorators/index.mjs",
+            "require": "./dist/decorators/index.cjs"
+        },
+        "./decorators/setup": {
+            "import": "./dist/decorators/setup.mjs",
+            "require": "./dist/decorators/setup.cjs"
+        },
         "./express": {
             "import": "./dist/express/index.mjs",
             "require": "./dist/express/index.cjs"
@@ -94,7 +102,8 @@
         "fastify": "^5.0.0",
         "h3": "^2.0.1-rc.16",
         "hono": "^4.0.0",
-        "koa": "^3.0.0"
+        "koa": "^3.0.0",
+        "reflect-metadata": "^0.2.2"
     },
     "peerDependenciesMeta": {
         "@koa/router": {
@@ -114,6 +123,9 @@
         },
         "koa": {
             "optional": true
+        },
+        "reflect-metadata": {
+            "optional": true
         }
     },
     "devDependencies": {
@@ -130,6 +142,7 @@
         "hono": "^4.12.8",
         "koa": "^3.2.0",
         "parasito": "^0.1.6",
+        "reflect-metadata": "^0.2.2",
         "tsdown": "^0.20.3",
         "tsx": "^4.21.0",
         "typescript": "^5.3.3",

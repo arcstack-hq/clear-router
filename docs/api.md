@@ -289,6 +289,8 @@ Configure HTTP method override behavior for POST requests.
 - `options.methodOverride.enabled` (boolean): Enable/disable method override support
 - `options.methodOverride.bodyKeys` (string | string[]): Body key(s) to inspect for method override
 - `options.methodOverride.headerKeys` (string | string[]): Header key(s) to inspect for method override
+- `options.container.enabled` (boolean): Enable/disable decorated handler argument binding
+- `options.container.autoDiscover` (boolean): Instantiate unknown class tokens when no explicit container binding exists
 
 When enabled, a POST request can target `put`, `patch`, `delete`, or `post` route handlers based on configured override keys.
 
@@ -314,6 +316,23 @@ Router.put('/users/:id', handler);
 ```javascript
 Router.configure({ methodOverride: { enabled: false } });
 ```
+
+```javascript
+Router.configure({
+  container: {
+    enabled: true,
+    autoDiscover: true,
+  },
+});
+```
+
+See [Container Binding](./guide/container-binding) for decorator and container usage, including TS 5.2+ standard decorators.
+
+```javascript
+import 'clear-router/decorators/setup';
+```
+
+The setup entry imports `reflect-metadata` and enables container binding defaults for all adapters.
 
 ### middleware(middlewares, callback)
 

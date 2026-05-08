@@ -266,11 +266,19 @@ export class Router extends CoreRouter {
         for (const route of this.routes) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
+            let bindingTarget: object | undefined
+            let bindingMethod: PropertyKey | undefined
+            let bindingHandler: object | undefined
+            let bindingMetadata: object | undefined
 
             try {
                 const resolved = this.resolveHandler(route)
                 handlerFunction = resolved.handlerFunction as RouteHandler
                 instance = resolved.instance
+                bindingTarget = resolved.bindingTarget
+                bindingMethod = resolved.bindingMethod
+                bindingHandler = resolved.bindingHandler
+                bindingMetadata = resolved.bindingMetadata
             } catch (error: any) {
                 console.error(`[ROUTES] Error setting up route ${route.path}:`, error.message)
                 throw error
@@ -306,7 +314,7 @@ export class Router extends CoreRouter {
                             method,
                         })
 
-                        const result = handlerFunction(ctx, ctx.clearRequest)
+                        const result = await Router.callHandler(handlerFunction, ctx, bindingTarget, bindingMethod, bindingHandler, bindingMetadata)
                         const resolved = await Promise.resolve(result)
                         const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
                             ? ctx.clearResponse
@@ -337,7 +345,7 @@ export class Router extends CoreRouter {
                                 method,
                             })
 
-                            const result = handlerFunction(ctx, ctx.clearRequest)
+                            const result = await Router.callHandler(handlerFunction, ctx, bindingTarget, bindingMethod, bindingHandler, bindingMetadata)
                             const resolved = await Promise.resolve(result)
                             const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
                                 ? ctx.clearResponse

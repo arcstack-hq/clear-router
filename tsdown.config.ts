@@ -19,6 +19,8 @@ export default defineConfig([
     tsconfig: 'tsconfig.json',
     entry: [
       'src/core/index.ts',
+      'src/decorators/index.ts',
+      'src/decorators/setup.ts',
       'src/express/index.ts',
       'src/fastify/index.ts',
       'src/h3/index.ts',

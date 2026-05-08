@@ -5,6 +5,7 @@ import { Controller } from 'src/Controller'
 import { Request as CoreRequest } from './Request'
 import { Response as CoreResponse } from './Response'
 import { Route } from 'src/Route'
+import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata } from './bindings'
 
 /**
  * @class clear-router CoreRouter
@@ -17,6 +18,54 @@ export abstract class CoreRouter {
 
     private static readonly stateStoreKey = Symbol.for('clear-router:router-state')
     private static readonly stateBoundKey = Symbol.for('clear-router:router-state-bound')
+    private static readonly defaultConfigKey = Symbol.for('clear-router:default-config')
+
+    protected static createBaseConfig (): RouterConfig {
+        return {
+            methodOverride: {
+                enabled: true,
+                bodyKeys: ['_method'],
+                headerKeys: ['x-http-method'],
+            },
+            container: {
+                enabled: false,
+                autoDiscover: false,
+            },
+        }
+    }
+
+    protected static mergeConfig (target: RouterConfig, source?: RouterConfig): RouterConfig {
+        if (!source) return target
+
+        if (source.methodOverride) {
+            target.methodOverride = {
+                ...(target.methodOverride || {}),
+                ...source.methodOverride,
+            }
+        }
+
+        if (source.container) {
+            target.container = {
+                ...(target.container || {}),
+                ...source.container,
+            }
+        }
+
+        return target
+    }
+
+    protected static getDefaultConfig (): RouterConfig {
+        const g = globalThis as Record<PropertyKey, any>
+
+        if (!g[this.defaultConfigKey]) {
+            g[this.defaultConfigKey] = this.createBaseConfig()
+        }
+
+        return {
+            methodOverride: { ...g[this.defaultConfigKey].methodOverride },
+            container: { ...g[this.defaultConfigKey].container },
+        }
+    }
 
     protected static resolveStateNamespace (this: any): string {
         return String(this.routerStateNamespace || this.name || 'clear-router:core')
@@ -34,13 +83,7 @@ export abstract class CoreRouter {
 
     protected static createDefaultState () {
         return {
-            config: {
-                methodOverride: {
-                    enabled: true,
-                    bodyKeys: ['_method'],
-                    headerKeys: ['x-http-method'],
-                },
-            },
+            config: this.getDefaultConfig(),
             groupContext: new AsyncLocalStorage<{
                 prefix: string
                 groupMiddlewares: any[]
@@ -156,6 +199,21 @@ export abstract class CoreRouter {
             bodyKeys: ['_method'],
             headerKeys: ['x-http-method'],
         },
+        container: {
+            enabled: false,
+            autoDiscover: false,
+        },
+    }
+
+    static configureDefaults (this: any, options?: RouterConfig): void {
+        const g = globalThis as Record<PropertyKey, any>
+        const defaults = this.mergeConfig(g[this.defaultConfigKey] || this.createBaseConfig(), options)
+        g[this.defaultConfigKey] = defaults
+
+        const store = this.getStateStore()
+        for (const state of Object.values(store) as Array<{ config?: RouterConfig }>) {
+            state.config = this.mergeConfig(state.config || this.createBaseConfig(), options)
+        }
     }
 
     protected static groupContext = new AsyncLocalStorage<{
@@ -240,11 +298,16 @@ export abstract class CoreRouter {
     static configure (this: any, options?: RouterConfig): void {
         this.ensureState()
 
-        if (!this.config.methodOverride) {
-            this.config.methodOverride = {
-                enabled: true,
-                bodyKeys: ['_method'],
-                headerKeys: ['x-http-method'],
+        this.config = this.mergeConfig(this.getDefaultConfig(), this.config)
+
+        const container = options?.container
+        if (container) {
+            if (typeof container.enabled === 'boolean') {
+                this.config.container.enabled = container.enabled
+            }
+
+            if (typeof container.autoDiscover === 'boolean') {
+                this.config.container.autoDiscover = container.autoDiscover
             }
         }
 
@@ -604,12 +667,22 @@ export abstract class CoreRouter {
     protected static resolveHandler (route: Route<any, any, any>): {
         handlerFunction: ((ctx: any, req: CoreRequest) => any | Promise<any>) | null
         instance: Controller<any> | null
+        bindingTarget?: object
+        bindingMethod?: PropertyKey
+        bindingHandler?: object
+        bindingMetadata?: object
     } {
         let handlerFunction: ((ctx: any, req: CoreRequest) => any | Promise<any>) | null
         let instance: Controller<any> | null = null
+        let bindingTarget: object | undefined
+        let bindingMethod: PropertyKey | undefined
+        let bindingHandler: object | undefined
+        let bindingMetadata: object | undefined
 
         if (typeof route.handler === 'function') {
             handlerFunction = route.handler.bind(route)
+            bindingTarget = route.handler
+            bindingHandler = route.handler
         } else if (
             Array.isArray(route.handler) &&
             route.handler.length === 2
@@ -622,10 +695,18 @@ export abstract class CoreRouter {
             ) {
                 instance = ControllerType
                 handlerFunction = ControllerType[method].bind(ControllerType)
+                bindingTarget = ControllerType
+                bindingMethod = method
+                bindingHandler = ControllerType[method]
+                bindingMetadata = ControllerType[(Symbol as any).metadata]
             } else if (typeof ControllerType === 'function') {
                 instance = new ControllerType()
                 if (typeof instance![method] === 'function') {
                     handlerFunction = instance![method].bind(instance)
+                    bindingTarget = ControllerType.prototype
+                    bindingMethod = method
+                    bindingHandler = instance![method]
+                    bindingMetadata = ControllerType[(Symbol as any).metadata]
                 } else {
                     throw new Error(
                         `Method "${method}" not found in controller instance "${ControllerType.name}"`
@@ -638,7 +719,47 @@ export abstract class CoreRouter {
             throw new Error(`Invalid handler format for route: ${route.path}`)
         }
 
-        return { handlerFunction, instance }
+        return { handlerFunction, instance, bindingTarget, bindingMethod, bindingHandler, bindingMetadata }
+    }
+
+    protected static async callHandler (
+        this: any,
+        handlerFunction: (ctx: any, req: CoreRequest) => any | Promise<any>,
+        ctx: any,
+        bindingTarget?: object,
+        bindingMethod?: PropertyKey,
+        bindingHandler?: object,
+        bindingMetadata?: object
+    ): Promise<any> {
+        if (!this.config.container?.enabled) {
+            return handlerFunction(ctx, ctx.clearRequest)
+        }
+
+        const metadata = getBindingMetadataFromTargets([
+            { target: bindingTarget, propertyKey: bindingMethod },
+            { target: bindingHandler },
+        ]) ?? getStandardMetadata(bindingMetadata, bindingMethod)
+        if (!metadata) {
+            return handlerFunction(ctx, ctx.clearRequest)
+        }
+
+        const designTokens = bindingTarget ? getDesignParamTypes(bindingTarget, bindingMethod) : []
+        const tokens = metadata.tokens?.length ? metadata.tokens : designTokens
+        if (!tokens.length) {
+            return handlerFunction(ctx, ctx.clearRequest)
+        }
+
+        const args = []
+        for (const token of tokens) {
+            const resolved = await Container.resolve(token, ctx, Boolean(this.config.container?.autoDiscover))
+            if (typeof resolved === 'undefined') {
+                return handlerFunction(ctx, ctx.clearRequest)
+            }
+
+            args.push(resolved)
+        }
+
+        return (handlerFunction as any)(...args)
     }
 
     protected static bindRequestToInstance (

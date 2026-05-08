@@ -3,6 +3,9 @@ import '../example/express/web'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
 
+import { Bind, Container } from '../src/decorators'
+import { Request as ClearRouterRequest } from '../src/core/Request'
+import { Response as ClearRouterResponse } from '../src/core/Response'
 import Router from '../src/express/router'
 import request from 'parasito'
 
@@ -17,6 +20,13 @@ describe('Express App (JS)', () => {
         Router.globalMiddlewares = []
         Router.routesByPathMethod = {}
         Router.routesByMethod = {}
+        Router.configure({
+            container: {
+                enabled: false,
+                autoDiscover: false,
+            },
+        })
+        Container.clear()
 
         app = express()
         router = ExRouter()
@@ -92,6 +102,168 @@ describe('Express App (JS)', () => {
             .expect(202)
             .expect('content-type', 'text/custom')
             .expect('accepted')
+    })
+
+    it('supports opt-in decorated container binding', async () => {
+        class AuditService {
+            name = 'discovered'
+        }
+
+        class BoundUsersController {
+            @Bind(ClearRouterRequest, ClearRouterResponse, AuditService)
+            update (request: ClearRouterRequest, response: ClearRouterResponse, audit: AuditService) {
+                return response.status(202).json({
+                    id: request.param('id'),
+                    name: request.input('name'),
+                    audit: audit.name,
+                })
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: true,
+                autoDiscover: true,
+            },
+        })
+        Router.put('/api/bound/:id', [BoundUsersController, 'update'])
+
+        await setupApp()
+
+        await request(app)
+            .put('/api/bound/123')
+            .send({ name: 'Ada' })
+            .expect(202)
+            .expect({ id: '123', name: 'Ada', audit: 'discovered' })
+    })
+
+    it('supports TS 5.2 standard decorator metadata without reflect-metadata', async () => {
+        class AuditService {
+            name = 'standard'
+        }
+
+        class StandardUsersController {
+            update (request: ClearRouterRequest, audit: AuditService) {
+                return {
+                    id: request.param('id'),
+                    audit: audit.name,
+                }
+            }
+        }
+
+        const metadata = {}
+        ;(Bind(ClearRouterRequest, AuditService) as any)(
+            StandardUsersController.prototype.update,
+            {
+                kind: 'method',
+                name: 'update',
+                static: false,
+                private: false,
+                access: {
+                    has: () => true,
+                    get: object => (object as StandardUsersController).update,
+                },
+                metadata,
+                addInitializer: () => undefined,
+            } as ClassMethodDecoratorContext<StandardUsersController>
+        )
+        ;(StandardUsersController as any)[(Symbol as any).metadata] = metadata
+
+        Router.configure({
+            container: {
+                enabled: true,
+                autoDiscover: true,
+            },
+        })
+        Router.get('/api/standard/:id', [StandardUsersController, 'update'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/standard/555')
+            .expect(200)
+            .expect({ id: '555', audit: 'standard' })
+    })
+
+    it('enables binding through the decorators setup entry', async () => {
+        class SetupController {
+            @Bind(ClearRouterRequest)
+            show (request: ClearRouterRequest) {
+                return { id: request.param('id') }
+            }
+        }
+
+        await import('../src/decorators/setup')
+        Router.get('/api/setup/:id', [SetupController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/setup/999')
+            .expect(200)
+            .expect({ id: '999' })
+    })
+
+    it('uses explicit container bindings when available', async () => {
+        class AuditService {
+            name = 'fallback'
+        }
+
+        class BoundAuditService extends AuditService {
+            name = 'bound'
+        }
+
+        class BoundUsersController {
+            @Bind(ClearRouterRequest, AuditService)
+            show (request: ClearRouterRequest, audit: AuditService) {
+                return {
+                    id: request.param('id'),
+                    audit: audit.name,
+                }
+            }
+        }
+
+        Container.bind(AuditService, () => new BoundAuditService())
+        Router.configure({
+            container: {
+                enabled: true,
+                autoDiscover: true,
+            },
+        })
+        Router.get('/api/bound/:id', [BoundUsersController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/bound/321')
+            .expect(200)
+            .expect({ id: '321', audit: 'bound' })
+    })
+
+    it('falls back to the default handler signature when binding is disabled', async () => {
+        class BoundUsersController {
+            @Bind(ClearRouterRequest)
+            show (ctx: any, request: ClearRouterRequest) {
+                return {
+                    hasContext: Boolean(ctx.req),
+                    id: request.param('id'),
+                }
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: false,
+            },
+        })
+        Router.get('/api/default/:id', [BoundUsersController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/default/777')
+            .expect(200)
+            .expect({ hasContext: true, id: '777' })
     })
 
     it('should create options route for non-OPTIONS method routes', async () => {
