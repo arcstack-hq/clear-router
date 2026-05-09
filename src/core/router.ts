@@ -132,6 +132,7 @@ export abstract class CoreRouter {
             routes: [] as Array<Route<any, any, any>>,
             routesByPathMethod: {} as Record<string, Route<any, any, any>>,
             routesByMethod: {} as { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> },
+            routesByName: {} as Record<string, Route<any, any, any>>,
             prefix: '',
             groupMiddlewares: [] as any[],
             globalMiddlewares: [] as any[],
@@ -156,6 +157,7 @@ export abstract class CoreRouter {
             'routes',
             'routesByPathMethod',
             'routesByMethod',
+            'routesByName',
             'prefix',
             'groupMiddlewares',
             'globalMiddlewares',
@@ -341,6 +343,7 @@ export abstract class CoreRouter {
     static routes: Array<Route<any, any, any>> = []
     static routesByPathMethod: Record<string, Route<any, any, any>> = {}
     static routesByMethod: { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> } = {}
+    static routesByName: Record<string, Route<any, any, any>> = {}
 
     static prefix = ''
     static groupMiddlewares: any[] = []
@@ -432,6 +435,10 @@ export abstract class CoreRouter {
             this.routesByMethod = {}
         }
 
+        if (!this.routesByName || typeof this.routesByName !== 'object') {
+            this.routesByName = {}
+        }
+
         if (typeof this.prefix !== 'string') {
             this.prefix = ''
         }
@@ -457,6 +464,68 @@ export abstract class CoreRouter {
             .split('/')
             .filter(Boolean)
             .join('/')
+    }
+
+    protected static parseRouteParameters (path: string): Array<{
+        name: string
+        field?: string
+        optional: boolean
+    }> {
+        const parameters: Array<{ name: string; field?: string; optional: boolean }> = []
+        const seen = new Set<string>()
+        const pattern = /\{([^{}]+)\}/g
+        let match: RegExpExecArray | null
+
+        while ((match = pattern.exec(path)) !== null) {
+            const raw = match[1].trim()
+            const optional = raw.endsWith('?')
+            const withoutOptional = optional ? raw.slice(0, -1) : raw
+            const [name, field] = withoutOptional.split(':', 2).map(part => part.trim())
+
+            if (!name || seen.has(name)) continue
+
+            seen.add(name)
+            parameters.push({
+                name,
+                field: field || undefined,
+                optional,
+            })
+        }
+
+        return parameters
+    }
+
+    protected static expandRoutePath (path: string): string[] {
+        let paths = ['']
+        const segments = this.normalizePath(path).split('/').filter(Boolean)
+
+        for (const segment of segments) {
+            const match = segment.match(/^\{([^{}]+)\}$/)
+
+            if (!match) {
+                paths = paths.map(current => `${current}/${segment}`)
+                continue
+            }
+
+            const raw = match[1].trim()
+            const optional = raw.endsWith('?')
+            const withoutOptional = optional ? raw.slice(0, -1) : raw
+            const [rawName] = withoutOptional.split(':', 2)
+            const name = rawName.trim()
+
+            if (!name) continue
+
+            const parameterSegment = `/:${name}`
+            paths = optional
+                ? paths.flatMap(current => [current, `${current}${parameterSegment}`])
+                : paths.map(current => `${current}${parameterSegment}`)
+        }
+
+        return paths.map(path => path || '/')
+    }
+
+    protected static routeRegistrationPaths (path: string): string[] {
+        return this.expandRoutePath(path)
     }
 
     /**
@@ -573,7 +642,7 @@ export abstract class CoreRouter {
         path: string,
         handler: any,
         middlewares?: any[] | any
-    ): void {
+    ): Route<any, any, any> {
         this.ensureState()
 
         const context = this.groupContext.getStore()
@@ -586,12 +655,25 @@ export abstract class CoreRouter {
             : undefined
 
         const fullPath = this.normalizePath(`${activePrefix}/${path}`)
+        const registrationPaths = this.routeRegistrationPaths(fullPath)
+        const parameters = this.parseRouteParameters(fullPath)
 
         const route = new Route(
             methods.includes('options') ? methods : methods.concat('options'),
             fullPath,
             handler,
-            [...this.globalMiddlewares, ...activeGroupMiddlewares, ...(middlewares || [])]
+            [...this.globalMiddlewares, ...activeGroupMiddlewares, ...(middlewares || [])],
+            {
+                registrationPaths,
+                parameters,
+                onName: (name, route, previousName) => {
+                    if (previousName && this.routesByName[previousName] === route) {
+                        delete this.routesByName[previousName]
+                    }
+
+                    this.routesByName[name] = route
+                },
+            }
         )
 
         if (
@@ -610,6 +692,8 @@ export abstract class CoreRouter {
             }
             this.routesByMethod[method].push(route)
         }
+
+        return route
     }
 
     /**
@@ -670,8 +754,8 @@ export abstract class CoreRouter {
      * @param handler       The handler function for the GET route.
      * @param middlewares   Optional middlewares to apply to the GET route.
      */
-    static get (path: string, handler: any, middlewares?: any[] | any): void {
-        this.add('get', path, handler, middlewares)
+    static get (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+        return this.add('get', path, handler, middlewares)
     }
 
     /**
@@ -682,8 +766,8 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static post (path: string, handler: any, middlewares?: any[] | any): void {
-        this.add('post', path, handler, middlewares)
+    static post (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+        return this.add('post', path, handler, middlewares)
     }
 
     /**
@@ -694,8 +778,8 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static put (path: string, handler: any, middlewares?: any[] | any): void {
-        this.add('put', path, handler, middlewares)
+    static put (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+        return this.add('put', path, handler, middlewares)
     }
 
     /**
@@ -706,8 +790,8 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static delete (path: string, handler: any, middlewares?: any[] | any): void {
-        this.add('delete', path, handler, middlewares)
+    static delete (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+        return this.add('delete', path, handler, middlewares)
     }
 
     /**
@@ -718,8 +802,8 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static patch (path: string, handler: any, middlewares?: any[] | any): void {
-        this.add('patch', path, handler, middlewares)
+    static patch (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+        return this.add('patch', path, handler, middlewares)
     }
 
     /**
@@ -730,8 +814,8 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static options (path: string, handler: any, middlewares?: any[] | any): void {
-        this.add('options', path, handler, middlewares)
+    static options (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+        return this.add('options', path, handler, middlewares)
     }
 
     /**
@@ -742,8 +826,8 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static head (path: string, handler: any, middlewares?: any[] | any): void {
-        this.add('head', path, handler, middlewares)
+    static head (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+        return this.add('head', path, handler, middlewares)
     }
 
     /**
@@ -814,7 +898,8 @@ export abstract class CoreRouter {
      * @param type  - 'method' to get routes organized by method
      */
     static allRoutes (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> }
-    static allRoutes (type?: 'method' | 'path'):
+    static allRoutes (type: 'name'): Record<string, Route<any, any, any>>
+    static allRoutes (type?: 'method' | 'path' | 'name'):
         Array<Route<any, any, any>> |
         Record<string, Route<any, any, any>> |
         Record<string, Array<Route<any, any, any>>> {
@@ -828,7 +913,21 @@ export abstract class CoreRouter {
             return this.routesByPathMethod
         }
 
+        if (type === 'name') {
+            return this.routesByName
+        }
+
         return this.routes.filter((e: Route<any, any, any>) => e.methods.length > 1 || e.methods[0] !== 'options')
+    }
+
+    static route (name: string): Route<any, any, any> | undefined {
+        this.ensureState()
+
+        return this.routesByName[name]
+    }
+
+    static url (name: string, params?: Record<string, any>): string | undefined {
+        return this.route(name)?.toPath(params)
     }
 
     protected static resolveHandler (route: Route<any, any, any>): {

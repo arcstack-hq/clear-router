@@ -111,8 +111,8 @@ export class Router extends CoreRouter {
         path: string,
         handler: Handler,
         middlewares?: Middleware[] | Middleware
-    ): void {
-        super.add(methods, path, handler, middlewares)
+    ): Route<HttpContext, Middleware, Handler> {
+        return super.add(methods, path, handler, middlewares)
     }
 
     /**
@@ -141,8 +141,8 @@ export class Router extends CoreRouter {
      * @param handler
      * @param middlewares
      */
-    static get (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
-        super.get(path, handler, middlewares)
+    static get (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+        return super.get(path, handler, middlewares)
     }
 
     /**
@@ -152,8 +152,8 @@ export class Router extends CoreRouter {
      * @param handler
      * @param middlewares
      */
-    static post (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
-        super.post(path, handler, middlewares)
+    static post (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+        return super.post(path, handler, middlewares)
     }
 
     /**
@@ -163,8 +163,8 @@ export class Router extends CoreRouter {
      * @param handler
      * @param middlewares
      */
-    static put (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
-        super.put(path, handler, middlewares)
+    static put (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+        return super.put(path, handler, middlewares)
     }
 
     /**
@@ -174,8 +174,8 @@ export class Router extends CoreRouter {
      * @param handler
      * @param middlewares
      */
-    static delete (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
-        super.delete(path, handler, middlewares)
+    static delete (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+        return super.delete(path, handler, middlewares)
     }
 
     /**
@@ -185,8 +185,8 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static patch (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
-        super.patch(path, handler, middlewares)
+    static patch (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+        return super.patch(path, handler, middlewares)
     }
 
     /**
@@ -196,8 +196,8 @@ export class Router extends CoreRouter {
      * @param handler
      * @param middlewares
      */
-    static options (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
-        super.options(path, handler, middlewares)
+    static options (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+        return super.options(path, handler, middlewares)
     }
 
     /**
@@ -208,8 +208,8 @@ export class Router extends CoreRouter {
      * @param handler
      * @param middlewares
      */
-    static head (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): void {
-        super.head(path, handler, middlewares)
+    static head (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+        return super.head(path, handler, middlewares)
     }
 
     /**
@@ -249,11 +249,16 @@ export class Router extends CoreRouter {
      * @param type  - 'method' to get routes organized by method 
      */
     static allRoutes (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<HttpContext, Middleware, Handler>> }
-    static allRoutes (type?: 'method' | 'path'):
+    static allRoutes (type: 'name'): Record<string, Route<HttpContext, Middleware, Handler>>
+    static allRoutes (type?: 'method' | 'path' | 'name'):
         Array<Route<HttpContext, Middleware, Handler>> |
         Record<string, Route<HttpContext, Middleware, Handler>> |
         Record<string, Array<Route<HttpContext, Middleware, Handler>>> {
         return super.allRoutes(type as any) as any
+    }
+
+    static route (name: string): Route<HttpContext, Middleware, Handler> | undefined {
+        return super.route(name)
     }
 
     /**
@@ -294,46 +299,16 @@ export class Router extends CoreRouter {
                     throw new Error(`Invalid HTTP method: ${method} for route: ${route.path}`)
                 }
 
-                ; (router[method] as any)(
-                    route.path,
-                    ...(route.middlewares || []),
-                    async (context: any, next: any) => {
-                        const ctx = context as HttpContext
-                        const reqBody = await Router.readBodyCached(ctx)
-                        const override = Router.resolveMethodOverride(ctx.method, ctx.headers as Record<string, any>, reqBody)
-
-                        if (method === 'post' && override && override !== 'post') {
-                            return next()
-                        }
-
-                        const inst = instance ?? route
-                        Router.bindRequestToInstance(ctx, inst, route, {
-                            body: reqBody,
-                            query: ctx.query as Record<string, any>,
-                            params: (ctx.params as Record<string, any>) ?? {},
-                            method,
-                        })
-
-                        const result = await Router.callHandler(handlerFunction, ctx, bindingTarget, bindingMethod, bindingHandler, bindingMetadata)
-                        const resolved = await Promise.resolve(result)
-                        const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
-                            ? ctx.clearResponse
-                            : resolved
-
-                        return Router.sendReturnValue(ctx, outgoing, method, route.path)
-                    }
-                )
-
-                if (['put', 'patch', 'delete'].includes(method)) {
-                    router.post(
-                        route.path,
+                for (const registrationPath of route.registrationPaths) {
+                    ; (router[method] as any)(
+                        registrationPath,
                         ...(route.middlewares || []),
                         async (context: any, next: any) => {
                             const ctx = context as HttpContext
                             const reqBody = await Router.readBodyCached(ctx)
                             const override = Router.resolveMethodOverride(ctx.method, ctx.headers as Record<string, any>, reqBody)
 
-                            if (override !== method) {
+                            if (method === 'post' && override && override !== 'post') {
                                 return next()
                             }
 
@@ -354,6 +329,40 @@ export class Router extends CoreRouter {
                             return Router.sendReturnValue(ctx, outgoing, method, route.path)
                         }
                     )
+                }
+
+                if (['put', 'patch', 'delete'].includes(method)) {
+                    for (const registrationPath of route.registrationPaths) {
+                        router.post(
+                            registrationPath,
+                            ...(route.middlewares || []),
+                            async (context: any, next: any) => {
+                                const ctx = context as HttpContext
+                                const reqBody = await Router.readBodyCached(ctx)
+                                const override = Router.resolveMethodOverride(ctx.method, ctx.headers as Record<string, any>, reqBody)
+
+                                if (override !== method) {
+                                    return next()
+                                }
+
+                                const inst = instance ?? route
+                                Router.bindRequestToInstance(ctx, inst, route, {
+                                    body: reqBody,
+                                    query: ctx.query as Record<string, any>,
+                                    params: (ctx.params as Record<string, any>) ?? {},
+                                    method,
+                                })
+
+                                const result = await Router.callHandler(handlerFunction, ctx, bindingTarget, bindingMethod, bindingHandler, bindingMetadata)
+                                const resolved = await Promise.resolve(result)
+                                const outgoing = typeof resolved === 'undefined' && ctx.clearResponse?.sent
+                                    ? ctx.clearResponse
+                                    : resolved
+
+                                return Router.sendReturnValue(ctx, outgoing, method, route.path)
+                            }
+                        )
+                    }
                 }
             }
         }

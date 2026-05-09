@@ -50,6 +50,8 @@ yarn add clear-router express
 - Controller handlers receive hydrated `this.body`, `this.query`, `this.params`, and `this.clearRequest`
 - `clearRequest` is passed as second handler argument for controller handlers
 - Route handlers can return response values directly across Express, Fastify, Hono, H3, and Koa
+- Laravel-style route parameters like `/books/{book}`, `/books/{book?}`, and `/books/{book:profile}`
+- Named routes with path generation via `Router.get(...).name(...)` and `Router.url(...)`
 - Optional decorated container binding for controller method arguments
 - Plugin API for registering container bindings from external packages
 - Supports TS 5.2+ standard decorators with explicit `@Bind(...)` tokens

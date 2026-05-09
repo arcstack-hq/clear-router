@@ -21,6 +21,7 @@ describe('Express App (JS)', () => {
         Router.globalMiddlewares = []
         Router.routesByPathMethod = {}
         Router.routesByMethod = {}
+        Router.routesByName = {}
         Router.configure({
             container: {
                 enabled: false,
@@ -555,6 +556,71 @@ describe('Express App (JS)', () => {
             .options('/peeps/123')
             .expect(204)
             .expect('allow', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD')
+    })
+
+    it('supports named routes and curly wrapped required parameters', async () => {
+        const route = Router.get('/books/{book}', ({ req, res }) => {
+            res.json({ book: req.params.book })
+        }).name('books.show')
+
+        await setupApp()
+
+        expect(route.routeName).toBe('books.show')
+        expect(Router.route('books.show')).toBe(route)
+        expect(Router.url('books.show', { book: 123 })).toBe('/books/123')
+        expect(Router.allRoutes('name')['books.show']).toBe(route)
+        expect(route.path).toBe('/books/{book}')
+        expect(route.registrationPaths).toEqual(['/books/:book'])
+        expect(route.parameters).toEqual([
+            { name: 'book', optional: false },
+        ])
+
+        await request(app)
+            .get('/books/123')
+            .expect(200)
+            .expect({ book: '123' })
+    })
+
+    it('supports curly wrapped scoped and optional parameters', async () => {
+        const scoped = Router.get('/profiles/{book:profile}', ({ req, res }) => {
+            res.json({ book: req.params.book })
+        }).name('books.profile')
+
+        const optional = Router.get('/optional-books/{book?}', ({ req, res }) => {
+            res.json({ book: req.params.book ?? null })
+        }).name('books.optional')
+
+        await setupApp()
+
+        expect(scoped.parameters).toEqual([
+            { name: 'book', field: 'profile', optional: false },
+        ])
+        expect(scoped.registrationPaths).toEqual(['/profiles/:book'])
+        expect(Router.url('books.profile', { book: { profile: 'ada' } })).toBe('/profiles/ada')
+        expect(optional.parameters).toEqual([
+            { name: 'book', optional: true },
+        ])
+        expect(optional.registrationPaths).toEqual([
+            '/optional-books',
+            '/optional-books/:book',
+        ])
+        expect(Router.url('books.optional')).toBe('/optional-books')
+        expect(Router.url('books.optional', { book: 456 })).toBe('/optional-books/456')
+
+        await request(app)
+            .get('/profiles/ada')
+            .expect(200)
+            .expect({ book: 'ada' })
+
+        await request(app)
+            .get('/optional-books')
+            .expect(200)
+            .expect({ book: null })
+
+        await request(app)
+            .get('/optional-books/456')
+            .expect(200)
+            .expect({ book: '456' })
     })
 
     it('should always expose req.getBody in handlers', async () => {

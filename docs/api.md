@@ -421,6 +421,22 @@ console.log(routes);
 // ]
 ```
 
+### Named Routes and Curly Wrapped Parameters
+
+Routes can be named by chaining `.name(...)` from a route registration call. Clear Router also accepts curly wrapped route parameters and converts them for each adapter:
+
+```javascript
+Router.get('/books/{book}', handler).name('books.show');
+Router.get('/books/{book?}', handler).name('books.optional');
+Router.get('/books/{book:profile}', handler).name('books.profile');
+
+Router.url('books.show', { book: 123 }); // /books/123
+Router.url('books.optional'); // /books
+Router.url('books.profile', { book: { profile: 'ada' } }); // /books/ada
+```
+
+Named routes are available through `Router.route(name)` and `Router.allRoutes('name')`.
+
 ### apply(router)
 
 Apply all registered routes to an Express Router instance.
