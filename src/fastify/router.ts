@@ -1,9 +1,9 @@
 import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
 import { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from 'types/fastify'
+import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
 
 import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'
-import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
 
 /**
  * @class clear-router Fastify Router
@@ -20,7 +20,13 @@ export class Router extends CoreRouter {
         }
     }
 
-    private static async sendReturnValue (req: any, reply: any, value: any, method: HttpMethod, path: string): Promise<any> {
+    private static async sendReturnValue (
+        req: any,
+        reply: any,
+        value: any,
+        method: HttpMethod,
+        path: string
+    ): Promise<any> {
         if (responseWasSent(reply) || value === reply || responseWasSent(value)) return value
 
         const meta = resolveResponseMeta(value, {

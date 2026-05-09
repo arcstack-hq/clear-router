@@ -3,17 +3,29 @@ export class Response {
     headers = new Headers()
     sent = false
     statusCode = 200
+    statusText = 'OK'
 
-    constructor(init?: Partial<Response>) {
-        Object.assign(this, init)
+    constructor(init?: Partial<Response | globalThis.Response>) {
+        const { status: _, ...rest } = init ?? {}
+        Object.assign(this, rest)
 
         if (init?.headers && !(init.headers instanceof Headers)) {
             this.headers = new Headers(init.headers as any)
+        }
+        if (init?.status && typeof init.status === 'number') {
+            this.statusCode = init?.status
         }
     }
 
     status (code: number): this {
         this.statusCode = code
+
+        return this
+    }
+
+
+    setStatusText (text: string): this {
+        this.statusText = text
 
         return this
     }

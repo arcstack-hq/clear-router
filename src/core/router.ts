@@ -78,7 +78,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static resolveStateNamespace (this: any): string {
+    protected static resolveStateNamespace (): string {
         return String(this.routerStateNamespace || this.name || 'clear-router:core')
     }
 
@@ -119,7 +119,7 @@ export abstract class CoreRouter {
             g[this.pluginArgumentResolversKey] = new Set<PluginArgumentsResolver>()
         }
 
-        return g[this.pluginArgumentResolversKey] as Set<PluginArgumentsResolver>
+        return g[this.pluginArgumentResolversKey]
     }
 
     protected static createDefaultState () {
@@ -138,7 +138,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static bindStateAccessors (this: any): void {
+    protected static bindStateAccessors (): void {
         if (Object.prototype.hasOwnProperty.call(this, this.stateBoundKey)) {
             return
         }
@@ -246,7 +246,7 @@ export abstract class CoreRouter {
         },
     }
 
-    static configureDefaults (this: any, options?: RouterConfig): void {
+    static configureDefaults (options?: RouterConfig): void {
         const g = globalThis as Record<PropertyKey, any>
         const defaults = this.mergeConfig(g[this.defaultConfigKey] || this.createBaseConfig(), options)
         g[this.defaultConfigKey] = defaults
@@ -266,7 +266,6 @@ export abstract class CoreRouter {
      * @returns 
      */
     static async use<Options = any> (
-        this: any,
         plugin: ClearRouterPluginInput<Options>,
         options?: Options
     ): Promise<void> {
@@ -326,7 +325,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static async pluginsReady (this: any): Promise<void> {
+    protected static async pluginsReady (): Promise<void> {
         const pending = Array.from(this.getPluginPendingStore())
         if (!pending.length) return
 
@@ -401,7 +400,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static ensureState (this: any): void {
+    protected static ensureState (): void {
         this.bindStateAccessors()
 
         if (!this.config) {
@@ -510,7 +509,6 @@ export abstract class CoreRouter {
     }
 
     protected static resolveMethodOverride (
-        this: any,
         method: string,
         headers: Headers | Record<string, any>,
         body: unknown
@@ -571,7 +569,6 @@ export abstract class CoreRouter {
      * @param middlewares 
      */
     static add (
-        this: any,
         methods: HttpMethod | HttpMethod[],
         path: string,
         handler: any,
@@ -624,7 +621,6 @@ export abstract class CoreRouter {
      * @param options 
      */
     static apiResource (
-        this: any,
         basePath: string,
         controller: any,
         options?: {
@@ -674,7 +670,7 @@ export abstract class CoreRouter {
      * @param handler       The handler function for the GET route.
      * @param middlewares   Optional middlewares to apply to the GET route.
      */
-    static get (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+    static get (path: string, handler: any, middlewares?: any[] | any): void {
         this.add('get', path, handler, middlewares)
     }
 
@@ -686,7 +682,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static post (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+    static post (path: string, handler: any, middlewares?: any[] | any): void {
         this.add('post', path, handler, middlewares)
     }
 
@@ -698,7 +694,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static put (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+    static put (path: string, handler: any, middlewares?: any[] | any): void {
         this.add('put', path, handler, middlewares)
     }
 
@@ -710,7 +706,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static delete (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+    static delete (path: string, handler: any, middlewares?: any[] | any): void {
         this.add('delete', path, handler, middlewares)
     }
 
@@ -722,7 +718,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static patch (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+    static patch (path: string, handler: any, middlewares?: any[] | any): void {
         this.add('patch', path, handler, middlewares)
     }
 
@@ -734,7 +730,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static options (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+    static options (path: string, handler: any, middlewares?: any[] | any): void {
         this.add('options', path, handler, middlewares)
     }
 
@@ -746,7 +742,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static head (this: any, path: string, handler: any, middlewares?: any[] | any): void {
+    static head (path: string, handler: any, middlewares?: any[] | any): void {
         this.add('head', path, handler, middlewares)
     }
 
@@ -759,7 +755,6 @@ export abstract class CoreRouter {
      * @param middlewares 
      */
     static async group (
-        this: any,
         prefix: string,
         callback: () => void | Promise<void>,
         middlewares?: any[]
@@ -791,7 +786,7 @@ export abstract class CoreRouter {
      * @param middlewares 
      * @param callback 
      */
-    static middleware (this: any, middlewares: any[], callback: () => void): void {
+    static middleware (middlewares: any[], callback: () => void): void {
         this.ensureState()
 
         const prevMiddlewares = this.globalMiddlewares
@@ -808,18 +803,18 @@ export abstract class CoreRouter {
      * 
      * @param this 
      */
-    static allRoutes (this: any): Array<Route<any, any, any>>
+    static allRoutes (): Array<Route<any, any, any>>
     /**
      * @param this  
      * @param type  - 'path' to get routes organized by path
      */
-    static allRoutes (this: any, type: 'path'): Record<string, Route<any, any, any>>
+    static allRoutes (type: 'path'): Record<string, Route<any, any, any>>
     /**
      * @param this  
      * @param type  - 'method' to get routes organized by method
      */
-    static allRoutes (this: any, type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> }
-    static allRoutes (this: any, type?: 'method' | 'path'):
+    static allRoutes (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> }
+    static allRoutes (type?: 'method' | 'path'):
         Array<Route<any, any, any>> |
         Record<string, Route<any, any, any>> |
         Record<string, Array<Route<any, any, any>>> {
@@ -895,7 +890,6 @@ export abstract class CoreRouter {
     }
 
     protected static async callHandler (
-        this: any,
         handlerFunction: (ctx: any, req: CoreRequest) => any | Promise<any>,
         ctx: any,
         bindingTarget?: object,
@@ -988,9 +982,11 @@ export abstract class CoreRouter {
         clearRequest.params = payload.params
 
         ctx.clearRequest = clearRequest
+        Container.bind(CoreRequest, ctx.clearRequest)
 
         if (!(ctx.clearResponse instanceof CoreResponse)) {
-            ctx.clearResponse = new CoreResponse()
+            ctx.clearResponse = new CoreResponse(ctx.response ?? ctx.reply ?? ctx.res)
+            Container.bind(CoreResponse, ctx.clearResponse)
         }
 
         if (!instance) return
