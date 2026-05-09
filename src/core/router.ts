@@ -927,11 +927,7 @@ export abstract class CoreRouter {
                 return (handlerFunction as any)(...pluginArgs)
             }
 
-            if (!metadata) {
-                return handlerFunction(ctx, ctx.clearRequest)
-            }
-
-            if (!tokens.length) {
+            if (!metadata || !tokens.length) {
                 return handlerFunction(ctx, ctx.clearRequest)
             }
 
