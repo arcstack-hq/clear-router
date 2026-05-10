@@ -104,6 +104,7 @@
         "h3": "^2.0.1-rc.16",
         "hono": "^4.0.0",
         "koa": "^3.0.0",
+        "@h3ravel/support": "^0.15.11",
         "reflect-metadata": "^0.2.2"
     },
     "peerDependenciesMeta": {
@@ -123,6 +124,9 @@
             "optional": true
         },
         "koa": {
+            "optional": true
+        },
+        "@h3ravel/support": {
             "optional": true
         },
         "reflect-metadata": {

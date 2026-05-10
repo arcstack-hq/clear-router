@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     root: './',
     passWithNoTests: true,
+    fileParallelism: false,
     environment: 'node',
     include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)'],
     env: {

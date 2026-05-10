@@ -60,7 +60,12 @@ export class Router extends CoreRouter {
         return {}
     }
 
-    private static async sendReturnValue (ctx: HttpContext, value: any, method: HttpMethod, path: string): Promise<any> {
+    private static async sendReturnValue (
+        ctx: HttpContext,
+        value: any,
+        method: HttpMethod,
+        path: string
+    ): Promise<any> {
         if (ctx.respond === false || ctx.headerSent) return value
 
         const meta = resolveResponseMeta(value, {
@@ -268,7 +273,7 @@ export class Router extends CoreRouter {
      * @returns    The  @koa/router instance with the applied routes
      */
     static apply (router: KoaRouterApp): KoaRouterApp {
-        for (const route of this.routes) {
+        for (const route of Array.from(this.routes)) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
             let bindingTarget: object | undefined

@@ -14,6 +14,7 @@ import { Controller } from 'src/Controller'
 import { Request as CoreRequest } from './Request'
 import { Response as CoreResponse } from './Response'
 import { Route } from 'src/Route'
+import { createRequire } from 'node:module'
 
 /**
  * @class clear-router CoreRouter
@@ -33,23 +34,52 @@ export abstract class CoreRouter {
     private static requestProvider?: typeof CoreRequest
     private static responseProvider?: typeof CoreResponse
 
+    static config: RouterConfig = {
+        inferParamName: false,
+        methodOverride: {
+            enabled: true,
+            bodyKeys: ['_method'],
+            headerKeys: ['x-http-method'],
+        },
+        container: {
+            enabled: false,
+            autoDiscover: false,
+        },
+    }
+
+    protected static groupContext = new AsyncLocalStorage<{
+        prefix: string
+        groupMiddlewares: any[]
+    }>()
+    protected static pluginRequestContext = new AsyncLocalStorage<ClearRouterPluginRequestContext>()
+
+    static routes = new Set<Route<any, any, any>>([])
+    static routesByPathMethod = new Map<string, Route<any, any, any>>()
+    static routesByMethod = new Map<Uppercase<HttpMethod>, Array<Route<any, any, any>>>()
+    static routesByName = new Map<string, Route<any, any, any>>()
+
+    static prefix = ''
+    static groupMiddlewares: any[] = []
+    static globalMiddlewares: any[] = []
+
     /**
      * Resets the router to it's default state
      */
     static reset () {
-        this.routes = []
+        this.routes.clear()
         this.prefix = ''
         this.groupMiddlewares = []
         this.globalMiddlewares = []
-        this.routesByPathMethod = {}
-        this.routesByMethod = {}
-        this.routesByName = {}
+        this.routesByPathMethod.clear()
+        this.routesByMethod.clear()
+        this.routesByName.clear()
 
         return this
     }
 
     protected static createBaseConfig (): RouterConfig {
         return {
+            inferParamName: false,
             methodOverride: {
                 enabled: true,
                 bodyKeys: ['_method'],
@@ -90,6 +120,7 @@ export abstract class CoreRouter {
         }
 
         return {
+            inferParamName: g[this.defaultConfigKey].inferParamName,
             methodOverride: { ...g[this.defaultConfigKey].methodOverride },
             container: { ...g[this.defaultConfigKey].container },
         }
@@ -146,10 +177,10 @@ export abstract class CoreRouter {
                 prefix: string
                 groupMiddlewares: any[]
             }>(),
-            routes: [] as Array<Route<any, any, any>>,
-            routesByPathMethod: {} as Record<string, Route<any, any, any>>,
-            routesByMethod: {} as { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> },
-            routesByName: {} as Record<string, Route<any, any, any>>,
+            routes: new Set([]),
+            routesByPathMethod: new Map(),
+            routesByMethod: new Map(),
+            routesByName: new Map(),
             prefix: '',
             groupMiddlewares: [] as any[],
             globalMiddlewares: [] as any[],
@@ -253,18 +284,6 @@ export abstract class CoreRouter {
         }
     }
 
-    static config: RouterConfig = {
-        methodOverride: {
-            enabled: true,
-            bodyKeys: ['_method'],
-            headerKeys: ['x-http-method'],
-        },
-        container: {
-            enabled: false,
-            autoDiscover: false,
-        },
-    }
-
     static configureDefaults (options?: RouterConfig): void {
         const g = globalThis as Record<PropertyKey, any>
         const defaults = this.mergeConfig(g[this.defaultConfigKey] || this.createBaseConfig(), options)
@@ -351,21 +370,6 @@ export abstract class CoreRouter {
         await Promise.all(pending)
     }
 
-    protected static groupContext = new AsyncLocalStorage<{
-        prefix: string
-        groupMiddlewares: any[]
-    }>()
-    protected static pluginRequestContext = new AsyncLocalStorage<ClearRouterPluginRequestContext>()
-
-    static routes: Array<Route<any, any, any>> = []
-    static routesByPathMethod: Record<string, Route<any, any, any>> = {}
-    static routesByMethod: { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> } = {}
-    static routesByName: Record<string, Route<any, any, any>> = {}
-
-    static prefix = ''
-    static groupMiddlewares: any[] = []
-    static globalMiddlewares: any[] = []
-
     protected static getCurrentPluginRequestContext (): ClearRouterPluginRequestContext | undefined {
         return this.pluginRequestContext.getStore()
     }
@@ -440,20 +444,20 @@ export abstract class CoreRouter {
             }>()
         }
 
-        if (!Array.isArray(this.routes)) {
-            this.routes = []
+        if (!this.routes || Array.isArray(this.routes)) {
+            this.routes = new Set<Route<any, any, any>>(this.routes ?? [])
         }
 
-        if (!this.routesByPathMethod || typeof this.routesByPathMethod !== 'object') {
-            this.routesByPathMethod = {}
+        if (!this.routesByPathMethod) {
+            this.routesByPathMethod = new Map<string, Route<any, any, any>>()
         }
 
-        if (!this.routesByMethod || typeof this.routesByMethod !== 'object') {
-            this.routesByMethod = {}
+        if (!this.routesByMethod) {
+            this.routesByMethod = new Map()
         }
 
-        if (!this.routesByName || typeof this.routesByName !== 'object') {
-            this.routesByName = {}
+        if (!this.routesByName) {
+            this.routesByName = new Map()
         }
 
         if (typeof this.prefix !== 'string') {
@@ -568,29 +572,33 @@ export abstract class CoreRouter {
             }
         }
 
+        const infer = options?.inferParamName
+        if (infer) this.config.inferParamName = options?.inferParamName
+
         const override = options?.methodOverride
-        if (!override) return
+        if (override) {
 
-        if (typeof override.enabled === 'boolean') {
-            this.config.methodOverride.enabled = override.enabled
-        }
+            if (typeof override.enabled === 'boolean') {
+                this.config.methodOverride.enabled = override.enabled
+            }
 
-        const bodyKeys = override.bodyKeys
-        if (typeof bodyKeys !== 'undefined') {
-            this.config.methodOverride.bodyKeys = (Array.isArray(bodyKeys)
-                ? bodyKeys
-                : [bodyKeys])
-                .map(e => String(e).trim())
-                .filter(Boolean)
-        }
+            const bodyKeys = override.bodyKeys
+            if (typeof bodyKeys !== 'undefined') {
+                this.config.methodOverride.bodyKeys = (Array.isArray(bodyKeys)
+                    ? bodyKeys
+                    : [bodyKeys])
+                    .map(e => String(e).trim())
+                    .filter(Boolean)
+            }
 
-        const headerKeys = override.headerKeys
-        if (typeof headerKeys !== 'undefined') {
-            this.config.methodOverride.headerKeys = (Array.isArray(headerKeys)
-                ? headerKeys
-                : [headerKeys])
-                .map(e => String(e).trim().toLowerCase())
-                .filter(Boolean)
+            const headerKeys = override.headerKeys
+            if (typeof headerKeys !== 'undefined') {
+                this.config.methodOverride.headerKeys = (Array.isArray(headerKeys)
+                    ? headerKeys
+                    : [headerKeys])
+                    .map(e => String(e).trim().toLowerCase())
+                    .filter(Boolean)
+            }
         }
     }
 
@@ -684,30 +692,30 @@ export abstract class CoreRouter {
                 registrationPaths,
                 parameters,
                 onName: (name, route, previousName) => {
-                    if (previousName && this.routesByName[previousName] === route) {
-                        delete this.routesByName[previousName]
+                    if (previousName && this.routesByName.get(previousName) === route) {
+                        this.routesByName.delete(previousName)
                     }
 
-                    this.routesByName[name] = route
+                    this.routesByName.set(name, route)
                 },
             }
         )
 
         if (
             !methods.includes('options') &&
-            !this.routesByPathMethod[`OPTIONS ${fullPath}`]
+            !this.routesByPathMethod.get(`OPTIONS ${fullPath}`)
         ) {
             this.options(path, this.createDefaultOptionsHandler())
         }
 
-        this.routes.push(route)
+        this.routes.add(route)
 
         for (const method of methods.map(m => m.toUpperCase() as Uppercase<HttpMethod>)) {
-            this.routesByPathMethod[`${method} ${fullPath}`] = route
-            if (!this.routesByMethod[method]) {
-                this.routesByMethod[method] = []
+            this.routesByPathMethod.set(`${method} ${fullPath}`, route)
+            if (!this.routesByMethod.has(method)) {
+                this.routesByMethod.set(method, [])
             }
-            this.routesByMethod[method].push(route)
+            this.routesByMethod.get(method)?.push(route)
         }
 
         return route
@@ -730,12 +738,20 @@ export abstract class CoreRouter {
             middlewares?: ApiResourceMiddleware<any>
         }
     ): void {
+        let paramName = 'id'
+
+        if (!!this.config.inferParamName && this.hasPackageInstalled('@h3ravel/support')) {
+            const require = createRequire(import.meta.url)
+            const { str } = require('@h3ravel/support')
+            paramName = str(basePath).singular().afterLast('/').toString()
+        }
+
         const actions = {
             index: { method: 'get', path: '/' },
-            show: { method: 'get', path: '/:id' },
+            show: { method: 'get', path: `/:${paramName}` },
             create: { method: 'post', path: '/' },
-            update: { method: 'put', path: '/:id' },
-            destroy: { method: 'delete', path: '/:id' },
+            update: { method: 'put', path: `/:${paramName}` },
+            destroy: { method: 'delete', path: `/:${paramName}` },
         } as const
 
         const only = options?.only || Object.keys(actions) as ControllerAction[]
@@ -751,6 +767,13 @@ export abstract class CoreRouter {
                     ? options.middlewares[action]
                     : options?.middlewares
 
+                const name =
+                    `${basePath}${path}`
+                        .replace(/\{(\w+):[^}]+\}/g, '$1')
+                        .replace(/\/|:|[{}]/g, '.')
+                        .replace(/\.{2,}/g, '.')
+                        .replace(/^\.|\.$/g, '')
+
                 this.add(
                     method,
                     `${basePath}${path}`,
@@ -758,7 +781,7 @@ export abstract class CoreRouter {
                     Array.isArray(actionMiddlewares)
                         ? actionMiddlewares
                         : actionMiddlewares ? [actionMiddlewares] : undefined
-                )
+                ).name(name + '.' + action.toLowerCase())
             }
         }
     }
@@ -921,26 +944,29 @@ export abstract class CoreRouter {
         Record<string, Route<any, any, any>> |
         Record<string, Array<Route<any, any, any>>> {
         this.ensureState()
-
         if (type === 'method') {
-            return this.routesByMethod
+            return Object.fromEntries(this.routesByMethod.entries())
         }
 
         if (type === 'path') {
-            return this.routesByPathMethod
+            return Object.fromEntries(this.routesByPathMethod.entries())
         }
 
         if (type === 'name') {
-            return this.routesByName
+            return Object.fromEntries(this.routesByName.entries())
         }
 
-        return this.routes.filter((e: Route<any, any, any>) => e.methods.length > 1 || e.methods[0] !== 'options')
+        const routes = Array.from(this.routes)
+
+        return routes.filter(
+            (e: Route<any, any, any>) => e.methods.length > 1 || e.methods[0] !== 'options'
+        )
     }
 
     static route (name: string): Route<any, any, any> | undefined {
         this.ensureState()
 
-        return this.routesByName[name]
+        return this.routesByName.get(name)
     }
 
     static url (name: string, params?: Record<string, any>): string | undefined {
@@ -963,6 +989,17 @@ export abstract class CoreRouter {
      */
     static setResponseProvider (provider: typeof CoreResponse) {
         this.responseProvider = provider
+    }
+
+    private static hasPackageInstalled (name: string): boolean {
+        try {
+            const require = createRequire(import.meta.url)
+            require.resolve(name, { paths: [process.cwd()] })
+
+            return true
+        } catch {
+            return false
+        }
     }
 
     /**

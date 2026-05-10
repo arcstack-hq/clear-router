@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, it, test } from 'vitest'
 
 import { H3 } from 'h3'
 import { H3App } from 'types/h3'
@@ -7,7 +7,25 @@ import Router from '../src/express/router'
 import express from 'express'
 import request from 'parasito'
 
-describe('Express Routing - ESM', () => {
+class UserController {
+    index () {
+        return { users: ['Alice', 'Bob'] }
+    }
+    show () {
+        return { name: 'Alice' }
+    }
+    create () {
+        return global.Response.json({ name: 'Alice' }, { status: 201 })
+    }
+    update () {
+        return global.Response.json({ name: 'Alice' }, { status: 202 })
+    }
+    destroy () {
+        return global.Response.json({ name: 'Alice' }, { status: 202 })
+    }
+}
+
+describe('Express Routing', () => {
     let app: express.Application
     let router: express.Router
 
@@ -20,11 +38,11 @@ describe('Express Routing - ESM', () => {
     })
 
     const setupApp = async () => {
-        await Router.apply(router)
+        Router.apply(router)
         app.use(router)
     }
 
-    test('should register GET route with ESM', async () => {
+    it('should register GET route with ESM', async () => {
         Router.get('/esm-test', ({ res }) => {
             res.json({ module: 'esm' })
         })
@@ -36,7 +54,7 @@ describe('Express Routing - ESM', () => {
         expect(response.body.module).toBe('esm')
     })
 
-    test('should handle async handlers', async () => {
+    it('should handle async handlers', async () => {
         Router.get('/async', async ({ res }) => {
             await new Promise(resolve => setTimeout(resolve, 10))
             res.json({ async: true })
@@ -48,7 +66,7 @@ describe('Express Routing - ESM', () => {
         expect(response.body.async).toBe(true)
     })
 
-    test('should support multiple methods', async () => {
+    it('should support multiple methods', async () => {
         Router.add(['get', 'post'], '/multi', ({ req, res }) => {
             res.json({ method: req.method })
         })
@@ -62,25 +80,7 @@ describe('Express Routing - ESM', () => {
         expect(postResponse.body.method).toBe('POST')
     })
 
-    test('should support API resources', async () => {
-        class UserController {
-            index ({ res }: { res: express.Response }) {
-                return res.json({ users: ['Alice', 'Bob'] })
-            }
-            show ({ res }: { res: express.Response }) {
-                return res.json({ name: 'Alice' })
-            }
-            create ({ res }: { res: express.Response }) {
-                return res.status(201).json({ name: 'Alice' })
-            }
-            update ({ res }: { res: express.Response }) {
-                return res.status(202).json({ name: 'Alice' })
-            }
-            destroy ({ res }: { res: express.Response }) {
-                return res.status(202).json({ name: 'Alice' })
-            }
-        }
-
+    it('should support API resources', async () => {
         Router.apiResource('/users', UserController)
 
         setupApp()
@@ -106,7 +106,7 @@ describe('Express Routing - ESM', () => {
         expect(destroyResponse.body).toEqual({ name: 'Alice' })
     })
 
-    test('should work with ESM class controllers', async () => {
+    it('should work with ESM class controllers', async () => {
         class UserController {
             static list ({ res }: { res: express.Response }): void {
                 res.json({ users: ['Alice', 'Bob'] })
@@ -121,7 +121,7 @@ describe('Express Routing - ESM', () => {
         expect(response.body.users).toHaveLength(2)
     })
 
-    test('should handle grouped routes in ESM', async () => {
+    it('should handle grouped routes in ESM', async () => {
         Router.group('/api', () => {
             Router.group('/v2', () => {
                 Router.get('/status', ({ res }) => {
@@ -136,7 +136,7 @@ describe('Express Routing - ESM', () => {
         expect(response.body.version).toBe(2)
     })
 
-    test('should return route information', async () => {
+    it('should return route information', async () => {
         Router.get('/info1', ({ res }) => void res.send('ok'))
         Router.post('/info2', ({ res }) => void res.send('ok'))
 
@@ -144,9 +144,29 @@ describe('Express Routing - ESM', () => {
         expect(routes).toHaveLength(2)
         expect(routes[0].handlerType).toBe('function')
     })
+
+    it('should work with api controller', async () => {
+        Router.apiResource('/account/users', UserController)
+
+        await setupApp()
+
+        await request(app).get('/account/users/1').expect(200)
+    })
+
+    it('should toggle and infer API param name from route', async () => {
+        Router.configure({ inferParamName: true })
+        Router.apiResource('/account/users', UserController)
+
+        Router.configure({ inferParamName: false })
+        Router.apiResource('/account/books', UserController)
+
+        const routes = Router.allRoutes('name')
+        expect(routes['account.users.user.show'].path === '/account/users/:user').toBe(true)
+        expect(routes['account.books.id.show'].path === '/account/books/:id').toBe(true)
+    })
 })
 
-describe('H3 Routing - ESM', () => {
+describe('H3 Routing ', () => {
     let app: H3
     let router: H3App
 
@@ -208,24 +228,6 @@ describe('H3 Routing - ESM', () => {
     })
 
     test('should support API resources', async () => {
-        class UserController {
-            index () {
-                return { users: ['Alice', 'Bob'] }
-            }
-            show () {
-                return { name: 'Alice' }
-            }
-            create () {
-                return global.Response.json({ name: 'Alice' }, { status: 201 })
-            }
-            update () {
-                return global.Response.json({ name: 'Alice' }, { status: 202 })
-            }
-            destroy () {
-                return global.Response.json({ name: 'Alice' }, { status: 202 })
-            }
-        }
-
         H3Router.apiResource('/users', UserController)
 
         setupApp()
@@ -281,7 +283,7 @@ describe('H3 Routing - ESM', () => {
         H3Router.get('/info1', () => 'ok')
         H3Router.post('/info2', () => 'ok')
 
-        const routes = Router.allRoutes()
+        const routes = H3Router.allRoutes()
         expect(routes).toHaveLength(2)
         expect(routes[0].handlerType).toBe('function')
     })

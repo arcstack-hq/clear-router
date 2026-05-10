@@ -239,7 +239,7 @@ export class Router extends CoreRouter {
      * @returns 
      */
     static apply (app: H3): H3App {
-        for (const route of this.routes) {
+        for (const route of Array.from(this.routes)) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
             let bindingTarget: object | undefined

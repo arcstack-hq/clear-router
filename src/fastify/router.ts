@@ -230,7 +230,7 @@ export class Router extends CoreRouter {
      * @returns    The Fastify application instance with the applied routes
      */
     static apply (app: FastifyApp): FastifyApp {
-        for (const route of this.routes) {
+        for (const route of Array.from(this.routes)) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
             let bindingTarget: object | undefined

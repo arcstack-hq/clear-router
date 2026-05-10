@@ -238,7 +238,7 @@ export class Router extends CoreRouter {
     static apply (router: ExpressRouter): void
     static async apply (router: ExpressRouter): Promise<void>
     static async apply (router: ExpressRouter): Promise<void> {
-        for (const route of this.routes) {
+        for (const route of Array.from(this.routes)) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
             let bindingTarget: object | undefined

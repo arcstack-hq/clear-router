@@ -26,6 +26,11 @@ export type ApiResourceMiddleware<M = any> =
 
 export interface RouterConfig {
     /**
+     * When enabled, API param name will be infered from the route path.
+     * So instead of getting /api/users/:id, we will now get /api/users/:user
+     */
+    inferParamName?: boolean
+    /**
      * Configuration for method override functionality, allowing clients to use a 
      * specific header or body parameter to override the HTTP method.
      */
