@@ -15,19 +15,13 @@ describe('Express App (JS)', () => {
     let router: ExRouter
 
     beforeEach(() => {
-        Router.routes = []
-        Router.prefix = ''
-        Router.groupMiddlewares = []
-        Router.globalMiddlewares = []
-        Router.routesByPathMethod = {}
-        Router.routesByMethod = {}
-        Router.routesByName = {}
         Router.configure({
             container: {
                 enabled: false,
                 autoDiscover: false,
             },
         })
+        Router.reset()
         Container.clear()
 
         app = express()

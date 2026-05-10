@@ -10,12 +10,7 @@ describe('Koa App (JS)', () => {
     let router: KoaRouter
 
     beforeEach(() => {
-        Router.routes = []
-        Router.prefix = ''
-        Router.groupMiddlewares = []
-        Router.globalMiddlewares = []
-        Router.routesByPathMethod = {}
-        Router.routesByMethod = {}
+        Router.reset()
 
         app = new Koa()
         router = new KoaRouter()

@@ -11,12 +11,7 @@ describe('H3 App (JS)', () => {
     let app: H3
 
     beforeEach(() => {
-        Router.routes = []
-        Router.prefix = ''
-        Router.groupMiddlewares = []
-        Router.globalMiddlewares = []
-        Router.routesByPathMethod = {}
-        Router.routesByMethod = {}
+        Router.reset()
 
         app = new H3()
     })

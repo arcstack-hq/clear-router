@@ -12,10 +12,7 @@ describe('Express Routing - ESM', () => {
     let router: express.Router
 
     beforeEach(() => {
-        Router.routes = []
-        Router.prefix = ''
-        Router.groupMiddlewares = []
-        Router.globalMiddlewares = []
+        Router.reset()
 
         app = express()
         router = express.Router()
@@ -154,10 +151,7 @@ describe('H3 Routing - ESM', () => {
     let router: H3App
 
     beforeEach(() => {
-        H3Router.routes = []
-        H3Router.prefix = ''
-        H3Router.groupMiddlewares = []
-        H3Router.globalMiddlewares = []
+        H3Router.reset()
 
         app = new H3()
     })

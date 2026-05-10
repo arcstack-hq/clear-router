@@ -17,12 +17,7 @@ describe('Express Routing - TypeScript', () => {
     let router: ExRouter
 
     beforeEach(() => {
-        Router.routes = []
-        Router.routesByPathMethod = {}
-        Router.routesByMethod = {}
-        Router.prefix = ''
-        Router.groupMiddlewares = []
-        Router.globalMiddlewares = []
+        Router.reset()
         Router.configure()
 
         app = express()
@@ -373,12 +368,7 @@ describe('H3 Routing - TypeScript', () => {
     let router: H3App
 
     beforeEach(() => {
-        H3Router.routes = []
-        H3Router.routesByPathMethod = {}
-        H3Router.routesByMethod = {}
-        H3Router.prefix = ''
-        H3Router.groupMiddlewares = []
-        H3Router.globalMiddlewares = []
+        H3Router.reset()
         H3Router.configure()
 
         app = new H3()

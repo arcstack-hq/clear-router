@@ -159,10 +159,7 @@ describe('Express Routing - CommonJS', () => {
 
   beforeEach(() => {
     // Reset routes before each test
-    Router.routes = [];
-    Router.prefix = '';
-    Router.groupMiddlewares = [];
-    Router.globalMiddlewares = [];
+    Router.reset();
 
     app = express();
     router = express.Router();
@@ -270,10 +267,7 @@ describe('Express Routing - ESM', () => {
   let router;
 
   beforeEach(() => {
-    Router.routes = [];
-    Router.prefix = '';
-    Router.groupMiddlewares = [];
-    Router.globalMiddlewares = [];
+    Router.reset();
 
     app = express();
     router = express.Router();
@@ -349,10 +343,7 @@ describe('Express Routing - TypeScript', () => {
   let router: Router;
 
   beforeEach(() => {
-    Router.routes = [];
-    Router.prefix = '';
-    Router.groupMiddlewares = [];
-    Router.globalMiddlewares = [];
+    Router.reset();
 
     app = express();
     router = Router();
@@ -445,10 +436,7 @@ describe('My Custom Tests', () => {
 
   beforeEach(() => {
     // Reset Routes state
-    Router.routes = [];
-    Router.prefix = '';
-    Router.groupMiddlewares = [];
-    Router.globalMiddlewares = [];
+    Router.reset();
 
     // Create fresh Express app and router
     app = express();
@@ -599,10 +587,7 @@ If tests are affecting each other, make sure you're resetting Routes state:
 
 ```javascript
 beforeEach(() => {
-  Router.routes = [];
-  Router.prefix = '';
-  Router.groupMiddlewares = [];
-  Router.globalMiddlewares = [];
+  Router.reset();
 });
 ```
 

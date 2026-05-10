@@ -8,12 +8,7 @@ describe('Fastify App (JS)', () => {
     let app: FastifyInstance
 
     beforeEach(() => {
-        Router.routes = []
-        Router.prefix = ''
-        Router.groupMiddlewares = []
-        Router.globalMiddlewares = []
-        Router.routesByPathMethod = {}
-        Router.routesByMethod = {}
+        Router.reset()
 
         app = fastify()
     })

@@ -8,12 +8,7 @@ describe('Hono App (JS)', () => {
     let app: Hono
 
     beforeEach(() => {
-        Router.routes = []
-        Router.prefix = ''
-        Router.groupMiddlewares = []
-        Router.globalMiddlewares = []
-        Router.routesByPathMethod = {}
-        Router.routesByMethod = {}
+        Router.reset()
 
         app = new Hono()
     })

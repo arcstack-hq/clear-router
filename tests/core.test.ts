@@ -20,19 +20,8 @@ class IsolatedRouter extends CoreRouter {
 
 describe('Core Router Shared State', () => {
     beforeEach(() => {
-        SharedRouterA.routes = []
-        SharedRouterA.routesByPathMethod = {}
-        SharedRouterA.routesByMethod = {}
-        SharedRouterA.prefix = ''
-        SharedRouterA.groupMiddlewares = []
-        SharedRouterA.globalMiddlewares = []
-
-        IsolatedRouter.routes = []
-        IsolatedRouter.routesByPathMethod = {}
-        IsolatedRouter.routesByMethod = {}
-        IsolatedRouter.prefix = ''
-        IsolatedRouter.groupMiddlewares = []
-        IsolatedRouter.globalMiddlewares = []
+        SharedRouterA.reset()
+        IsolatedRouter.reset()
     })
 
     it('shares route state across routers with same namespace', () => {
