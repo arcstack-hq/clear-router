@@ -86,6 +86,16 @@ Router.get('/legacy', ({ res }) => {
 });
 ```
 
+### reset()
+
+Resets the router to it's default state
+
+**Example:**
+
+```javascript
+Router.reset(); // Returns: the current router instance
+```
+
 ### normalizePath(path)
 
 Normalize a path by removing duplicate slashes and ensuring a leading slash.

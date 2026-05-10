@@ -33,6 +33,21 @@ export abstract class CoreRouter {
     private static requestProvider?: typeof CoreRequest
     private static responseProvider?: typeof CoreResponse
 
+    /**
+     * Resets the router to it's default state
+     */
+    static reset () {
+        this.routes = []
+        this.prefix = ''
+        this.groupMiddlewares = []
+        this.globalMiddlewares = []
+        this.routesByPathMethod = {}
+        this.routesByMethod = {}
+        this.routesByName = {}
+
+        return this
+    }
+
     protected static createBaseConfig (): RouterConfig {
         return {
             methodOverride: {
