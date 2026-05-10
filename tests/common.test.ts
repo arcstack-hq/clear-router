@@ -155,14 +155,15 @@ describe('Express Routing', () => {
 
     it('should toggle and infer API param name from route', async () => {
         Router.configure({ inferParamName: true })
-        Router.apiResource('/account/users', UserController)
+        Router.apiResource('/users', UserController)
 
         Router.configure({ inferParamName: false })
         Router.apiResource('/account/books', UserController)
 
         const routes = Router.allRoutes('name')
-        expect(routes['account.users.user.show'].path === '/account/users/:user').toBe(true)
-        expect(routes['account.books.id.show'].path === '/account/books/:id').toBe(true)
+
+        expect(routes['users.show'].path === '/users/:user').toBe(true)
+        expect(routes['account.books.show'].path === '/account/books/:id').toBe(true)
     })
 })
 
