@@ -230,7 +230,7 @@ console.log(allRoutes);
 
 ## API Reference
 
-See [API](../api) for complete API documentation.
+See [API](../../api) for complete API documentation.
 
 ## Testing
 
@@ -239,4 +239,4 @@ npm test
 npm run test:ts
 ```
 
-See [Testing](../testing) for detailed testing guide.
+See [Testing](../../testing) for detailed testing guide.
