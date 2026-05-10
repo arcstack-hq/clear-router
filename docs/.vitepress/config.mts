@@ -24,11 +24,17 @@ export default defineConfig({
                 text: 'Documentation',
                 items: [
                     { text: 'Overview', link: '/index' },
-                    { text: 'Using with Express', link: '/guide/express' },
-                    { text: 'Using with Fastify', link: '/guide/fastify' },
-                    { text: 'Using with H3', link: '/guide/h3' },
-                    { text: 'Using with Hono', link: '/guide/hono' },
-                    { text: 'Using with Koa', link: '/guide/koa' },
+                    {
+                        text: 'Usage', collapsed: true, items: [
+                            { text: 'Using with Express', link: '/guide/usage/express' },
+                            { text: 'Using with Fastify', link: '/guide/usage/fastify' },
+                            { text: 'Using with H3', link: '/guide/usage/h3' },
+                            { text: 'Using with Hono', link: '/guide/usage/hono' },
+                            { text: 'Using with Koa', link: '/guide/usage/koa' },
+                        ]
+                    },
+                    { text: 'Requests', link: '/guide/request' },
+                    { text: 'Responses', link: '/guide/response' },
                     { text: 'Container Binding', link: '/guide/container-binding' },
                     { text: 'Plugins', link: '/guide/plugins' },
                     { text: 'Adapter Authoring Guide', link: '/guide/adapters' },

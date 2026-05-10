@@ -421,6 +421,74 @@ console.log(routes);
 // ]
 ```
 
+### setClearRequestProvider(Request);
+
+You can subclass `Request` and register it as the provider to have your custom class used in place of the default across all routes.
+
+```typescript
+import { Request, Router } from 'clear-router';
+import { CoreRouter } from 'clear-router/core';
+
+class AppRequest extends Request {
+  get isJson(): boolean {
+    return this.header('content-type').includes('application/json');
+  }
+
+  get bearerToken(): string | null {
+    const auth = this.header('Authorization');
+    return auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  }
+}
+
+CoreRouter.setClearRequestProvider(AppRequest);
+```
+
+Once registered, every `ctx.clearRequest` across all routes will be an instance of `AppRequest`.
+
+```typescript
+Router.post('/login', ({ clearRequest }) => {
+  return {
+    isJson: clearRequest.isJson,
+    bearerToken: clearRequest.bearerToken,
+  };
+});
+```
+
+### setClearResponseProvider(Response)
+
+You can subclass `Response` and register it as the provider to have your custom class used in place of the default across all routes.
+
+```typescript
+import { Response } from 'clear-router';
+import { CoreRouter } from 'clear-router/core';
+
+class AppResponse extends Response {
+  success(data: any) {
+    return this.status(200).json({ success: true, data });
+  }
+
+  failure(message: string, code = 400) {
+    return this.status(code).json({ success: false, message });
+  }
+}
+
+CoreRouter.setClearResponseProvider(AppResponse);
+```
+
+Once registered, every `ctx.clearResponse` across all routes will be an instance of `AppResponse`.
+
+```typescript
+Router.post('/users', ({ clearResponse }) => {
+  const body = clearResponse.getBody();
+
+  if (!body.name) {
+    return clearResponse.failure('Name is required.', 422);
+  }
+
+  return clearResponse.success({ name: body.name });
+});
+```
+
 ### Named Routes and Curly Wrapped Parameters
 
 Routes can be named by chaining `.name(...)` from a route registration call. Clear Router also accepts curly wrapped route parameters and converts them for each adapter:
