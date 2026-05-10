@@ -30,6 +30,8 @@ export abstract class CoreRouter {
     private static readonly pluginStoreKey = Symbol.for('clear-router:plugins')
     private static readonly pluginPendingKey = Symbol.for('clear-router:plugin-promises')
     private static readonly pluginArgumentResolversKey = Symbol.for('clear-router:plugin-argument-resolvers')
+    private static clearRequestProvider?: typeof CoreRequest
+    private static clearResponseProvider?: typeof CoreResponse
 
     protected static createBaseConfig (): RouterConfig {
         return {
@@ -930,6 +932,51 @@ export abstract class CoreRouter {
         return this.route(name)?.toPath(params)
     }
 
+    /**
+     * Provide a class that will overide the base Request instance
+     * 
+     * @param provider 
+     */
+    static setClearRequestProvider (provider: typeof CoreRequest) {
+        this.clearRequestProvider = provider
+    }
+
+    /**
+     * Provide a class that will overide the base Response instance
+     * 
+     * @param provider 
+     */
+    static setClearResponseProvider (provider: typeof CoreResponse) {
+        this.clearResponseProvider = provider
+    }
+
+    /**
+     * Provide a class that will overide the base Response instance
+     * 
+     * @param provider 
+     */
+    private static initializeInstance<
+        Prov extends typeof CoreResponse,
+        Args extends ConstructorParameters<Prov>[0]
+    > (provider: Prov, args: Args): CoreResponse
+    private static initializeInstance<
+        Prov extends typeof CoreRequest,
+        Args extends ConstructorParameters<Prov>[0]
+    > (provider: Prov, args: Args): CoreRequest
+    private static initializeInstance (provider: any, args: any) {
+
+        const isRequest = ['CoreRequest', 'Request', 'ClearRequest'].includes(provider.name)
+        const isResponse = ['CoreResponse', 'Response', 'ClearResponse'].includes(provider.name)
+
+        if (isRequest && this.clearRequestProvider) {
+            return new this.clearRequestProvider(args as never)
+        } else if (isResponse && this.clearResponseProvider) {
+            return new this.clearResponseProvider(args as never)
+        }
+
+        return new provider(args as never)
+    }
+
     protected static resolveHandler (route: Route<any, any, any>): {
         handlerFunction: ((ctx: any, req: CoreRequest) => any | Promise<any>) | null
         instance: Controller<any> | null
@@ -1057,7 +1104,7 @@ export abstract class CoreRouter {
     ): void {
         const clearRequest = ctx.clearRequest instanceof CoreRequest
             ? ctx.clearRequest
-            : new CoreRequest({
+            : this.initializeInstance(CoreRequest, {
                 ctx,
                 route,
                 body: payload.body,
@@ -1080,7 +1127,10 @@ export abstract class CoreRouter {
         Container.bind(CoreRequest, ctx.clearRequest)
 
         if (!(ctx.clearResponse instanceof CoreResponse)) {
-            ctx.clearResponse = new CoreResponse(ctx.response ?? ctx.reply ?? ctx.res)
+            ctx.clearResponse = this.initializeInstance(
+                CoreResponse,
+                ctx.response ?? ctx.reply ?? ctx.res
+            )
             Container.bind(CoreResponse, ctx.clearResponse)
         }
 

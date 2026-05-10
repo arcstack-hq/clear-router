@@ -1,4 +1,5 @@
 export class Response {
+    [key: string]: any
     body: any
     headers = new Headers()
     sent = false
