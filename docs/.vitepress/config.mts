@@ -33,6 +33,7 @@ export default defineConfig({
                             { text: 'Using with Koa', link: '/guide/usage/koa' },
                         ]
                     },
+                    { text: 'Routing', link: '/guide/routing' },
                     { text: 'Requests', link: '/guide/request' },
                     { text: 'Responses', link: '/guide/response' },
                     { text: 'Container Binding', link: '/guide/container-binding' },
