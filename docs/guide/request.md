@@ -128,7 +128,7 @@ Router.post('/users', [UserController, 'store']);
 
 ## Container Injection
 
-When [container binding](./container.md) is enabled, the `Request` instance can be injected directly into controller methods by type.
+When [container binding](./container-binding.md) is enabled, the `Request` instance can be injected directly into controller methods by type.
 
 ```typescript
 import { Request } from 'clear-router';
@@ -164,7 +164,7 @@ class AppRequest extends Request {
   }
 }
 
-Router.setClearRequestProvider(AppRequest);
+Router.setRequestProvider(AppRequest);
 ```
 
 Once registered, every `ctx.clearRequest` across all routes will be an instance of `AppRequest`.

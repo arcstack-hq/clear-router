@@ -30,8 +30,8 @@ export abstract class CoreRouter {
     private static readonly pluginStoreKey = Symbol.for('clear-router:plugins')
     private static readonly pluginPendingKey = Symbol.for('clear-router:plugin-promises')
     private static readonly pluginArgumentResolversKey = Symbol.for('clear-router:plugin-argument-resolvers')
-    private static clearRequestProvider?: typeof CoreRequest
-    private static clearResponseProvider?: typeof CoreResponse
+    private static requestProvider?: typeof CoreRequest
+    private static responseProvider?: typeof CoreResponse
 
     protected static createBaseConfig (): RouterConfig {
         return {
@@ -937,8 +937,8 @@ export abstract class CoreRouter {
      * 
      * @param provider 
      */
-    static setClearRequestProvider (provider: typeof CoreRequest) {
-        this.clearRequestProvider = provider
+    static setRequestProvider (provider: typeof CoreRequest) {
+        this.requestProvider = provider
     }
 
     /**
@@ -946,8 +946,8 @@ export abstract class CoreRouter {
      * 
      * @param provider 
      */
-    static setClearResponseProvider (provider: typeof CoreResponse) {
-        this.clearResponseProvider = provider
+    static setResponseProvider (provider: typeof CoreResponse) {
+        this.responseProvider = provider
     }
 
     /**
@@ -968,10 +968,10 @@ export abstract class CoreRouter {
         const isRequest = ['CoreRequest', 'Request', 'ClearRequest'].includes(provider.name)
         const isResponse = ['CoreResponse', 'Response', 'ClearResponse'].includes(provider.name)
 
-        if (isRequest && this.clearRequestProvider) {
-            return new this.clearRequestProvider(args as never)
-        } else if (isResponse && this.clearResponseProvider) {
-            return new this.clearResponseProvider(args as never)
+        if (isRequest && this.requestProvider) {
+            return new this.requestProvider(args as never)
+        } else if (isResponse && this.responseProvider) {
+            return new this.responseProvider(args as never)
         }
 
         return new provider(args as never)

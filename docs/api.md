@@ -421,7 +421,7 @@ console.log(routes);
 // ]
 ```
 
-### setClearRequestProvider(Request);
+### setRequestProvider(Request);
 
 You can subclass `Request` and register it as the provider to have your custom class used in place of the default across all routes.
 
@@ -440,7 +440,7 @@ class AppRequest extends Request {
   }
 }
 
-CoreRouter.setClearRequestProvider(AppRequest);
+CoreRouter.setRequestProvider(AppRequest);
 ```
 
 Once registered, every `ctx.clearRequest` across all routes will be an instance of `AppRequest`.
@@ -454,7 +454,7 @@ Router.post('/login', ({ clearRequest }) => {
 });
 ```
 
-### setClearResponseProvider(Response)
+### setResponseProvider(Response)
 
 You can subclass `Response` and register it as the provider to have your custom class used in place of the default across all routes.
 
@@ -472,7 +472,7 @@ class AppResponse extends Response {
   }
 }
 
-CoreRouter.setClearResponseProvider(AppResponse);
+CoreRouter.setResponseProvider(AppResponse);
 ```
 
 Once registered, every `ctx.clearResponse` across all routes will be an instance of `AppResponse`.

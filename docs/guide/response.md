@@ -197,7 +197,7 @@ Router.post('/users', [UserController, 'store']);
 
 ## Container Injection
 
-When [container binding](./container.md) is enabled, the `Response` instance can be injected directly into controller methods by type.
+When [container binding](./container-binding.md) is enabled, the `Response` instance can be injected directly into controller methods by type.
 
 ```typescript
 import { Request, Response } from 'clear-router';
@@ -232,7 +232,7 @@ class AppResponse extends Response {
   }
 }
 
-Router.setClearResponseProvider(AppResponse);
+Router.setResponseProvider(AppResponse);
 ```
 
 Once registered, every `ctx.clearResponse` across all routes will be an instance of `AppResponse`.

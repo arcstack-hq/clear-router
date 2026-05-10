@@ -77,7 +77,7 @@ describe('Core Request and Reponse', () => {
             customBinding = 'successfull'
         }
 
-        Router.setClearRequestProvider(CustomRequest)
+        Router.setRequestProvider(CustomRequest)
 
         Router.get('/health', ({ clearRequest }) => {
             return {
@@ -98,7 +98,7 @@ describe('Core Request and Reponse', () => {
             customBinding = 'successfull'
         }
 
-        Router.setClearResponseProvider(CustomResponse)
+        Router.setResponseProvider(CustomResponse)
 
         Router.get('/health', ({ clearResponse }) => {
             return {
