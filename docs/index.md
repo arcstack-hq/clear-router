@@ -4,7 +4,7 @@ Laravel-style routing for Express, H3, Fastify, Hono, and Koa with support for C
 
 ## Documentation
 
-- [Using with Express](./guide/usage//express)
+- [Using with Express](./guide/usage/express)
 - [Using with Fastify](./guide/usage/fastify)
 - [Using with H3](./guide/usage/h3)
 - [Using with Hono](./guide/usage/hono)
