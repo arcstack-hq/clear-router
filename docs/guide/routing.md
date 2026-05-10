@@ -89,6 +89,120 @@ Register a route for one or multiple HTTP methods at once.
 Router.add(['get', 'post'], '/auth/login', loginHandler);
 ```
 
+## Route Handlers
+
+Handlers can be controller classes, controller methods, or plain callable functions. When using a callable, the framework's `HttpContext` is passed as the first argument, giving you direct access to the request, response, and Clear Router's own request/response wrappers.
+
+### Callable Handlers
+
+```ts
+Router.get('/users', (ctx) => {
+  // ctx is the framework-specific HttpContext
+});
+```
+
+The shape of `ctx` depends on which framework router you are using.
+
+**Express** — `clear-router/express`
+
+```ts
+import { HttpContext } from 'clear-router/express';
+
+Router.get(
+  '/users',
+  ({ req, res, next, clearRequest, clearResponse }: HttpContext) => {
+    res.json({ users: [] });
+  },
+);
+```
+
+| Property        | Type                 | Description                                |
+| --------------- | -------------------- | ------------------------------------------ |
+| `req`           | `RequestWithGetBody` | Express request, extended with `getBody()` |
+| `res`           | `Response`           | Express response                           |
+| `next`          | `NextFunction`       | Express next function                      |
+| `clearRequest`  | `CoreRequest`        | Clear Router's normalised request wrapper  |
+| `clearResponse` | `CoreResponse`       | Clear Router's normalised response wrapper |
+
+**Fastify** — `clear-router/fastify`
+
+```ts
+import { HttpContext } from 'clear-router/fastify';
+
+Router.get(
+  '/users',
+  ({ req, reply, clearRequest, clearResponse }: HttpContext) => {
+    reply.send({ users: [] });
+  },
+);
+```
+
+| Property        | Type                 | Description                                |
+| --------------- | -------------------- | ------------------------------------------ |
+| `req`           | `RequestWithGetBody` | Fastify request, extended with `getBody()` |
+| `reply`         | `FastifyReply`       | Fastify reply instance                     |
+| `clearRequest`  | `CoreRequest`        | Clear Router's normalised request wrapper  |
+| `clearResponse` | `CoreResponse`       | Clear Router's normalised response wrapper |
+
+**H3** — `clear-router/h3`
+
+```ts
+import { HttpContext } from 'clear-router/h3';
+
+Router.get('/users', ({ req, clearRequest, clearResponse }: HttpContext) => {
+  return { users: [] };
+});
+```
+
+| Property        | Type           | Description                                |
+| --------------- | -------------- | ------------------------------------------ |
+| `req`           | `HttpRequest`  | H3 HTTP request                            |
+| `clearRequest`  | `CoreRequest`  | Clear Router's normalised request wrapper  |
+| `clearResponse` | `CoreResponse` | Clear Router's normalised response wrapper |
+
+> H3's `HttpContext` extends `H3Event`, so all H3 event utilities are available on `ctx` directly.
+
+**Hono** — `clear-router/hono`
+
+```ts
+import { HttpContext } from 'clear-router/hono';
+
+Router.get('/users', (ctx: HttpContext) => {
+  return ctx.json({ users: [] });
+});
+```
+
+| Property        | Type                 | Description                                |
+| --------------- | -------------------- | ------------------------------------------ |
+| `req`           | `RequestWithGetBody` | Hono request, extended with `getBody()`    |
+| `clearRequest`  | `CoreRequest`        | Clear Router's normalised request wrapper  |
+| `clearResponse` | `CoreResponse`       | Clear Router's normalised response wrapper |
+
+> `HttpContext` extends Hono's native `Context`, so all Hono context methods (e.g. `ctx.json()`, `ctx.text()`) are available directly.
+
+**Koa** — `clear-router/koa`
+
+```ts
+import { HttpContext } from 'clear-router/koa';
+
+Router.get(
+  '/users',
+  ({ request, clearRequest, clearResponse, query, params }: HttpContext) => {
+    // ...
+  },
+);
+```
+
+| Property        | Type                  | Description                                |
+| --------------- | --------------------- | ------------------------------------------ |
+| `request`       | `RequestWithGetBody`  | Koa request, extended with `getBody()`     |
+| `clearRequest`  | `CoreRequest`         | Clear Router's normalised request wrapper  |
+| `clearResponse` | `CoreResponse`        | Clear Router's normalised response wrapper |
+| `params`        | `Record<string, any>` | Parsed route parameters                    |
+| `query`         | `Record<string, any>` | Parsed query string parameters             |
+
+> `HttpContext` extends `Koa.Context`, so all standard Koa context properties (`ctx.body`, `ctx.status`, etc.) are available.
+
 ## Resource Routes
 
 ### `Router.apiResource(basePath, controller, options?)`
