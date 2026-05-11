@@ -14,10 +14,7 @@ export default defineConfig({
             { text: 'H3', link: '/guide/h3' },
             { text: 'Hono', link: '/guide/hono' },
             { text: 'Koa', link: '/guide/koa' },
-            { text: 'Container Binding', link: '/guide/container-binding' },
-            { text: 'Adapters', link: '/guide/adapters' },
             { text: 'API', link: '/api' },
-            { text: 'Testing', link: '/testing' },
         ],
         sidebar: [
             {
