@@ -1122,7 +1122,7 @@ export abstract class CoreRouter {
                 tokens,
                 designTokens,
             })
-            if (pluginArgs) {
+            if (pluginArgs?.length) {
                 return (handlerFunction as any)(...pluginArgs)
             }
 

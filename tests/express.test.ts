@@ -516,6 +516,39 @@ describe('Express App (JS)', () => {
             })
     })
 
+    it('falls back to the default handler signature when plugin arguments are empty', async () => {
+        const emptyArgumentsPlugin = definePlugin({
+            name: 'test-empty-arguments-plugin',
+            setup ({ resolveArguments }) {
+                resolveArguments(() => [])
+            },
+        })
+
+        class EmptyArgumentsController {
+            show (ctx: any, request: ClearRouterRequest) {
+                return {
+                    hasContext: Boolean(ctx.req),
+                    id: request.param('id'),
+                }
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: true,
+            },
+        })
+        Router.use(emptyArgumentsPlugin)
+        Router.get('/api/empty-plugin-arguments/:id', [EmptyArgumentsController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/empty-plugin-arguments/246')
+            .expect(200)
+            .expect({ hasContext: true, id: '246' })
+    })
+
     it('falls back to the default handler signature when binding is disabled', async () => {
         class BoundUsersController {
             @Bind(ClearRouterRequest)
