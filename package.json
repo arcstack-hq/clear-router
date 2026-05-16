@@ -19,11 +19,11 @@
     ],
     "homepage": "https://arkstack-tmp.github.io/clear-router",
     "bugs": {
-        "url": "https://github.com/toneflix/clear-router/issues"
+        "url": "https://github.com/arkstack-tmp/clear-router/issues"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/toneflix/clear-router.git"
+        "url": "git+https://github.com/arkstack-tmp/clear-router.git"
     },
     "license": "MIT",
     "author": "3m1n1nce <3m1n1nce@toneflix.net>",

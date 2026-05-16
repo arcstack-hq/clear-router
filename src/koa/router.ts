@@ -9,7 +9,7 @@ import { Route } from 'src/Route'
  * @class clear-router Koa Router
  * @description Laravel-style routing system for Koa using @koa/router and shared clear-router core
  * @author 3m1n3nc3
- * @repository https://github.com/toneflix/clear-router
+ * @repository https://github.com/arkstack-tmp/clear-router
  */
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:koa'

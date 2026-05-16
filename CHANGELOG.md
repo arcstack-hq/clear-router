@@ -490,7 +490,7 @@ console.log(routes);
 
 For questions, issues, or feature requests:
 
-- **GitHub Issues**: https://github.com/toneflix/clear-router/issues
+- **GitHub Issues**: https://github.com/arkstack-tmp/clear-router/issues
 - **Email**: oss@toneflix.net
 - **Documentation**: See API.md and TESTING.md
 

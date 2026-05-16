@@ -2,7 +2,7 @@
 
 [![NPM Downloads](https://img.shields.io/npm/dt/clear-router.svg)](https://www.npmjs.com/package/clear-router)
 [![npm version](https://img.shields.io/npm/v/clear-router.svg)](https://www.npmjs.com/package/clear-router)
-[![License](https://img.shields.io/npm/l/clear-router.svg)](https://github.com/toneflix/clear-router/blob/main/LICENSE)
+[![License](https://img.shields.io/npm/l/clear-router.svg)](https://github.com/arkstack-tmp/clear-router/blob/main/LICENSE)
 [![Publish to NPM](https://github.com/arkstack-tmp/clear-router/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/arkstack-tmp/clear-router/actions/workflows/npm-publish.yml)
 [![Run Tests](https://github.com/arkstack-tmp/clear-router/actions/workflows/ci.yml/badge.svg)](https://github.com/arkstack-tmp/clear-router/actions/workflows/ci.yml)
 
@@ -146,4 +146,4 @@ MIT License © 2026 ToneFlix Technologies Limited
 
 ## Repository
 
-https://github.com/toneflix/clear-router
+https://github.com/arkstack-tmp/clear-router

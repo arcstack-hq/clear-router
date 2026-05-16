@@ -10,7 +10,7 @@ import { resolveResponseMeta } from 'src/core/responses'
  * @class clear-router H3 Router
  * @description Laravel-style routing system for Express.js and H3 with support for CommonJS, ESM, and TypeScript
  * @author 3m1n3nc3
- * @repository https://github.com/toneflix/clear-router
+ * @repository https://github.com/arkstack-tmp/clear-router
  */
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:h3'

@@ -19,5 +19,5 @@ Laravel-style routing for Express, H3, Fastify, Hono, and Koa with support for C
 
 ## Quick Links
 
-- [GitHub Repository](https://github.com/toneflix/clear-router)
+- [GitHub Repository](https://github.com/arkstack-tmp/clear-router)
 - [npm package](https://www.npmjs.com/package/clear-router)

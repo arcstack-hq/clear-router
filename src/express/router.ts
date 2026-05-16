@@ -11,7 +11,7 @@ import { Route } from 'src/Route'
  * @description Laravel-style routing system for Express.js and H3 with support for CommonJS, ESM, and TypeScript
  * @author Refkinscallv
  * @author 3m1n3nc3
- * @repository https://github.com/toneflix/clear-router
+ * @repository https://github.com/arkstack-tmp/clear-router
  */
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:express'

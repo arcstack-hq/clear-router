@@ -20,7 +20,7 @@ import { createRequire } from 'node:module'
  * @class clear-router CoreRouter
  * @description Core routing logic for clear-router, shared between all supported adapters (Express.js, H3, etc.)
  * @author 3m1n3nc3
- * @repository https://github.com/toneflix/clear-router
+ * @repository https://github.com/arkstack-tmp/clear-router
  */
 export abstract class CoreRouter {
     protected static routerStateNamespace = 'clear-router:core'
