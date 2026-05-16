@@ -3,8 +3,8 @@
 [![NPM Downloads](https://img.shields.io/npm/dt/clear-router.svg)](https://www.npmjs.com/package/clear-router)
 [![npm version](https://img.shields.io/npm/v/clear-router.svg)](https://www.npmjs.com/package/clear-router)
 [![License](https://img.shields.io/npm/l/clear-router.svg)](https://github.com/toneflix/clear-router/blob/main/LICENSE)
-[![Publish to NPM](https://github.com/arkstack-hq/clear-router/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/arkstack-hq/clear-router/actions/workflows/npm-publish.yml)
-[![Run Tests](https://github.com/arkstack-hq/clear-router/actions/workflows/ci.yml/badge.svg)](https://github.com/arkstack-hq/clear-router/actions/workflows/ci.yml)
+[![Publish to NPM](https://github.com/arkstack-tmp/clear-router/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/arkstack-tmp/clear-router/actions/workflows/npm-publish.yml)
+[![Run Tests](https://github.com/arkstack-tmp/clear-router/actions/workflows/ci.yml/badge.svg)](https://github.com/arkstack-tmp/clear-router/actions/workflows/ci.yml)
 
 Laravel-style routing for Node.js with support for Express, H3, Fastify, Hono, and Koa, including CommonJS, ESM, and TypeScript support.
 
@@ -70,27 +70,27 @@ yarn add clear-router express
 
 ### Express JS
 
-See the [Express JS documentation](https://arkstack-hq.github.io/clear-router/guide/express) for details.
+See the [Express JS documentation](https://arkstack-tmp.github.io/clear-router/guide/express) for details.
 
 ### H3
 
-See the [H3 documentation](https://arkstack-hq.github.io/clear-router/guide/h3) for details.
+See the [H3 documentation](https://arkstack-tmp.github.io/clear-router/guide/h3) for details.
 
 ### Fastify
 
-See the [Fastify documentation](https://arkstack-hq.github.io/clear-router/guide/fastify) for details.
+See the [Fastify documentation](https://arkstack-tmp.github.io/clear-router/guide/fastify) for details.
 
 ### Hono
 
-See the [Hono documentation](https://arkstack-hq.github.io/clear-router/guide/hono) for details.
+See the [Hono documentation](https://arkstack-tmp.github.io/clear-router/guide/hono) for details.
 
 ### Koa
 
-See the [Koa documentation](https://arkstack-hq.github.io/clear-router/guide/koa) for details.
+See the [Koa documentation](https://arkstack-tmp.github.io/clear-router/guide/koa) for details.
 
 ## API Reference
 
-See [API.md](https://arkstack-hq.github.io/clear-router/api) for complete API documentation.
+See [API.md](https://arkstack-tmp.github.io/clear-router/api) for complete API documentation.
 
 ## Middleware Execution Order
 
@@ -115,7 +115,7 @@ npm run test:esm      # Test ESM
 npm run test:ts       # Test TypeScript
 ```
 
-See [TESTING.md](https://arkstack-hq.github.io/clear-router/testing) for a detailed testing guide.
+See [TESTING.md](https://arkstack-tmp.github.io/clear-router/testing) for a detailed testing guide.
 
 ## Examples
 
