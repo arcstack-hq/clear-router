@@ -109,7 +109,7 @@ jobs:
           echo "new_version=$TARGET_VERSION" >> $GITHUB_OUTPUT
 
       - name: Publish to NPM
-        run: pnpm publish
+        run: pnpm publish --no-git-checks
         if: steps.release_version.outputs.version != ''
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
