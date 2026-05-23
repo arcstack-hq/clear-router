@@ -23,9 +23,13 @@ export interface ClearRouterPluginArgumentsContext<X = any> extends ClearRouterP
     designTokens: BindToken[]
 }
 
-export type PluginBindFactory<T = any> = (ctx: ClearRouterPluginRequestContext) => T | Promise<T>
-export type PluginBindValue<T = any> = BindValue<T> | PluginBindFactory<T>
-export type PluginBind = <T>(token: BindToken<T>, value: PluginBindValue<T>) => void
+export type PluginBindFactory<
+    T = any,
+    X = any> = (ctx: ClearRouterPluginRequestContext<X>) => T | Promise<T>
+
+export type PluginBindValue<T = any, X = any> = BindValue<T> | PluginBindFactory<T, X>
+export type PluginBind<X = any> = <T>(token: BindToken<T>, value: PluginBindValue<T, X>) => void
+
 export type PluginArgumentsResolver<HttpContext = any> = (
     ctx: ClearRouterPluginArgumentsContext<HttpContext>
 ) => any[] | undefined | Promise<any[] | undefined>
@@ -38,7 +42,7 @@ export interface ClearRouterPluginContext<Options = any, HttpContext = any> {
     /**
      * Register service container bindings
      */
-    bind: PluginBind
+    bind: PluginBind<HttpContext>
     /**
      * Replace all controller method arguments
      * @param resolver 
