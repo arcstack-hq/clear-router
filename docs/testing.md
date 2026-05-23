@@ -23,7 +23,7 @@ pnpm install
 This will install all required dependencies including:
 
 - vitest (test framework)
-- supertest (HTTP testing)
+- parasito (HTTP testing)
 - typescript & ts-node (TypeScript support)
 
 ### Configuration Files
@@ -149,7 +149,7 @@ File: `tests/commonjs.test.js`
 ### Example Test
 
 ```javascript
-const request = require('supertest');
+const request = require('parasito');
 const express = require('express');
 const Routes = require('../src/routes');
 
@@ -258,7 +258,7 @@ File: `tests/esm.test.mjs`
 ### Example Test
 
 ```javascript
-import request from 'supertest';
+import request from 'parasito';
 import express from 'express';
 import Router from '../src/routes.mjs';
 
@@ -334,7 +334,7 @@ File: `tests/typescript.test.ts`
 ### Example Test
 
 ```typescript
-import request from 'supertest';
+import request from 'parasito';
 import express, { Router } from 'express';
 import Router, { HttpContext } from '../types/index';
 
@@ -426,7 +426,7 @@ npx ts-node tests/typescript.test.ts
 ### Test Template
 
 ```javascript
-const request = require('supertest');
+const request = require('parasito');
 const express = require('express');
 const Routes = require('clear-router');
 
@@ -593,6 +593,6 @@ beforeEach(() => {
 
 ## Additional Resources
 
-- [Vitest Documentation](https://vitest.dev/)
-- [Supertest Documentation](https://github.com/visionmedia/supertest)
+- [Vitest Documentation](https://vitest.dev)
+- [Parasito Documentation](https://github.com/arkstack-tmp/parasito)
 - [TypeScript Testing](https://www.typescriptlang.org/docs/handbook/project-references.html#an-example-project)
