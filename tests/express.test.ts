@@ -329,6 +329,35 @@ describe('Express App (JS)', () => {
             })
     })
 
+    it('allows plugins to augment http context', async () => {
+        const plugin = definePlugin<{ name: string }>({
+            name: 'test-plugin',
+            setup ({ useHttpContext }) {
+                useHttpContext(({ ctx }) => {
+                    ctx.pluginName = 'test-plugin'
+                })
+            },
+        })
+
+        class PluginUsersController {
+            show (ctx: { pluginName: string }) {
+                return {
+                    pluginName: ctx.pluginName
+                }
+            }
+        }
+
+        Router.use(plugin, { name: 'plugin' })
+        Router.get('/api/plugin/augment', [PluginUsersController, 'show'])
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/plugin/augment')
+            .expect(200)
+            .expect({ pluginName: 'test-plugin' })
+    })
+
     it('supports plugins registering container bindings', async () => {
         class AuditService {
             constructor(readonly name: string) { }

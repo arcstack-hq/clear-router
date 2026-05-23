@@ -30,6 +30,7 @@ export abstract class CoreRouter {
     private static readonly defaultConfigKey = Symbol.for('clear-router:default-config')
     private static readonly pluginStoreKey = Symbol.for('clear-router:plugins')
     private static readonly pluginPendingKey = Symbol.for('clear-router:plugin-promises')
+    private static readonly pluginHttpCtxResolversKey = Symbol.for('clear-router:plugin-http-ctx')
     private static readonly pluginArgumentResolversKey = Symbol.for('clear-router:plugin-argument-resolvers')
     private static requestProvider?: typeof CoreRequest
     private static responseProvider?: typeof CoreResponse
@@ -162,12 +163,20 @@ export abstract class CoreRouter {
 
     protected static getPluginArgumentResolvers (): Set<PluginArgumentsResolver> {
         const g = globalThis as Record<PropertyKey, any>
-
         if (!g[this.pluginArgumentResolversKey]) {
             g[this.pluginArgumentResolversKey] = new Set<PluginArgumentsResolver>()
         }
 
         return g[this.pluginArgumentResolversKey]
+    }
+
+    protected static getPluginHttpCtxResolvers (): Set<PluginArgumentsResolver> {
+        const g = globalThis as Record<PropertyKey, any>
+        if (!g[this.pluginHttpCtxResolversKey]) {
+            g[this.pluginHttpCtxResolversKey] = new Set<PluginArgumentsResolver>()
+        }
+
+        return g[this.pluginHttpCtxResolversKey]
     }
 
     protected static createDefaultState () {
@@ -284,6 +293,11 @@ export abstract class CoreRouter {
         }
     }
 
+    /**
+     * Default configuration used for everytime the router is reset
+     * 
+     * @param options 
+     */
     static configureDefaults (options?: RouterConfig): void {
         const g = globalThis as Record<PropertyKey, any>
         const defaults = this.mergeConfig(g[this.defaultConfigKey] || this.createBaseConfig(), options)
@@ -314,9 +328,7 @@ export abstract class CoreRouter {
 
         if (name && store.has(name)) return
 
-        if (name) {
-            store.add(name)
-        }
+        if (name) store.add(name)
 
         const setup = async (): Promise<void> => {
             const ctx: ClearRouterPluginContext<Options> = {
@@ -324,6 +336,9 @@ export abstract class CoreRouter {
                 bind: this.createPluginBind(),
                 resolveArguments: (resolver) => {
                     this.getPluginArgumentResolvers().add(resolver)
+                },
+                useHttpContext: (resolver) => {
+                    this.getPluginHttpCtxResolvers().add(resolver)
                 },
                 bindings: Container.bindings(),
                 configure: this.configure.bind(this),
@@ -403,7 +418,6 @@ export abstract class CoreRouter {
     }
 
     protected static async resolvePluginArguments (
-        this: any,
         ctx: any,
         routeContext: Omit<ClearRouterPluginArgumentsContext, keyof ClearRouterPluginRequestContext>
     ): Promise<any[] | undefined> {
@@ -414,13 +428,25 @@ export abstract class CoreRouter {
         const pluginContext: ClearRouterPluginArgumentsContext = {
             ...requestContext,
             ...routeContext,
-        }
+        } as never
 
         for (const resolver of resolvers) {
             const args = await resolver(pluginContext)
             if (Array.isArray(args)) {
                 return args
             }
+        }
+    }
+
+    protected static async resolvePluginHttpCtx (
+        ctx: any,
+    ): Promise<void> {
+        const resolvers = Array.from(this.getPluginHttpCtxResolvers()) as PluginArgumentsResolver[]
+        if (!resolvers.length) return undefined
+
+        const pluginContext = this.createPluginRequestContext(ctx)
+        for (const resolver of resolvers) {
+            await resolver(pluginContext as never)
         }
     }
 
@@ -1098,6 +1124,7 @@ export abstract class CoreRouter {
     ): Promise<any> {
         return this.pluginRequestContext.run(this.createPluginRequestContext(ctx), async () => {
             await this.pluginsReady()
+            await this.resolvePluginHttpCtx(ctx)
 
             if (!this.config.container?.enabled) {
                 return handlerFunction(ctx, ctx.clearRequest)
@@ -1113,7 +1140,9 @@ export abstract class CoreRouter {
                 { target: bindingTarget, propertyKey: '__class__' },
             ]) ?? getStandardMetadata(bindingMetadata, bindingMethod)
                 ?? getStandardMetadata(bindingMetadata, '__class__')
+
             const tokens = metadata?.tokens?.length ? metadata.tokens : designTokens
+
             const pluginArgs = await this.resolvePluginArguments(ctx, {
                 target: bindingTarget,
                 method: bindingMethod,
@@ -1122,6 +1151,7 @@ export abstract class CoreRouter {
                 tokens,
                 designTokens,
             })
+
             if (pluginArgs?.length) {
                 return (handlerFunction as any)(...pluginArgs)
             }

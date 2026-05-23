@@ -30,31 +30,93 @@ export type PluginArgumentsResolver = (
     ctx: ClearRouterPluginArgumentsContext
 ) => any[] | undefined | Promise<any[] | undefined>
 
-export interface ClearRouterPluginContext<Options = any> {
+export interface ClearRouterPluginContext<Options = any, _HttpContext = any> {
+    /**
+     * The service container
+     */
     container: typeof Container
+    /**
+     * Register service container bindings
+     */
     bind: PluginBind
+    /**
+     * Replace all controller method arguments
+     * @param resolver 
+     * @returns 
+     */
     resolveArguments: (resolver: PluginArgumentsResolver) => void
+    /**
+     * Use the current http context
+     */
+    useHttpContext: (resolver: PluginArgumentsResolver) => void
+    /**
+     * All registered service container bindings
+     */
     bindings: Record<string, BindValue>,
+    /**
+     * Configures the router with the given options, such as method override settings
+     * 
+     * @param options 
+     * @returns 
+     */
     configure: (options: RouterConfig) => void
+    /**
+     * Default configuration used for everytime the router is reset
+     * 
+     * @param options 
+     */
     configureDefaults: (options: RouterConfig) => void
+    /**
+     * The current Request instance
+     */
     readonly request?: CoreRequest
+    /**
+     * The current Response instance
+     * @returns 
+     */
     readonly response?: CoreResponse
+    /**
+     * Get the current Request instance
+     * @returns 
+     */
     getRequest: () => CoreRequest | undefined
+    /**
+     * Get the current Response instance
+     * @returns 
+     */
     getResponse: () => CoreResponse | undefined
+    /**
+     * Plugin configuration options
+     */
     options: Options
 }
 
-export interface ClearRouterPlugin<Options = any> {
+export interface ClearRouterPlugin<Options = any, HttpContext = any> {
+    /**
+     * The name of the plugin
+     */
     name?: string
-    setup: (ctx: ClearRouterPluginContext<Options>) => PluginSetupResult
+    /**
+     * Plugin setup an implemnetation
+     * 
+     * @param ctx 
+     * @returns 
+     */
+    setup: (ctx: ClearRouterPluginContext<Options, HttpContext>) => PluginSetupResult
 }
 
-export type ClearRouterPluginInput<Options = any> =
+export type ClearRouterPluginInput<Options = any, HttpContext = any> =
     | ClearRouterPlugin<Options>
-    | ((ctx: ClearRouterPluginContext<Options>) => PluginSetupResult)
+    | ((ctx: ClearRouterPluginContext<Options, HttpContext>) => PluginSetupResult)
 
-export function definePlugin<Options = any> (
-    plugin: ClearRouterPlugin<Options>
-): ClearRouterPlugin<Options> {
+/**
+ * Creates a new plugin
+ * 
+ * @param plugin 
+ * @returns 
+ */
+export function definePlugin<Options = any, HttpContext = any> (
+    plugin: ClearRouterPlugin<Options, HttpContext>
+): ClearRouterPlugin<Options, HttpContext> {
     return plugin
 }
