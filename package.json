@@ -95,7 +95,7 @@
         "example:esm": "tsx example/express/esm.ts",
         "example:ts": "tsx example/express/typescript.ts",
         "build": "pnpm tsdown",
-        "prepublishOnly": "pnpm build && pnpm vitest run --coverage && pnpm lint"
+        "prepublishOnly": "pnpm build && pnpm vitest run && pnpm lint"
     },
     "peerDependencies": {
         "@koa/router": "^15.0.0",
