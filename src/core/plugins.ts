@@ -6,15 +6,15 @@ import type { RouterConfig } from 'types/basic'
 
 export type PluginSetupResult = void | Promise<void>
 
-export interface ClearRouterPluginRequestContext {
-    ctx: any
+export interface ClearRouterPluginRequestContext<HttpContext = any> {
+    ctx: HttpContext
     request: CoreRequest
     response: CoreResponse
     getBindings: () => Record<string, BindValue>,
     [key: string]: any
 }
 
-export interface ClearRouterPluginArgumentsContext extends ClearRouterPluginRequestContext {
+export interface ClearRouterPluginArgumentsContext<X = any> extends ClearRouterPluginRequestContext<X> {
     target?: object
     method?: PropertyKey
     handler?: object
@@ -26,11 +26,11 @@ export interface ClearRouterPluginArgumentsContext extends ClearRouterPluginRequ
 export type PluginBindFactory<T = any> = (ctx: ClearRouterPluginRequestContext) => T | Promise<T>
 export type PluginBindValue<T = any> = BindValue<T> | PluginBindFactory<T>
 export type PluginBind = <T>(token: BindToken<T>, value: PluginBindValue<T>) => void
-export type PluginArgumentsResolver = (
-    ctx: ClearRouterPluginArgumentsContext
+export type PluginArgumentsResolver<HttpContext = any> = (
+    ctx: ClearRouterPluginArgumentsContext<HttpContext>
 ) => any[] | undefined | Promise<any[] | undefined>
 
-export interface ClearRouterPluginContext<Options = any, _HttpContext = any> {
+export interface ClearRouterPluginContext<Options = any, HttpContext = any> {
     /**
      * The service container
      */
@@ -44,11 +44,11 @@ export interface ClearRouterPluginContext<Options = any, _HttpContext = any> {
      * @param resolver 
      * @returns 
      */
-    resolveArguments: (resolver: PluginArgumentsResolver) => void
+    resolveArguments: (resolver: PluginArgumentsResolver<HttpContext>) => void
     /**
      * Use the current http context
      */
-    useHttpContext: (resolver: PluginArgumentsResolver) => void
+    useHttpContext: (resolver: PluginArgumentsResolver<HttpContext>) => void
     /**
      * All registered service container bindings
      */

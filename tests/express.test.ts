@@ -330,7 +330,7 @@ describe('Express App (JS)', () => {
     })
 
     it('allows plugins to augment http context', async () => {
-        const plugin = definePlugin<{ name: string }>({
+        const plugin = definePlugin<{ name: string }, { pluginName: string }>({
             name: 'test-plugin',
             setup ({ useHttpContext }) {
                 useHttpContext(({ ctx }) => {
