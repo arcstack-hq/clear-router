@@ -1,4 +1,5 @@
 export * from './ClearRequest'
 export * from './Controller'
+export * from './Contracts'
 export * from './Route'
 export * from './core'

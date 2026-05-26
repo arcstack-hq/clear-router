@@ -1,6 +1,6 @@
 import type { Context, HonoRequest, MiddlewareHandler } from 'hono'
 
-import type { ClearHttpContext } from 'clear-router/core'
+import type { ClearHttpContext } from '../Contracts'
 import type { ControllerHandler } from './basic'
 import { Request as CoreRequest } from 'src/core/Request'
 import { Response as CoreResponse } from 'src/core/Response'
