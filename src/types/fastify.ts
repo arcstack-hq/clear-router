@@ -2,8 +2,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
 import type { ClearHttpContext } from '../Contracts'
 import type { ControllerHandler } from './basic'
-import { Request as CoreRequest } from 'src/core/Request'
-import { Response as CoreResponse } from 'src/core/Response'
+import type { Request as CoreRequest } from '../core/Request'
+import type { Response as CoreResponse } from '../core/Response'
 
 export interface RequestWithGetBody extends FastifyRequest {
     getBody: () => Record<string, any>

@@ -5,3 +5,9 @@
  */
 export interface ClearHttpContext {
 }
+
+export interface RouteParameter {
+    name: string
+    field?: string
+    optional: boolean
+}

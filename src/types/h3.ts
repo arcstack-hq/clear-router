@@ -2,8 +2,8 @@ import type { EventHandlerRequest, H3, H3Event, TypedServerRequest } from 'h3'
 
 import type { ClearHttpContext } from '../Contracts'
 import type { ControllerHandler } from './basic'
-import { Request as CoreRequest } from 'src/core/Request'
-import { Response as CoreResponse } from 'src/core/Response'
+import type { Request as CoreRequest } from '../core/Request'
+import type { Response as CoreResponse } from '../core/Response'
 
 export type H3App = Omit<H3, 'fetch'> & {
     fetch: (request: TypedServerRequest<EventHandlerRequest>) => Promise<Response>

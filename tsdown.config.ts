@@ -9,12 +9,14 @@ export default defineConfig([
     dts: true,
     clean: true,
     exports: true,
+    unbundle: true,
     outDir: 'dist',
   },
   {
     dts: true,
     clean: true,
     exports: true,
+    unbundle: true,
     entry: [
       'src/core/index.ts',
       'src/decorators/index.ts',

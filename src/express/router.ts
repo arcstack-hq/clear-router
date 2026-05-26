@@ -1,10 +1,10 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'src/types/basic'
-import { Handler, HttpContext, Middleware, RouteHandler } from 'src/types/express'
-import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
+import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../types/basic'
+import type { Handler, HttpContext, Middleware, RouteHandler } from '../types/express'
+import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
-import { CoreRouter } from 'src/core/router'
-import { Router as ExpressRouter } from 'express'
-import { Route } from 'src/Route'
+import { CoreRouter } from '../core/router'
+import type { Router as ExpressRouter } from 'express'
+import type { Route } from '../Route'
 
 /**
  * @class clear-router Express Router

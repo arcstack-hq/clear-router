@@ -1,9 +1,9 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'src/types/basic'
-import { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from 'src/types/fastify'
-import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
+import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../types/basic'
+import type { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from '../types/fastify'
+import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
-import { CoreRouter } from 'src/core/router'
-import { Route } from 'src/Route'
+import { CoreRouter } from '../core/router'
+import type { Route } from '../Route'
 
 /**
  * @class clear-router Fastify Router

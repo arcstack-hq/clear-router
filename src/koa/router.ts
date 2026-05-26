@@ -1,9 +1,9 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'src/types/basic'
-import { Handler, HttpContext, KoaRouterApp, Middleware, RouteHandler } from 'src/types/koa'
-import { isFetchResponse, resolveResponseMeta } from 'src/core/responses'
+import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../types/basic'
+import type { Handler, HttpContext, KoaRouterApp, Middleware, RouteHandler } from '../types/koa'
+import { isFetchResponse, resolveResponseMeta } from '../core/responses'
 
-import { CoreRouter } from 'src/core/router'
-import { Route } from 'src/Route'
+import { CoreRouter } from '../core/router'
+import type { Route } from '../Route'
 
 /**
  * @class clear-router Koa Router

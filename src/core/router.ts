@@ -1,4 +1,4 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'src/types/basic'
+import type { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from '../types/basic'
 import type {
     ClearRouterPluginArgumentsContext,
     ClearRouterPluginContext,
@@ -10,10 +10,10 @@ import type {
 import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata, isClass } from './bindings'
 
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { Controller } from 'src/Controller'
+import { Controller } from '../Controller'
 import { Request as CoreRequest } from './Request'
 import { Response as CoreResponse } from './Response'
-import { Route } from 'src/Route'
+import { Route } from '../Route'
 import { createRequire } from 'node:module'
 
 /**

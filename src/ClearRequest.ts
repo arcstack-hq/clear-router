@@ -1,10 +1,10 @@
-import { Middleware as EMiddleware } from 'src/types/express'
-import { Middleware as FMiddleware } from 'src/types/fastify'
-import { Middleware as HMiddleware } from 'src/types/h3'
-import { Middleware as HNMiddleware } from 'src/types/hono'
-import { Middleware as KMiddleware } from 'src/types/koa'
-import { RequestData } from 'src/types'
-import { Route } from './Route'
+import type { Middleware as EMiddleware } from './types/express'
+import type { Middleware as FMiddleware } from './types/fastify'
+import type { Middleware as HMiddleware } from './types/h3'
+import type { Middleware as HNMiddleware } from './types/hono'
+import type { Middleware as KMiddleware } from './types/koa'
+import type { RequestData } from './types'
+import type { Route } from './Route'
 
 export class ClearRequest<
     X = any,

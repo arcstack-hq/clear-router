@@ -2,7 +2,7 @@ import { BindToken, BindValue, Container } from './bindings'
 
 import type { Request as CoreRequest } from './Request'
 import type { Response as CoreResponse } from './Response'
-import type { RouterConfig } from 'src/types/basic'
+import type { RouterConfig } from '../types/basic'
 
 export type PluginSetupResult = void | Promise<void>
 
