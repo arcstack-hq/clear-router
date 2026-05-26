@@ -15,12 +15,10 @@ export interface HttpRequest extends TypedServerRequest<EventHandlerRequest> {
     getBody: () => Record<string, any>;
 };
 
-type MergedHttpContext = Omit<H3Event, 'req'> & ClearHttpContext
-
 /**
  * HTTP context passed to route handlers
  */
-export interface HttpContext extends MergedHttpContext {
+export interface HttpContext extends Omit<H3Event, 'req'>, ClearHttpContext {
     req: HttpRequest
     clearRequest: CoreRequest
     clearResponse: CoreResponse

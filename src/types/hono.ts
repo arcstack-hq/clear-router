@@ -9,9 +9,7 @@ export type RequestWithGetBody = HonoRequest & {
     getBody: () => Record<string, any>
 }
 
-type MergedHttpContext = ClearHttpContext & Context
-
-export interface HttpContext extends MergedHttpContext {
+export interface HttpContext extends Context, ClearHttpContext {
     req: RequestWithGetBody
     clearRequest: CoreRequest
     clearResponse: CoreResponse

@@ -10,9 +10,7 @@ export interface RequestWithGetBody extends Koa.Request {
     body?: any
 }
 
-type MergedHttpContext = ClearHttpContext & Koa.Context
-
-export interface HttpContext extends MergedHttpContext {
+export interface HttpContext extends Koa.Context, ClearHttpContext {
     request: RequestWithGetBody
     clearRequest: CoreRequest
     clearResponse: CoreResponse
