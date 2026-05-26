@@ -1,6 +1,6 @@
 import { H3Event, getQuery, getRouterParams } from 'h3'
 
-import { NextFunction } from 'types/h3'
+import { NextFunction } from 'src/types/h3'
 import Route from '../../src/h3/router'
 
 function pickRequestFields (evt: H3Event) {
@@ -128,8 +128,8 @@ Route.middleware([Middleware.protected], () => {
 
 Route.get('routes-info', () => {
     const allRoutes = Route.allRoutes()
-    
-return {
+
+    return {
         total: allRoutes.length,
         routes: allRoutes
     }

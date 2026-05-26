@@ -1,6 +1,6 @@
 import express, { Router as ExRouter, NextFunction, Request, Response } from 'express'
 
-import { HttpContext } from 'types/express'
+import { HttpContext } from 'src/types/express'
 import Router from 'clear-router/express/router'
 
 const app = express()

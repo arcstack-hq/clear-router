@@ -1,10 +1,9 @@
-import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+// import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
 import { defineConfig } from 'tsdown'
 
 export default defineConfig([
   {
-    tsconfig: 'tsconfig.json',
     entry: ['src/index.ts'],
     format: ['esm', 'cjs'],
     dts: true,
@@ -16,7 +15,6 @@ export default defineConfig([
     dts: true,
     clean: true,
     exports: true,
-    tsconfig: 'tsconfig.json',
     entry: [
       'src/core/index.ts',
       'src/decorators/index.ts',
@@ -35,29 +33,28 @@ export default defineConfig([
   {
     clean: true,
     exports: true,
-    unbundle: true,
     entry: {
       'types/*': [
-        './types/*.ts',
-        '!./types/index.ts',
-        '!./src/index.ts',
-        '!./src/ClearRequest.ts',
-        '!./src/Route.ts',
+        './src/types/*.ts',
+        '!./src/types/index.ts',
+        // '!./src/index.ts',
+        // '!./src/ClearRequest.ts',
+        // '!./src/Route.ts',
       ],
     },
     outDir: 'dist',
     format: ['esm'],
-    onSuccess (rsc) {
-      for (const n of ['ClearRequest', 'Route']) {
-        cpSync(rsc.outDir + `/src/${n}.d.mts`, rsc.outDir + `/types/${n}.d.mts`)
-      }
-      cpSync(rsc.outDir + '/src/core', rsc.outDir + '/types/core', { recursive: true })
-      for (const d of Object.keys(rsc.entry)) {
-        const p = d.replace('types', `${rsc.outDir}/types`) + '.d.mts'
-        const code = readFileSync(p, 'utf-8')
-        writeFileSync(p, code.replace(/\.\.\/src\//g, './'), 'utf-8')
-      }
-      rmSync(rsc.outDir + '/src', { recursive: true })
-    },
+    // onSuccess (rsc) {
+    //   for (const n of ['ClearRequest', 'Route']) {
+    //     cpSync(rsc.outDir + `/src/${n}.d.mts`, rsc.outDir + `/types/${n}.d.mts`)
+    //   }
+    //   cpSync(rsc.outDir + '/src/core', rsc.outDir + '/types/core', { recursive: true })
+    //   for (const d of Object.keys(rsc.entry)) {
+    //     const p = d.replace('types', `${rsc.outDir}/types`) + '.d.mts'
+    //     const code = readFileSync(p, 'utf-8')
+    //     writeFileSync(p, code.replace(/\.\.\/src\//g, './'), 'utf-8')
+    //   }
+    //   rmSync(rsc.outDir + '/src', { recursive: true })
+    // },
   }
 ])

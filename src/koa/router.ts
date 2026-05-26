@@ -1,5 +1,5 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
-import { Handler, HttpContext, KoaRouterApp, Middleware, RouteHandler } from 'types/koa'
+import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'src/types/basic'
+import { Handler, HttpContext, KoaRouterApp, Middleware, RouteHandler } from 'src/types/koa'
 import { isFetchResponse, resolveResponseMeta } from 'src/core/responses'
 
 import { CoreRouter } from 'src/core/router'

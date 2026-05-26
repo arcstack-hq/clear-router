@@ -1,8 +1,8 @@
-import { HttpMethod, RequestData } from 'types'
+import { HttpMethod, RequestData } from 'src/types'
 
 import { ClearRequest } from './ClearRequest'
-import { Middleware as EMiddleware } from 'types/express'
-import { Middleware as HMiddleware } from 'types/h3'
+import { Middleware as EMiddleware } from 'src/types/express'
+import { Middleware as HMiddleware } from 'src/types/h3'
 
 export interface RouteParameter {
     name: string

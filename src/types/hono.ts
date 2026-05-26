@@ -1,14 +1,16 @@
+import type { ClearHttpContext, ControllerHandler } from './basic'
 import type { Context, HonoRequest, MiddlewareHandler } from 'hono'
 
 import { Request as CoreRequest } from 'src/core/Request'
 import { Response as CoreResponse } from 'src/core/Response'
-import type { ControllerHandler } from './basic'
 
 export type RequestWithGetBody = HonoRequest & {
     getBody: () => Record<string, any>
 }
 
-export type HttpContext = Context & {
+type MergedHttpContext = ClearHttpContext & Context
+
+export interface HttpContext extends MergedHttpContext {
     req: RequestWithGetBody
     clearRequest: CoreRequest
     clearResponse: CoreResponse

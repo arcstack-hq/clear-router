@@ -1,8 +1,8 @@
+import type { ClearHttpContext, ControllerHandler } from './basic'
 import type { EventHandlerRequest, H3, H3Event, TypedServerRequest } from 'h3'
 
 import { Request as CoreRequest } from 'src/core/Request'
 import { Response as CoreResponse } from 'src/core/Response'
-import type { ControllerHandler } from './basic'
 
 export type H3App = Omit<H3, 'fetch'> & {
     fetch: (request: TypedServerRequest<EventHandlerRequest>) => Promise<Response>
@@ -14,12 +14,12 @@ export interface HttpRequest extends TypedServerRequest<EventHandlerRequest> {
     getBody: () => Record<string, any>;
 };
 
-type RequestlessH3Event = Omit<H3Event, 'req'>
+type MergedHttpContext = Omit<H3Event, 'req'> & ClearHttpContext
 
 /**
  * HTTP context passed to route handlers
  */
-export interface HttpContext extends RequestlessH3Event {
+export interface HttpContext extends MergedHttpContext {
     req: HttpRequest
     clearRequest: CoreRequest
     clearResponse: CoreResponse

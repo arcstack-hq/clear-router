@@ -1,4 +1,4 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'types/basic'
+import { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from 'src/types/basic'
 import type {
     ClearRouterPluginArgumentsContext,
     ClearRouterPluginContext,

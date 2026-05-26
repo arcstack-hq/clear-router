@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, test } from 'vitest'
 
 import { H3 } from 'h3'
-import { H3App } from 'types/h3'
+import { H3App } from 'src/types/h3'
 import H3Router from '../src/h3/router'
 import Router from '../src/express/router'
 import express from 'express'

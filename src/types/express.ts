@@ -1,8 +1,8 @@
+import type { ClearHttpContext, ControllerHandler } from './basic'
 import type { NextFunction, Request, Response } from 'express'
 
 import { Request as CoreRequest } from 'src/core/Request'
 import { Response as CoreResponse } from 'src/core/Response'
-import type { ControllerHandler } from './basic'
 
 export interface RequestWithGetBody extends Request {
     getBody: () => Record<string, any>
@@ -11,7 +11,7 @@ export interface RequestWithGetBody extends Request {
 /**
  * HTTP context passed to route handlers
  */
-export interface HttpContext {
+export interface HttpContext extends ClearHttpContext {
     req: RequestWithGetBody;
     res: Response;
     next: NextFunction;

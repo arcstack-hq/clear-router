@@ -1,5 +1,5 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
-import { Handler, HttpContext, Middleware, RouteHandler } from 'types/express'
+import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'src/types/basic'
+import { Handler, HttpContext, Middleware, RouteHandler } from 'src/types/express'
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from 'src/core/responses'
 
 import { CoreRouter } from 'src/core/router'

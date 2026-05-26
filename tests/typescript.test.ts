@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, test } from 'vitest'
 import express, { Router as ExRouter, NextFunction, Request, Response } from 'express'
 
 import { Controller } from 'src/Controller'
-import { H3App } from 'types/h3'
-import { NextFunction as H3NextFunction } from '../types/h3'
+import { H3App } from 'src/types/h3'
+import { NextFunction as H3NextFunction } from '../src/types/h3'
 import H3Router from '../src/h3/router'
-import { HttpContext } from 'types/express'
+import { HttpContext } from 'src/types/express'
 import Router from '../src/express/router'
 import request from 'parasito'
 

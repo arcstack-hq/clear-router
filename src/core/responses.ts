@@ -1,5 +1,5 @@
-import type { HttpMethod } from 'types/basic'
 import { Response as CoreResponse } from './Response'
+import type { HttpMethod } from 'src/types/basic'
 
 type HeaderSource = Record<string, any> | Headers | undefined
 

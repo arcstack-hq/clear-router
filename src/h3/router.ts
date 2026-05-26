@@ -2,8 +2,8 @@ import { HTTPResponse, getQuery, getRouterParams, readBody, type H3 } from 'h3'
 
 import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
-import { H3App, Handler, HttpContext, Middleware, RouteHandler } from 'types/h3'
+import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'src/types/basic'
+import { H3App, Handler, HttpContext, Middleware, RouteHandler } from 'src/types/h3'
 import { resolveResponseMeta } from 'src/core/responses'
 
 /**

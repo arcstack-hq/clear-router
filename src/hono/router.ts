@@ -1,5 +1,5 @@
-import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'types/basic'
-import { Handler, HonoApp, HttpContext, Middleware, RouteHandler } from 'types/hono'
+import { ApiResourceMiddleware, ControllerAction, HttpMethod } from 'src/types/basic'
+import { Handler, HonoApp, HttpContext, Middleware, RouteHandler } from 'src/types/hono'
 
 import { CoreRouter } from 'src/core/router'
 import { Route } from 'src/Route'

@@ -1,6 +1,6 @@
-import { ClearRequest } from 'src/ClearRequest'
+import type { HttpMethod, RequestData } from 'src/types/basic'
 
-import type { HttpMethod, RequestData } from 'types/basic'
+import { ClearRequest } from 'src/ClearRequest'
 import type { Route } from 'src/Route'
 
 export class Request<X = any, M = any> extends ClearRequest<X, M> {

@@ -36,7 +36,7 @@
   },
   "include": [
     "src/**/*",
-    "types/**/*",
+    "src/types/**/*",
     "tests/**/*",
     "example/**/*",
     "vitest.config.ts",
