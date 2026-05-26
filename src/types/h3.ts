@@ -1,6 +1,7 @@
-import type { ClearHttpContext, ControllerHandler } from './basic'
 import type { EventHandlerRequest, H3, H3Event, TypedServerRequest } from 'h3'
 
+import type { ClearHttpContext } from 'clear-router/core'
+import type { ControllerHandler } from './basic'
 import { Request as CoreRequest } from 'src/core/Request'
 import { Response as CoreResponse } from 'src/core/Response'
 

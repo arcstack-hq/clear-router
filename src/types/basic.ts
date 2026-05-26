@@ -23,13 +23,6 @@ export type ApiResourceMiddleware<M = any> =
     | M[]
     | { [K in ControllerAction]?: M | M[] }
 
-/**
- * HTTP context passed to route handlers
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ClearHttpContext {
-}
-
 export interface RouterConfig {
     /**
      * When enabled, API param name will be infered from the route path.

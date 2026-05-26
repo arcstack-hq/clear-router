@@ -1,6 +1,7 @@
-import type { ClearHttpContext, ControllerHandler } from './basic'
 import type { NextFunction, Request, Response } from 'express'
 
+import type { ClearHttpContext } from 'clear-router/core'
+import type { ControllerHandler } from './basic'
 import { Request as CoreRequest } from 'src/core/Request'
 import { Response as CoreResponse } from 'src/core/Response'
 
