@@ -648,6 +648,47 @@ describe('Express App (JS)', () => {
             .expect({ hasContext: true, id: '777' })
     })
 
+    it('lets static and dynamic route schemas coexist regardless of registration order', async () => {
+        Router.get('/api/users/:id', ({ req, res }) => {
+            res.json({ route: 'show', id: req.params.id })
+        })
+
+        Router.get('/api/users/books', ({ res }) => {
+            res.json({ route: 'books' })
+        })
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/users/books')
+            .expect(200)
+            .expect({ route: 'books' })
+
+        await request(app)
+            .get('/api/users/123')
+            .expect(200)
+            .expect({ route: 'show', id: '123' })
+    })
+
+    it('lets later routes overwrite the same method and path schema', async () => {
+        Router.get('/api/overlap/:id', ({ req, res }) => {
+            res.json({ route: 'first', id: req.params.id })
+        })
+
+        Router.get('/api/overlap/:id', ({ req, res }) => {
+            res.json({ route: 'second', id: req.params.id })
+        })
+
+        await setupApp()
+
+        expect(Router.allRoutes().filter(route => route.path === '/api/overlap/:id')).toHaveLength(1)
+
+        await request(app)
+            .get('/api/overlap/123')
+            .expect(200)
+            .expect({ route: 'second', id: '123' })
+    })
+
     it('should create options route for non-OPTIONS method routes', async () => {
         Router.get('/peeps/:id', ({ res }) => res.send('Hello'))
         await setupApp()

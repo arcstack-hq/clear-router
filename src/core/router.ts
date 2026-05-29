@@ -13,7 +13,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { Controller } from '../Controller'
 import { Request as CoreRequest } from './Request'
 import { Response as CoreResponse } from './Response'
-import { ResourceRoutes } from 'src/ResourceRoutes'
+import { ResourceRoutes } from '../ResourceRoutes'
 import { Route } from '../Route'
 import { createRequire } from 'node:module'
 
@@ -86,6 +86,49 @@ export abstract class CoreRouter {
 
     protected static resolveMiddlewares (middlewares: any[] = []): any[] {
         return middlewares.map(middleware => this.resolveMiddleware(middleware))
+    }
+
+    protected static routeSpecificity (route: Route<any, any, any>): [number, number, number] {
+        const path = route.registrationPaths
+            .slice()
+            .sort((left, right) => right.length - left.length)[0] ?? route.path
+        const segments = this.normalizePath(path).split('/').filter(Boolean)
+        const staticSegments = segments.filter(segment => !segment.startsWith(':')).length
+
+        return [staticSegments, segments.length, path.length]
+    }
+
+    protected static orderedRoutes (): Array<Route<any, any, any>> {
+        return Array.from(this.routes).sort((left, right) => {
+            const leftScore = this.routeSpecificity(left)
+            const rightScore = this.routeSpecificity(right)
+
+            for (let index = 0; index < leftScore.length; index++) {
+                const difference = rightScore[index] - leftScore[index]
+                if (difference !== 0) return difference
+            }
+
+            return 0
+        })
+    }
+
+    protected static removeRouteMethod (route: Route<any, any, any>, method: HttpMethod, path: string): void {
+        route.methods = route.methods.filter(existingMethod => existingMethod !== method)
+        this.routesByPathMethod.delete(`${method.toUpperCase()} ${path}`)
+
+        const methodKey = method.toUpperCase() as Uppercase<HttpMethod>
+        this.routesByMethod.set(
+            methodKey,
+            (this.routesByMethod.get(methodKey) ?? []).filter(existingRoute => existingRoute !== route)
+        )
+
+        if (!route.methods.some(existingMethod => existingMethod !== 'options')) {
+            this.routes.delete(route)
+
+            if (route.routeName && this.routesByName.get(route.routeName) === route) {
+                this.routesByName.delete(route.routeName)
+            }
+        }
     }
 
     /**
@@ -733,6 +776,13 @@ export abstract class CoreRouter {
         const fullPath = this.normalizePath(`${activePrefix}/${path}`)
         const registrationPaths = this.routeRegistrationPaths(fullPath)
         const parameters = this.parseRouteParameters(fullPath)
+
+        for (const method of methods) {
+            const existing = this.routesByPathMethod.get(`${method.toUpperCase()} ${fullPath}`)
+            if (existing) {
+                this.removeRouteMethod(existing, method, fullPath)
+            }
+        }
 
         const route = new Route(
             methods.includes('options') ? methods : methods.concat('options'),

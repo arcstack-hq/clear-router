@@ -2,7 +2,8 @@ import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../typ
 import type { Handler, HonoApp, HttpContext, Middleware, RouteHandler } from '../types/hono'
 
 import { CoreRouter } from '../core/router'
-import type { ResourceRoutes, Route } from '../Route'
+import type { Route } from '../Route'
+import type { ResourceRoutes } from '../ResourceRoutes'
 import { resolveResponseMeta } from '../core/responses'
 
 /**
@@ -250,7 +251,7 @@ export class Router extends CoreRouter {
      * @returns    The Hono application instance with the applied routes
      */
     static apply (app: HonoApp): HonoApp {
-        for (const route of Array.from(this.routes)) {
+        for (const route of this.orderedRoutes()) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
             let bindingTarget: object | undefined

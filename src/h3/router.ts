@@ -1,7 +1,8 @@
 import { HTTPResponse, getQuery, getRouterParams, readBody, type H3 } from 'h3'
 
 import { CoreRouter } from '../core/router'
-import type { ResourceRoutes, Route } from '../Route'
+import type { Route } from '../Route'
+import type { ResourceRoutes } from '../ResourceRoutes'
 import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../types/basic'
 import type { H3App, Handler, HttpContext, Middleware, RouteHandler } from '../types/h3'
 import { resolveResponseMeta } from '../core/responses'
@@ -239,7 +240,7 @@ export class Router extends CoreRouter {
      * @returns 
      */
     static apply (app: H3): H3App {
-        for (const route of Array.from(this.routes)) {
+        for (const route of this.orderedRoutes()) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
             let bindingTarget: object | undefined

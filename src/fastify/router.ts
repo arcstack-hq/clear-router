@@ -3,7 +3,8 @@ import type { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from 
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
 import { CoreRouter } from '../core/router'
-import type { ResourceRoutes, Route } from '../Route'
+import type { Route } from '../Route'
+import type { ResourceRoutes } from '../ResourceRoutes'
 
 /**
  * @class clear-router Fastify Router
@@ -230,7 +231,7 @@ export class Router extends CoreRouter {
      * @returns    The Fastify application instance with the applied routes
      */
     static apply (app: FastifyApp): FastifyApp {
-        for (const route of Array.from(this.routes)) {
+        for (const route of this.orderedRoutes()) {
             let handlerFunction: RouteHandler | null = null
             let instance = null
             let bindingTarget: object | undefined
