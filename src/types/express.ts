@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import type { ClearHttpContext } from '../Contracts'
-import type { ControllerHandler } from './basic'
+import type { ClassMiddleware, ControllerHandler, MiddlewareHandle } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 
@@ -42,4 +42,9 @@ export type Handler = RouteHandler | ControllerHandler;
 /**
  * Middleware function type
  */
-export type Middleware = (req: Request, res: Response, next: NextFunction) => any | Promise<any>;
+export type MiddlewareFunction = MiddlewareHandle<[Request, Response, NextFunction]>
+
+/**
+ * Middleware class or instance with a framework-aware handle method.
+ */
+export type Middleware = MiddlewareFunction | ClassMiddleware<MiddlewareFunction>;

@@ -3,6 +3,24 @@
  */
 export type ControllerHandler = [any, string];
 
+export type MaybePromise<T = any> = T | Promise<T>
+
+export type MiddlewareHandle<Args extends any[] = any[], Return = any> = (
+    ...args: Args
+) => MaybePromise<Return>
+
+export type MiddlewareClass<M extends MiddlewareHandle = MiddlewareHandle> = new () => {
+    handle: M
+}
+
+export type MiddlewareInstance<M extends MiddlewareHandle = MiddlewareHandle> = {
+    handle: M
+}
+
+export type ClassMiddleware<M extends MiddlewareHandle = MiddlewareHandle> =
+    | MiddlewareClass<M>
+    | MiddlewareInstance<M>
+
 /**
  * HTTP methods supported by the router
  */

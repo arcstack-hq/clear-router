@@ -3,10 +3,17 @@ import { beforeEach, describe, expect, test } from 'vitest'
 import express, { Router as ExRouter, NextFunction, Request, Response } from 'express'
 
 import { Controller } from '../src/Controller'
+import { FastifyReply, FastifyRequest } from 'fastify'
 import { H3App } from '../src/types/h3'
 import { NextFunction as H3NextFunction } from '../src/types/h3'
 import H3Router from '../src/h3/router'
+import { HttpContext as FastifyHttpContext, Middleware as FastifyMiddlewareType } from '../src/types/fastify'
+import { Middleware as H3MiddlewareType } from '../src/types/h3'
+import { Middleware as HonoMiddlewareType } from '../src/types/hono'
+import { HttpContext as KoaHttpContext, Middleware as KoaMiddlewareType } from '../src/types/koa'
+import { Middleware as ExpressMiddlewareType } from '../src/types/express'
 import { HttpContext } from '../src/types/express'
+import { Context as HonoContext } from 'hono'
 import Router from '../src/express/router'
 import request from 'parasito'
 
@@ -217,6 +224,70 @@ describe('Express Routing - TypeScript', () => {
 
         const response = await request(app).post('/auth')
         expect(response.body.auth).toBe(true)
+    })
+
+    test('should handle typed class based middleware', async () => {
+        class AuthMiddleware {
+            handle (req: Request, _res: Response, next: NextFunction): void {
+                (req as any).authenticated = true
+                next()
+            }
+        }
+
+        Router.post('/class-auth', ({ req, res }: HttpContext) => {
+            res.json({ auth: (req as any).authenticated })
+        }, [AuthMiddleware])
+
+        await setupApp()
+
+        const response = await request(app).post('/class-auth')
+        expect(response.body.auth).toBe(true)
+    })
+
+    test('should type class based middleware per framework', () => {
+        class ExpressMiddleware {
+            handle (_req: Request, _res: Response, next: NextFunction): void {
+                next()
+            }
+        }
+
+        class FastifyMiddleware {
+            handle (_req: FastifyRequest, _reply: FastifyReply, next: (err?: Error) => void): void {
+                next()
+            }
+        }
+
+        class H3Middleware {
+            async handle (_ctx: H3Event, next: H3NextFunction): Promise<unknown | undefined> {
+                return next()
+            }
+        }
+
+        class HonoMiddleware {
+            async handle (_ctx: HonoContext, next: () => Promise<void>): Promise<void> {
+                await next()
+            }
+        }
+
+        class KoaMiddleware {
+            async handle (_ctx: KoaHttpContext, next: () => Promise<any>): Promise<any> {
+                return next()
+            }
+        }
+
+        const expressMiddleware: ExpressMiddlewareType = ExpressMiddleware
+        const fastifyMiddleware: FastifyMiddlewareType = FastifyMiddleware
+        const h3Middleware: H3MiddlewareType = H3Middleware
+        const honoMiddleware: HonoMiddlewareType = HonoMiddleware
+        const koaMiddleware: KoaMiddlewareType = KoaMiddleware
+
+        Router.get('/typed-express-middleware', ({ res }: HttpContext) => res.send('ok'), [ExpressMiddleware])
+
+        expect(expressMiddleware).toBe(ExpressMiddleware)
+        expect(fastifyMiddleware).toBe(FastifyMiddleware)
+        expect(h3Middleware).toBe(H3Middleware)
+        expect(honoMiddleware).toBe(HonoMiddleware)
+        expect(koaMiddleware).toBe(KoaMiddleware)
     })
 
     test('should handle async TypeScript handlers', async () => {

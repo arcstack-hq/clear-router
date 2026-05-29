@@ -1,7 +1,7 @@
-import type { EventHandlerRequest, H3, H3Event, TypedServerRequest } from 'h3'
+import type { EventHandlerRequest, H3, H3Event, Middleware as H3Middleware, TypedServerRequest } from 'h3'
 
 import type { ClearHttpContext } from '../Contracts'
-import type { ControllerHandler } from './basic'
+import type { ClassMiddleware, ControllerHandler } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 
@@ -48,4 +48,6 @@ export type NextFunction = () => MaybePromise<unknown | undefined>;
 /**
  * Middleware function type
  */
-export type { Middleware } from 'h3'
+export type MiddlewareFunction = H3Middleware
+
+export type Middleware = MiddlewareFunction | ClassMiddleware<MiddlewareFunction>

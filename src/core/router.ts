@@ -64,6 +64,30 @@ export abstract class CoreRouter {
     static globalMiddlewares: any[] = []
 
     /**
+     * Resolve middlewares before assigning to adapter
+     * 
+     * @param middleware 
+     * @returns 
+     */
+    protected static resolveMiddleware (middleware: any): any {
+        if (!middleware || typeof middleware === 'function' && !isClass(middleware)) {
+            return middleware
+        }
+
+        const instance = isClass(middleware) ? new middleware() : middleware
+
+        if (instance && typeof instance.handle === 'function') {
+            return instance.handle.bind(instance)
+        }
+
+        return middleware
+    }
+
+    protected static resolveMiddlewares (middlewares: any[] = []): any[] {
+        return middlewares.map(middleware => this.resolveMiddleware(middleware))
+    }
+
+    /**
      * Resets the router to it's default state
      */
     static reset () {
@@ -713,7 +737,11 @@ export abstract class CoreRouter {
             methods.includes('options') ? methods : methods.concat('options'),
             fullPath,
             handler,
-            [...this.globalMiddlewares, ...activeGroupMiddlewares, ...(middlewares || [])],
+            this.resolveMiddlewares([
+                ...this.globalMiddlewares,
+                ...activeGroupMiddlewares,
+                ...(middlewares || []),
+            ]),
             {
                 registrationPaths,
                 parameters,

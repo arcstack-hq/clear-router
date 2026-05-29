@@ -1,7 +1,7 @@
 import type { Context, HonoRequest, MiddlewareHandler } from 'hono'
 
 import type { ClearHttpContext } from '../Contracts'
-import type { ControllerHandler } from './basic'
+import type { ClassMiddleware, ControllerHandler } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 
@@ -24,11 +24,13 @@ export type Handler = RouteHandler | ControllerHandler
 
 export type NextFunction = () => Promise<void>
 
-export type Middleware = MiddlewareHandler
+export type MiddlewareFunction = MiddlewareHandler
+
+export type Middleware = MiddlewareFunction | ClassMiddleware<MiddlewareFunction>
 
 export type HonoApp = {
     [K in 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head']: (
         path: string,
-        ...handlers: Middleware[]
+        ...handlers: MiddlewareFunction[]
     ) => any
 }

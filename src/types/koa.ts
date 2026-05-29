@@ -1,5 +1,5 @@
 import type { ClearHttpContext } from '../Contracts'
-import type { ControllerHandler } from './basic'
+import type { ClassMiddleware, ControllerHandler } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 import type Koa from 'koa'
@@ -27,6 +27,8 @@ export type Handler = RouteHandler | ControllerHandler
 
 export type NextFunction = Koa.Next
 
-export type Middleware = Koa.Middleware<any, any>
+export type MiddlewareFunction = Koa.Middleware<any, any>
+
+export type Middleware = MiddlewareFunction | ClassMiddleware<MiddlewareFunction>
 
 export type KoaRouterApp = Router<any, any>

@@ -42,6 +42,26 @@ describe('Express App (JS)', () => {
         expect(res.text || res.body).toBeDefined()
     })
 
+    it('supports class based middleware with a handle method', async () => {
+        class AuthMiddleware {
+            handle (req: any, _res: any, next: any) {
+                req.authenticated = true
+                next()
+            }
+        }
+
+        Router.get('/class-middleware', ({ req, res }) => {
+            res.json({ authenticated: (req as any).authenticated })
+        }, [AuthMiddleware])
+
+        await setupApp()
+
+        await request(app)
+            .get('/class-middleware')
+            .expect(200)
+            .expect({ authenticated: true })
+    })
+
     it('supports direct primitive, object, and Response returns', async () => {
         Router.get('/html', () => '<h1>Hello</h1>')
         Router.get('/api/text', () => '<h1>Hello</h1>')
@@ -335,6 +355,8 @@ describe('Express App (JS)', () => {
             setup ({ useHttpContext }) {
                 useHttpContext(({ ctx }) => {
                     ctx.pluginName = 'test-plugin'
+
+                    return undefined
                 })
             },
         })

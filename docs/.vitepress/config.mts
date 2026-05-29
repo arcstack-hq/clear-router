@@ -31,6 +31,7 @@ export default defineConfig({
                         ]
                     },
                     { text: 'Routing', link: '/guide/routing' },
+                    { text: 'Middlewares', link: '/guide/middlewares' },
                     { text: 'Requests', link: '/guide/request' },
                     { text: 'Responses', link: '/guide/response' },
                     { text: 'Container Binding', link: '/guide/container-binding' },

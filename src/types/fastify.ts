@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
 import type { ClearHttpContext } from '../Contracts'
-import type { ControllerHandler } from './basic'
+import type { ClassMiddleware, ControllerHandler, MiddlewareHandle } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 
@@ -25,10 +25,12 @@ export type Handler = RouteHandler | ControllerHandler
 
 export type NextFunction = (err?: Error) => void
 
-export type Middleware = (
+export type MiddlewareFunction = MiddlewareHandle<[
     req: RequestWithGetBody,
     reply: FastifyReply,
     next: NextFunction
-) => any | Promise<any>
+]>
+
+export type Middleware = MiddlewareFunction | ClassMiddleware<MiddlewareFunction>
 
 export type FastifyApp = FastifyInstance
