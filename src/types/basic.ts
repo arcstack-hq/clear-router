@@ -5,6 +5,8 @@ export type ControllerHandler = [any, string];
 
 export type MaybePromise<T = any> = T | Promise<T>
 
+export type ResourceAction = 'index' | 'show' | 'create' | 'update' | 'destroy'
+
 export type MiddlewareHandle<Args extends any[] = any[], Return = any> = (
     ...args: Args
 ) => MaybePromise<Return>

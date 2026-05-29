@@ -244,6 +244,39 @@ describe('Express Routing - TypeScript', () => {
         expect(response.body.auth).toBe(true)
     })
 
+    test('should type middleware chaining', () => {
+        const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+            (req as any).authenticated = true
+            next()
+        }
+
+        class ChainedUsersController {
+            index ({ res }: HttpContext): void {
+                res.json({ users: [] })
+            }
+
+            show ({ res }: HttpContext): void {
+                res.json({ user: {} })
+            }
+        }
+
+        const route = Router
+            .get('/typed-chain', ({ res }: HttpContext) => res.send('ok'))
+            .middleware(authMiddleware)
+
+        const resource = Router
+            .apiResource('/typed-chain-users', ChainedUsersController, {
+                only: ['index', 'show'],
+            })
+            .middleware(authMiddleware)
+
+        resource.get().middleware(authMiddleware)
+        resource.index()?.middleware(authMiddleware)
+
+        expect(route.middlewareCount).toBe(1)
+        expect(resource.get().all().length).toBe(2)
+    })
+
     test('should type class based middleware per framework', () => {
         class ExpressMiddleware {
             handle (_req: Request, _res: Response, next: NextFunction): void {

@@ -3,7 +3,7 @@ import type { Handler, HttpContext, KoaRouterApp, Middleware, RouteHandler } fro
 import { isFetchResponse, resolveResponseMeta } from '../core/responses'
 
 import { CoreRouter } from '../core/router'
-import type { Route } from '../Route'
+import type { ResourceRoutes, Route } from '../Route'
 
 /**
  * @class clear-router Koa Router
@@ -135,8 +135,8 @@ export class Router extends CoreRouter {
             except?: ControllerAction[]
             middlewares?: ApiResourceMiddleware<Middleware>
         }
-    ): void {
-        super.apiResource(basePath, controller, options)
+    ): ResourceRoutes<HttpContext, Middleware, Handler> {
+        return super.apiResource(basePath, controller, options)
     }
 
     /**

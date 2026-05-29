@@ -33,6 +33,7 @@ export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
             registrationPaths?: string[]
             parameters?: RouteParameter[]
             onName?: (name: string, route: Route<X, M, H>, previousName?: string) => void
+            normalizeMiddleware?: (middleware: M) => M
         } = {}
     ) {
         this.methods = methods
@@ -46,14 +47,26 @@ export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
         this.controllerName = Array.isArray(handler) ? handler[0]?.name : undefined
         this.actionName = Array.isArray(handler) ? handler[1] : typeof handler === 'function' ? handler.constructor.name ?? handler.name : undefined
         this.onName = options.onName
+        this.normalizeMiddleware = options.normalizeMiddleware
     }
 
     private onName?: (name: string, route: Route<X, M, H>, previousName?: string) => void
+    private normalizeMiddleware?: (middleware: M) => M
 
     name (name: string): this {
         const previousName = this.routeName
         this.routeName = name
         this.onName?.(name, this, previousName)
+
+        return this
+    }
+
+    middleware (middlewares: M[] | M): this {
+        const normalized = (Array.isArray(middlewares) ? middlewares : [middlewares])
+            .map(middleware => this.normalizeMiddleware?.(middleware) ?? middleware)
+
+        this.middlewares.push(...normalized)
+        this.middlewareCount = this.middlewares.length
 
         return this
     }

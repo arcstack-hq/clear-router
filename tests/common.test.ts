@@ -106,6 +106,82 @@ describe('Express Routing', () => {
         expect(destroyResponse.body).toEqual({ name: 'Alice' })
     })
 
+    it('should support chaining middleware onto API resources', async () => {
+        class ResourceController {
+            index ({ req }: any) {
+                return { auth: req.authenticated, action: 'index' }
+            }
+
+            show ({ req }: any) {
+                return { auth: req.authenticated, action: 'show' }
+            }
+        }
+
+        const authMiddleware = (req: any, _res: any, next: any) => {
+            req.authenticated = true
+            next()
+        }
+
+        const resource = Router
+            .apiResource('/secure-users', ResourceController, {
+                only: ['index', 'show'],
+            })
+            .middleware(authMiddleware)
+
+        expect(resource.index()?.middlewareCount).toBe(1)
+        expect(resource.show()?.middlewareCount).toBe(1)
+
+        setupApp()
+
+        await request(app)
+            .get('/secure-users')
+            .expect(200)
+            .expect({ auth: true, action: 'index' })
+
+        await request(app)
+            .get('/secure-users/1')
+            .expect(200)
+            .expect({ auth: true, action: 'show' })
+    })
+
+    it('should support chaining middleware onto API resource method selections', async () => {
+        class ResourceController {
+            index ({ req }: any) {
+                return { auth: req.authenticated ?? false, action: 'index' }
+            }
+
+            show ({ req }: any) {
+                return { auth: req.authenticated ?? false, action: 'show' }
+            }
+        }
+
+        const authMiddleware = (req: any, _res: any, next: any) => {
+            req.authenticated = true
+            next()
+        }
+
+        const resource = Router.apiResource('/selected-users', ResourceController, {
+            only: ['index', 'show'],
+        })
+
+        resource.get().middleware(authMiddleware)
+
+        expect(resource.get().all()).toHaveLength(2)
+        expect(resource.get().first()?.middlewareCount).toBe(1)
+
+        setupApp()
+
+        await request(app)
+            .get('/selected-users')
+            .expect(200)
+            .expect({ auth: true, action: 'index' })
+
+        await request(app)
+            .get('/selected-users/1')
+            .expect(200)
+            .expect({ auth: true, action: 'show' })
+    })
+
     it('should work with ESM class controllers', async () => {
         class UserController {
             static list ({ res }: { res: express.Response }): void {

@@ -4,6 +4,7 @@ import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/r
 
 import { CoreRouter } from '../core/router'
 import type { Router as ExpressRouter } from 'express'
+import { ResourceRoutes } from '../ResourceRoutes'
 import type { Route } from '../Route'
 
 /**
@@ -103,8 +104,8 @@ export class Router extends CoreRouter {
             except?: ControllerAction[]
             middlewares?: ApiResourceMiddleware<Middleware>
         }
-    ): void {
-        super.apiResource(basePath, controller, options)
+    ): ResourceRoutes<HttpContext, Middleware, Handler> {
+        return super.apiResource(basePath, controller, options)
     }
 
     /**

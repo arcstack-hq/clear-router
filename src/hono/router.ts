@@ -2,7 +2,7 @@ import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../typ
 import type { Handler, HonoApp, HttpContext, Middleware, RouteHandler } from '../types/hono'
 
 import { CoreRouter } from '../core/router'
-import type { Route } from '../Route'
+import type { ResourceRoutes, Route } from '../Route'
 import { resolveResponseMeta } from '../core/responses'
 
 /**
@@ -113,8 +113,8 @@ export class Router extends CoreRouter {
             except?: ControllerAction[]
             middlewares?: ApiResourceMiddleware<Middleware>
         }
-    ): void {
-        super.apiResource(basePath, controller, options)
+    ): ResourceRoutes<HttpContext, Middleware, Handler> {
+        return super.apiResource(basePath, controller, options)
     }
 
     /**

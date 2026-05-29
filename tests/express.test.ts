@@ -62,6 +62,28 @@ describe('Express App (JS)', () => {
             .expect({ authenticated: true })
     })
 
+    it('supports chaining middleware onto route methods', async () => {
+        const authMiddleware = (req: any, _res: any, next: any) => {
+            req.authenticated = true
+            next()
+        }
+
+        const route = Router
+            .get('/chained-middleware', ({ req, res }) => {
+                res.json({ authenticated: (req as any).authenticated })
+            })
+            .middleware(authMiddleware)
+
+        expect(route.middlewareCount).toBe(1)
+
+        await setupApp()
+
+        await request(app)
+            .get('/chained-middleware')
+            .expect(200)
+            .expect({ authenticated: true })
+    })
+
     it('supports direct primitive, object, and Response returns', async () => {
         Router.get('/html', () => '<h1>Hello</h1>')
         Router.get('/api/text', () => '<h1>Hello</h1>')

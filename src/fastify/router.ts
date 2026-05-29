@@ -3,7 +3,7 @@ import type { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from 
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
 import { CoreRouter } from '../core/router'
-import type { Route } from '../Route'
+import type { ResourceRoutes, Route } from '../Route'
 
 /**
  * @class clear-router Fastify Router
@@ -96,8 +96,8 @@ export class Router extends CoreRouter {
             except?: ControllerAction[]
             middlewares?: ApiResourceMiddleware<Middleware>
         }
-    ): void {
-        super.apiResource(basePath, controller, options)
+    ): ResourceRoutes<HttpContext, Middleware, Handler> {
+        return super.apiResource(basePath, controller, options)
     }
 
     /**

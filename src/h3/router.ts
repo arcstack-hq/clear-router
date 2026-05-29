@@ -1,7 +1,7 @@
 import { HTTPResponse, getQuery, getRouterParams, readBody, type H3 } from 'h3'
 
 import { CoreRouter } from '../core/router'
-import type { Route } from '../Route'
+import type { ResourceRoutes, Route } from '../Route'
 import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../types/basic'
 import type { H3App, Handler, HttpContext, Middleware, RouteHandler } from '../types/h3'
 import { resolveResponseMeta } from '../core/responses'
@@ -104,8 +104,8 @@ export class Router extends CoreRouter {
             except?: ControllerAction[]
             middlewares?: ApiResourceMiddleware<Middleware>
         }
-    ): void {
-        super.apiResource(basePath, controller, options)
+    ): ResourceRoutes<HttpContext, Middleware, Handler> {
+        return super.apiResource(basePath, controller, options)
     }
 
     /**

@@ -178,6 +178,25 @@ Router.get('/me', [UserController, 'show'], AuthMiddleware);
 Router.get('/settings', [SettingsController, 'index'], [AuthMiddleware]);
 ```
 
+Route helpers also return the registered route, so middlewares can be chained after the route is defined:
+
+```ts
+Router.get('/profile', [ProfileController, 'show']).middleware(AuthMiddleware);
+
+Router.post('/profile', [ProfileController, 'update']).middleware([
+  AuthMiddleware,
+  AuditMiddleware,
+]);
+```
+
+The chained form is useful when route metadata is easier to read after the handler:
+
+```ts
+Router.get('/reports/{report}', [ReportController, 'show'])
+  .middleware(AuthMiddleware)
+  .name('reports.show');
+```
+
 ## Group Middlewares
 
 `Router.group()` applies middleware to every route registered inside the group.
@@ -228,6 +247,37 @@ Router.apiResource('/posts', PostController, {
     destroy: [AuthMiddleware, AdminMiddleware],
   },
 });
+```
+
+`Router.apiResource()` also returns the generated resource routes, so middlewares can be chained after registration:
+
+```ts
+Router.apiResource('/posts', PostController).middleware(AuthMiddleware);
+```
+
+You can target a single resource action:
+
+```ts
+const posts = Router.apiResource('/posts', PostController);
+
+posts.index()?.middleware(AuthMiddleware);
+posts.destroy()?.middleware([AuthMiddleware, AdminMiddleware]);
+```
+
+Or target generated routes by HTTP method:
+
+```ts
+const posts = Router.apiResource('/posts', PostController);
+
+posts.get().middleware(AuthMiddleware);
+posts.post().middleware([AuthMiddleware, AuditMiddleware]);
+```
+
+Method selections can be inspected when needed:
+
+```ts
+const getRoutes = posts.get().all();
+const firstGetRoute = posts.get().first();
 ```
 
 ## Execution Order

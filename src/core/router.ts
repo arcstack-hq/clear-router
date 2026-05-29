@@ -1,4 +1,4 @@
-import type { ApiResourceMiddleware, ControllerAction, HttpMethod, RouterConfig } from '../types/basic'
+import type { ApiResourceMiddleware, ControllerAction, HttpMethod, ResourceAction, RouterConfig } from '../types/basic'
 import type {
     ClearRouterPluginArgumentsContext,
     ClearRouterPluginContext,
@@ -13,6 +13,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { Controller } from '../Controller'
 import { Request as CoreRequest } from './Request'
 import { Response as CoreResponse } from './Response'
+import { ResourceRoutes } from 'src/ResourceRoutes'
 import { Route } from '../Route'
 import { createRequire } from 'node:module'
 
@@ -752,6 +753,7 @@ export abstract class CoreRouter {
 
                     this.routesByName.set(name, route)
                 },
+                normalizeMiddleware: middleware => this.resolveMiddleware(middleware),
             }
         )
 
@@ -791,7 +793,8 @@ export abstract class CoreRouter {
             except?: ControllerAction[]
             middlewares?: ApiResourceMiddleware<any>
         }
-    ): void {
+    ): ResourceRoutes<any, any, any> {
+        const resourceRoutes: Partial<Record<ResourceAction, Route<any, any, any>>> = {}
         let paramName = 'id'
 
         if (!!this.config.inferParamName && this.hasPackageInstalled('@h3ravel/support')) {
@@ -829,7 +832,7 @@ export abstract class CoreRouter {
                         .replace(/\.{2,}/g, '.')
                         .replace(/^\.|\.$/g, '')
 
-                this.add(
+                const route = this.add(
                     method,
                     `${basePath}${path}`,
                     [controller, action],
@@ -837,8 +840,12 @@ export abstract class CoreRouter {
                         ? actionMiddlewares
                         : actionMiddlewares ? [actionMiddlewares] : undefined
                 ).name(name + '.' + action.toLowerCase())
+
+                resourceRoutes[action] = route
             }
         }
+
+        return new ResourceRoutes(resourceRoutes)
     }
 
     /**
