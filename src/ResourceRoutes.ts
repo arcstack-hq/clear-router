@@ -5,6 +5,12 @@ import type { Middleware as HMiddleware } from './types/h3'
 import { ResourceRouteSelection } from './ResourceRouteSelection'
 import { Route } from './Route'
 
+/**
+ * @class clear-router ResourceRoutes
+ * @description A ResourceRoutes creates a collection of resourceful routes in a single call
+ * @author 3m1n3nc3
+ * @repository https://github.com/arkstack-tmp/clear-router
+ */
 export class ResourceRoutes<X = any, M = HMiddleware | EMiddleware, H = any> {
     constructor(
         readonly routes: Partial<Record<ResourceAction, Route<X, M, H>>>

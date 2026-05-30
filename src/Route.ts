@@ -5,6 +5,12 @@ import type { Middleware as EMiddleware } from './types/express'
 import type { Middleware as HMiddleware } from './types/h3'
 import { RouteParameter } from './Contracts'
 
+/**
+ * @class clear-router Route
+ * @description A route describes a single enpoint on clear-router
+ * @author 3m1n3nc3
+ * @repository https://github.com/arkstack-tmp/clear-router
+ */
 export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
     ctx!: X
     body: RequestData = {}
@@ -53,6 +59,12 @@ export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
     private onName?: (name: string, route: Route<X, M, H>, previousName?: string) => void
     private normalizeMiddleware?: (middleware: M) => M
 
+    /**
+     * Set the route name
+     * 
+     * @param name 
+     * @returns 
+     */
     name (name: string): this {
         const previousName = this.routeName
         this.routeName = name
@@ -61,6 +73,12 @@ export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
         return this
     }
 
+    /**
+     * Register one or more middleware that will be executed before the route.
+     * 
+     * @param middlewares 
+     * @returns 
+     */
     middleware (middlewares: M[] | M): this {
         const normalized = (Array.isArray(middlewares) ? middlewares : [middlewares])
             .map(middleware => this.normalizeMiddleware?.(middleware) ?? middleware)
@@ -71,6 +89,12 @@ export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
         return this
     }
 
+    /**
+     * Get the path generated and accessible by this route
+     * 
+     * @param params 
+     * @returns 
+     */
     toPath (params: RequestData = {}): string {
         const path = this.path.replace(/\/?\{([^{}]+)\}/g, (segment, raw: string) => {
             const optional = raw.endsWith('?')

@@ -5,6 +5,12 @@ import { Route } from './Route'
 export class ResourceRouteSelection<X = any, M = HMiddleware | EMiddleware, H = any> {
     constructor(readonly routes: Array<Route<X, M, H>>) { }
 
+    /**
+     * Register one or more middleware that will be executed before the route.
+     * 
+     * @param middlewares 
+     * @returns 
+     */
     middleware (middlewares: M[] | M): this {
         for (const route of this.routes) {
             route.middleware(middlewares)
