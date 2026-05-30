@@ -269,6 +269,8 @@ describe('Express Routing - TypeScript', () => {
                 only: ['index', 'show'],
             })
             .middleware(authMiddleware)
+            .except('destroy')
+            .only('index', 'show')
 
         resource.get().middleware(authMiddleware)
         resource.index()?.middleware(authMiddleware)

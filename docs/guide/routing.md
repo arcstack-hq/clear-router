@@ -229,8 +229,8 @@ Generated routes:
 
 | Option        | Type                    | Description                      |
 | ------------- | ----------------------- | -------------------------------- |
-| `only`        | `ControllerAction[]`    | Whitelist specific actions       |
-| `except`      | `ControllerAction[]`    | Blacklist specific actions       |
+| `only`        | `ResourceAction[]`      | Whitelist specific actions       |
+| `except`      | `ResourceAction[]`      | Blacklist specific actions       |
 | `middlewares` | `ApiResourceMiddleware` | Global or per-action middlewares |
 
 ```ts
@@ -251,6 +251,26 @@ Router.apiResource('/books', BookController, {
     destroy: [AuthMiddleware, AdminMiddleware],
   },
 });
+```
+
+`apiResource()` returns a `ResourceRoutes` collection. You can filter the generated actions after creation:
+
+```ts
+Router.apiResource('/books', BookController)
+  .only('index', 'show');
+
+Router.apiResource('/books', BookController)
+  .except('destroy');
+```
+
+The collection can also be used for resource middleware chaining:
+
+```ts
+const books = Router.apiResource('/books', BookController)
+  .only('index', 'show')
+  .middleware(AuthMiddleware);
+
+books.show()?.name('books.public.show');
 ```
 
 ## Groups & Prefixes

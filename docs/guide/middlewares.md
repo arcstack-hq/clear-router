@@ -255,6 +255,18 @@ Router.apiResource('/posts', PostController, {
 Router.apiResource('/posts', PostController).middleware(AuthMiddleware);
 ```
 
+Resource filters can be chained from the same collection:
+
+```ts
+Router.apiResource('/posts', PostController)
+  .only('index', 'show')
+  .middleware(AuthMiddleware);
+
+Router.apiResource('/posts', PostController)
+  .except('destroy')
+  .middleware([AuthMiddleware, AuditMiddleware]);
+```
+
 You can target a single resource action:
 
 ```ts

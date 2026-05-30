@@ -5,8 +5,6 @@ export type ControllerHandler = [any, string];
 
 export type MaybePromise<T = any> = T | Promise<T>
 
-export type ResourceAction = 'index' | 'show' | 'create' | 'update' | 'destroy'
-
 export type MiddlewareHandle<Args extends any[] = any[], Return = any> = (
     ...args: Args
 ) => MaybePromise<Return>
@@ -26,12 +24,12 @@ export type ClassMiddleware<M extends MiddlewareHandle = MiddlewareHandle> =
 /**
  * HTTP methods supported by the router
  */
-export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head';
+export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head'
 
 /**
- * Common controller action names
+ * Common resource action names
  */
-export type ControllerAction = 'index' | 'show' | 'create' | 'update' | 'destroy';
+export type ResourceAction = 'index' | 'show' | 'create' | 'update' | 'destroy'
 
 /**
  * Generic Object type for request data
@@ -41,7 +39,7 @@ export type RequestData = Record<string, any>;
 export type ApiResourceMiddleware<M = any> =
     | M
     | M[]
-    | { [K in ControllerAction]?: M | M[] }
+    | { [K in ResourceAction]?: M | M[] }
 
 export interface RouterConfig {
     /**

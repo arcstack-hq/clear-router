@@ -1,4 +1,4 @@
-import type { ApiResourceMiddleware, ControllerAction, HttpMethod, ResourceAction, RouterConfig } from '../types/basic'
+import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouterConfig } from '../types/basic'
 import type {
     ClearRouterPluginArgumentsContext,
     ClearRouterPluginContext,
@@ -128,6 +128,23 @@ export abstract class CoreRouter {
             if (route.routeName && this.routesByName.get(route.routeName) === route) {
                 this.routesByName.delete(route.routeName)
             }
+        }
+    }
+
+    protected static removeRoute (route: Route<any, any, any>): void {
+        this.routes.delete(route)
+
+        if (route.routeName && this.routesByName.get(route.routeName) === route) {
+            this.routesByName.delete(route.routeName)
+        }
+
+        for (const method of route.methods) {
+            const methodKey = method.toUpperCase() as Uppercase<HttpMethod>
+            this.routesByPathMethod.delete(`${methodKey} ${route.path}`)
+            this.routesByMethod.set(
+                methodKey,
+                (this.routesByMethod.get(methodKey) ?? []).filter(existingRoute => existingRoute !== route)
+            )
         }
     }
 
@@ -839,12 +856,11 @@ export abstract class CoreRouter {
         basePath: string,
         controller: any,
         options?: {
-            only?: ControllerAction[]
-            except?: ControllerAction[]
+            only?: ResourceAction[]
+            except?: ResourceAction[]
             middlewares?: ApiResourceMiddleware<any>
         }
     ): ResourceRoutes<any, any, any> {
-        const resourceRoutes: Partial<Record<ResourceAction, Route<any, any, any>>> = {}
         let paramName = 'id'
 
         if (!!this.config.inferParamName && this.hasPackageInstalled('@h3ravel/support')) {
@@ -853,49 +869,16 @@ export abstract class CoreRouter {
             paramName = str(basePath).singular().afterLast('/').toString()
         }
 
-        const actions = {
-            index: { method: 'get', path: '/' },
-            show: { method: 'get', path: `/:${paramName}` },
-            create: { method: 'post', path: '/' },
-            update: { method: 'put', path: `/:${paramName}` },
-            destroy: { method: 'delete', path: `/:${paramName}` },
-        } as const
-
-        const only = options?.only || Object.keys(actions) as ControllerAction[]
-        const except = options?.except || []
-
-        const preController = typeof controller === 'function' ? new controller() : controller
-
-        for (const action of only) {
-            if (except.includes(action)) continue
-            if (typeof preController[action] === 'function') {
-                const { method, path } = actions[action]
-                const actionMiddlewares = typeof options?.middlewares === 'object' && !Array.isArray(options.middlewares)
-                    ? options.middlewares[action]
-                    : options?.middlewares
-
-                const name =
-                    `${basePath}${path}`
-                        .replace(/\/:[^/]+|\/\{[^}]+\}/g, '')
-                        .replace(/\{(\w+):[^}]+\}/g, '$1')
-                        .replace(/\/|:|[{}]/g, '.')
-                        .replace(/\.{2,}/g, '.')
-                        .replace(/^\.|\.$/g, '')
-
-                const route = this.add(
-                    method,
-                    `${basePath}${path}`,
-                    [controller, action],
-                    Array.isArray(actionMiddlewares)
-                        ? actionMiddlewares
-                        : actionMiddlewares ? [actionMiddlewares] : undefined
-                ).name(name + '.' + action.toLowerCase())
-
-                resourceRoutes[action] = route
-            }
-        }
-
-        return new ResourceRoutes(resourceRoutes)
+        return new ResourceRoutes(
+            basePath,
+            controller,
+            paramName,
+            options,
+            ({ method, path, handler, middlewares, name }) => {
+                return this.add(method, path, handler, middlewares).name(name)
+            },
+            route => this.removeRoute(route)
+        ).register()
     }
 
     /**

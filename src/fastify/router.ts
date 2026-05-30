@@ -1,10 +1,10 @@
-import type { ApiResourceMiddleware, ControllerAction, HttpMethod } from '../types/basic'
+import type { ApiResourceMiddleware, HttpMethod, ResourceAction } from '../types/basic'
 import type { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from '../types/fastify'
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
 import { CoreRouter } from '../core/router'
-import type { Route } from '../Route'
 import type { ResourceRoutes } from '../ResourceRoutes'
+import type { Route } from '../Route'
 
 /**
  * @class clear-router Fastify Router
@@ -93,8 +93,8 @@ export class Router extends CoreRouter {
         basePath: string,
         controller: any,
         options?: {
-            only?: ControllerAction[]
-            except?: ControllerAction[]
+            only?: ResourceAction[]
+            except?: ResourceAction[]
             middlewares?: ApiResourceMiddleware<Middleware>
         }
     ): ResourceRoutes<HttpContext, Middleware, Handler> {
@@ -108,7 +108,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static get (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+    static get (
+        path: string,
+        handler: Handler,
+        middlewares?: Middleware[] | Middleware
+    ): Route<HttpContext, Middleware, Handler> {
         return super.get(path, handler, middlewares)
     }
 
@@ -119,7 +123,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static post (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+    static post (
+        path: string,
+        handler: Handler,
+        middlewares?: Middleware[] | Middleware
+    ): Route<HttpContext, Middleware, Handler> {
         return super.post(path, handler, middlewares)
     }
 
@@ -130,7 +138,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static put (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+    static put (
+        path: string,
+        handler: Handler,
+        middlewares?: Middleware[] | Middleware
+    ): Route<HttpContext, Middleware, Handler> {
         return super.put(path, handler, middlewares)
     }
 
@@ -141,7 +153,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static delete (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+    static delete (
+        path: string,
+        handler: Handler,
+        middlewares?: Middleware[] | Middleware
+    ): Route<HttpContext, Middleware, Handler> {
         return super.delete(path, handler, middlewares)
     }
 
@@ -152,7 +168,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static patch (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+    static patch (
+        path: string,
+        handler: Handler,
+        middlewares?: Middleware[] | Middleware
+    ): Route<HttpContext, Middleware, Handler> {
         return super.patch(path, handler, middlewares)
     }
 
@@ -163,7 +183,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static options (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+    static options (
+        path: string,
+        handler: Handler,
+        middlewares?: Middleware[] | Middleware
+    ): Route<HttpContext, Middleware, Handler> {
         return super.options(path, handler, middlewares)
     }
 
@@ -174,7 +198,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static head (path: string, handler: Handler, middlewares?: Middleware[] | Middleware): Route<HttpContext, Middleware, Handler> {
+    static head (
+        path: string,
+        handler: Handler,
+        middlewares?: Middleware[] | Middleware
+    ): Route<HttpContext, Middleware, Handler> {
         return super.head(path, handler, middlewares)
     }
 

@@ -182,6 +182,41 @@ describe('Express Routing', () => {
             .expect({ auth: true, action: 'show' })
     })
 
+    it('should support chaining only and except onto API resources', async () => {
+        const onlyResource = Router
+            .apiResource('/only-users', UserController)
+            .only(['index', 'show'])
+
+        const exceptResource = Router
+            .apiResource('/except-users', UserController)
+            .except('destroy')
+
+        expect(onlyResource.index()).toBeDefined()
+        expect(onlyResource.show()).toBeDefined()
+        expect(onlyResource.create()).toBeUndefined()
+        expect(onlyResource.update()).toBeUndefined()
+        expect(onlyResource.destroy()).toBeUndefined()
+
+        expect(exceptResource.destroy()).toBeUndefined()
+        expect(exceptResource.index()).toBeDefined()
+        expect(exceptResource.create()).toBeDefined()
+
+        setupApp()
+
+        await request(app)
+            .get('/only-users')
+            .expect(200)
+            .expect({ users: ['Alice', 'Bob'] })
+
+        await request(app)
+            .post('/only-users')
+            .expect(404)
+
+        await request(app)
+            .delete('/except-users/1')
+            .expect(404)
+    })
+
     it('should work with ESM class controllers', async () => {
         class UserController {
             static list ({ res }: { res: express.Response }): void {
