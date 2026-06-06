@@ -3,6 +3,7 @@ import '../example/express/web'
 import { Bind, Container } from '../src/decorators'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
+import { resolve } from 'node:path'
 
 import { Request as ClearRouterRequest } from '../src/core/Request'
 import { Response as ClearRouterResponse } from '../src/core/Response'
@@ -40,6 +41,28 @@ describe('Express App (JS)', () => {
         const res = await request(app).get('/directly')
         expect(res.statusCode).toBe(200)
         expect(res.text || res.body).toBeDefined()
+    })
+
+    it('loads route groups from relative files and absolute directories', async () => {
+        await Router.group('/api', 'tests/fixtures/group-file.ts')
+        await Router.group('/account', resolve('tests/fixtures/group-directory'))
+
+        await setupApp()
+
+        await request(app)
+            .get('/api/loaded-file')
+            .expect(200)
+            .expect({ source: 'file' })
+
+        await request(app)
+            .get('/account/profile')
+            .expect(200)
+            .expect({ source: 'directory' })
+
+        await request(app)
+            .get('/account/settings')
+            .expect(200)
+            .expect({ source: 'nested-directory' })
     })
 
     it('supports class based middleware with a handle method', async () => {

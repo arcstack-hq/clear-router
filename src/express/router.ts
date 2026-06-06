@@ -1,4 +1,4 @@
-import type { ApiResourceMiddleware, HttpMethod, ResourceAction } from '../types/basic'
+import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouteGroupSource } from '../types/basic'
 import type { Handler, HttpContext, Middleware, RouteHandler } from '../types/express'
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
@@ -222,10 +222,10 @@ export class Router extends CoreRouter {
      */
     static async group (
         prefix: string,
-        callback: () => void | Promise<void>,
+        source: RouteGroupSource,
         middlewares?: Middleware[]
     ): Promise<void> {
-        await super.group(prefix, callback, middlewares)
+        await super.group(prefix, source, middlewares)
     }
 
     /**

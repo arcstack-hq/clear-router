@@ -3,7 +3,7 @@ import { HTTPResponse, getQuery, getRouterParams, readBody, type H3 } from 'h3'
 import { CoreRouter } from '../core/router'
 import type { Route } from '../Route'
 import type { ResourceRoutes } from '../ResourceRoutes'
-import type { ApiResourceMiddleware, ResourceAction, HttpMethod } from '../types/basic'
+import type { ApiResourceMiddleware, ResourceAction, HttpMethod, RouteGroupSource } from '../types/basic'
 import type { H3App, Handler, HttpContext, Middleware, RouteHandler } from '../types/h3'
 import { resolveResponseMeta } from '../core/responses'
 
@@ -223,10 +223,10 @@ export class Router extends CoreRouter {
      */
     static async group (
         prefix: string,
-        callback: () => void | Promise<void>,
+        source: RouteGroupSource,
         middlewares?: Middleware[]
     ): Promise<void> {
-        await super.group(prefix, callback, middlewares)
+        await super.group(prefix, source, middlewares)
     }
 
     /**

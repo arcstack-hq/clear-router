@@ -98,13 +98,13 @@
         "prepublishOnly": "pnpm build && pnpm vitest run && pnpm lint"
     },
     "peerDependencies": {
+        "@h3ravel/support": "^0.15.11",
         "@koa/router": "^15.0.0",
         "express": "^5.1.0",
         "fastify": "^5.0.0",
         "h3": "^2.0.1-rc.16",
         "hono": "^4.0.0",
         "koa": "^3.0.0",
-        "@h3ravel/support": "^0.15.11",
         "reflect-metadata": "^0.2.2"
     },
     "peerDependenciesMeta": {
@@ -159,5 +159,8 @@
     },
     "engines": {
         "node": ">=20.0.0"
+    },
+    "dependencies": {
+        "jiti": "^2.7.0"
     }
 }

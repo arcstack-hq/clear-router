@@ -1,9 +1,13 @@
+import { JitiOptions, JitiResolveOptions } from 'jiti'
+
 /**
  * Controller method reference
  */
 export type ControllerHandler = [any, string];
 
 export type MaybePromise<T = any> = T | Promise<T>
+export type RouteGroupCallback = () => MaybePromise<void>
+export type RouteGroupSource = RouteGroupCallback | string
 
 export type MiddlewareHandle<Args extends any[] = any[], Return = any> = (
     ...args: Args
@@ -68,4 +72,12 @@ export interface RouterConfig {
         /** Whether unknown constructor tokens should be instantiated automatically */
         autoDiscover?: boolean
     }
+}
+
+export interface FileImporter {
+    <T = unknown> (filePath: string): Promise<T>;
+    <T = unknown> (filePath: string, userOptions?: JitiOptions | undefined): Promise<T>;
+    <T = unknown> (filePath: string, userOptions?: JitiOptions | undefined, resolveOptions?: (JitiResolveOptions & {
+        default?: true;
+    })): Promise<T>;
 }

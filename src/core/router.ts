@@ -1,4 +1,4 @@
-import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouterConfig } from '../types/basic'
+import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouteGroupSource, RouterConfig } from '../types/basic'
 import type {
     ClearRouterPluginArgumentsContext,
     ClearRouterPluginContext,
@@ -8,6 +8,8 @@ import type {
     PluginBind,
 } from './plugins'
 import { Container, getBindingMetadataFromTargets, getDesignParamTypes, getStandardMetadata, isClass } from './bindings'
+import { isAbsolute, join, resolve } from 'node:path'
+import { readdir, stat } from 'node:fs/promises'
 
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { Controller } from '../Controller'
@@ -15,7 +17,9 @@ import { Request as CoreRequest } from './Request'
 import { Response as CoreResponse } from './Response'
 import { ResourceRoutes } from '../ResourceRoutes'
 import { Route } from '../Route'
+import type { Stats } from 'node:fs'
 import { createRequire } from 'node:module'
+import { importFile } from './helpers'
 
 /**
  * @class clear-router CoreRouter
@@ -975,7 +979,7 @@ export abstract class CoreRouter {
      */
     static async group (
         prefix: string,
-        callback: () => void | Promise<void>,
+        source: RouteGroupSource,
         middlewares?: any[]
     ): Promise<void> {
         this.ensureState()
@@ -994,8 +998,58 @@ export abstract class CoreRouter {
         }
 
         await this.groupContext.run(nextContext, async () => {
-            await Promise.resolve(callback())
+            if (typeof source === 'function') {
+                await Promise.resolve(source())
+
+                return
+            }
+
+            for (const file of await this.resolveGroupFiles(source)) {
+                await importFile(file)
+            }
         })
+    }
+
+    protected static async resolveGroupFiles (source: string): Promise<string[]> {
+        const resolved = isAbsolute(source) ? source : resolve(process.cwd(), source)
+        let sourceStat: Stats
+
+        try {
+            sourceStat = await stat(resolved)
+        } catch {
+            throw new Error(`Route group source not found: ${source}`)
+        }
+
+        if (sourceStat.isFile()) {
+            return [resolved]
+        }
+
+        if (!sourceStat.isDirectory()) {
+            throw new Error(`Route group source must be a file or directory: ${source}`)
+        }
+
+        return this.readGroupDirectory(resolved)
+    }
+
+    protected static async readGroupDirectory (directory: string): Promise<string[]> {
+        const entries = await readdir(directory, { withFileTypes: true })
+        const files: string[] = []
+
+        for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+            const path = join(directory, entry.name)
+
+            if (entry.isDirectory()) {
+                files.push(...await this.readGroupDirectory(path))
+            } else if (
+                entry.isFile() &&
+                /\.(?:[cm]?ts)$/.test(entry.name) &&
+                !entry.name.endsWith('.d.ts')
+            ) {
+                files.push(path)
+            }
+        }
+
+        return files
     }
 
     /**
