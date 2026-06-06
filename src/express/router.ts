@@ -4,6 +4,7 @@ import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/r
 
 import { CoreRouter } from '../core/router'
 import type { Router as ExpressRouter } from 'express'
+import { RouteGroup } from '../RouteGroup'
 import { ResourceRoutes } from '../ResourceRoutes'
 import type { Route } from '../Route'
 
@@ -220,12 +221,12 @@ export class Router extends CoreRouter {
      * @param callback 
      * @param middlewares 
      */
-    static async group (
+    static group (
         prefix: string,
         source: RouteGroupSource,
         middlewares?: Middleware[]
-    ): Promise<void> {
-        await super.group(prefix, source, middlewares)
+    ): RouteGroup {
+        return super.group(prefix, source, middlewares)
     }
 
     /**

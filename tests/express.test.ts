@@ -65,6 +65,64 @@ describe('Express App (JS)', () => {
             .expect({ source: 'nested-directory' })
     })
 
+    it('supports conditional groups and arrays of paths or callbacks', async () => {
+        await Router.group('/conditional', () => {
+            Router.get('/hidden', () => ({ hidden: false }))
+        }).when(() => false)
+
+        await Router.group('/callbacks', [
+            () => Router.get('/first', () => ({ source: 'first-callback' })),
+            () => Router.get('/second', () => ({ source: 'second-callback' })),
+        ])
+
+        await Router.group('/files', [
+            'tests/fixtures/group-array/first.ts',
+            'tests/fixtures/group-array/second.ts',
+        ])
+
+        await Router.group('/parent', async () => {
+            Router.get('/visible', () => ({ visible: true }))
+            await Router.group('/child', () => {
+                Router.get('/hidden', () => ({ hidden: true }))
+            }).when(() => false)
+        }).when(() => true)
+
+        await setupApp()
+
+        await request(app)
+            .get('/conditional/hidden')
+            .expect(404)
+
+        await request(app)
+            .get('/callbacks/first')
+            .expect(200)
+            .expect({ source: 'first-callback' })
+
+        await request(app)
+            .get('/callbacks/second')
+            .expect(200)
+            .expect({ source: 'second-callback' })
+
+        await request(app)
+            .get('/files/first')
+            .expect(200)
+            .expect({ source: 'first-file' })
+
+        await request(app)
+            .get('/files/second')
+            .expect(200)
+            .expect({ source: 'second-file' })
+
+        await request(app)
+            .get('/parent/visible')
+            .expect(200)
+            .expect({ visible: true })
+
+        await request(app)
+            .get('/parent/child/hidden')
+            .expect(404)
+    })
+
     it('supports class based middleware with a handle method', async () => {
         class AuthMiddleware {
             handle (req: any, _res: any, next: any) {

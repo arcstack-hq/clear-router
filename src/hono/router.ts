@@ -2,6 +2,7 @@ import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouteGroupSourc
 import type { Handler, HonoApp, HttpContext, Middleware, RouteHandler } from '../types/hono'
 
 import { CoreRouter } from '../core/router'
+import { RouteGroup } from '../RouteGroup'
 import type { ResourceRoutes } from '../ResourceRoutes'
 import type { Route } from '../Route'
 import { resolveResponseMeta } from '../core/responses'
@@ -230,12 +231,12 @@ export class Router extends CoreRouter {
      * @param callback 
      * @param middlewares 
      */
-    static async group (
+    static group (
         prefix: string,
         source: RouteGroupSource,
         middlewares?: Middleware[]
-    ): Promise<void> {
-        await super.group(prefix, source, middlewares)
+    ): RouteGroup {
+        return super.group(prefix, source, middlewares)
     }
 
     /**

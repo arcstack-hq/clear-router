@@ -1,4 +1,7 @@
-import { JitiOptions, JitiResolveOptions } from 'jiti'
+import type { JitiOptions, JitiResolveOptions } from 'jiti'
+
+import type { AsyncLocalStorage } from 'node:async_hooks'
+import type { Route } from 'src/Route'
 
 /**
  * Controller method reference
@@ -6,8 +9,9 @@ import { JitiOptions, JitiResolveOptions } from 'jiti'
 export type ControllerHandler = [any, string];
 
 export type MaybePromise<T = any> = T | Promise<T>
-export type RouteGroupCallback = () => MaybePromise<void>
-export type RouteGroupSource = RouteGroupCallback | string
+export type RouteGroupCallback = () => MaybePromise<any>
+export type RouteGroupEntry = RouteGroupCallback | string
+export type RouteGroupSource = RouteGroupEntry | RouteGroupEntry[]
 
 export type MiddlewareHandle<Args extends any[] = any[], Return = any> = (
     ...args: Args
@@ -73,6 +77,26 @@ export interface RouterConfig {
         autoDiscover?: boolean
     }
 }
+
+
+export interface RouteGroupContext {
+    prefix: string
+    groupMiddlewares: any[]
+    routeCollectors?: Array<Set<Route<any, any, any>>>
+}
+
+export interface RouteGroupOptions {
+    prefix: string
+    source: RouteGroupSource
+    middlewares?: any[]
+    context: AsyncLocalStorage<RouteGroupContext>
+    defaultPrefix: string
+    defaultMiddlewares: any[]
+    normalizePath: (path: string) => string
+    removeRoute: (route: Route<any, any, any>) => void
+}
+
+export type RouteGroupCondition = () => MaybePromise<unknown>
 
 export interface FileImporter {
     <T = unknown> (filePath: string): Promise<T>;
