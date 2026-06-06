@@ -246,30 +246,28 @@ Router.apiResource('/users', UserController);
 ### Grouped Routes
 
 ```javascript
-Router.group('/admin', () => {
+await Router.group('/admin', () => {
   Router.get('/dashboard', ({ res }) => res.send('Admin Panel'));
 });
 ```
 
-Async group callbacks are also supported:
+Groups can load route files, directories, and mixed source arrays:
 
 ```javascript
-await Router.group('/api', async () => {
-  await loadRoutes();
-  Router.get('/status', ({ res }) => res.json({ ok: true }));
-});
+await Router.group('/api', [
+  'routes/users.ts',
+  'routes/posts',
+  () => Router.get('/status', ({ res }) => res.json({ ok: true })),
+]);
 ```
 
-With middleware:
+Middleware and conditions are chainable:
 
 ```javascript
-Router.group(
-  '/secure',
-  () => {
-    Router.get('/data', ({ res }) => res.send('Secure Data'));
-  },
-  [authMiddleware],
-);
+await Router
+  .group('/secure', 'routes/secure')
+  .middleware(authMiddleware)
+  .when((source) => Boolean(source) && secureRoutesEnabled);
 ```
 
 ### Global Middleware Scope

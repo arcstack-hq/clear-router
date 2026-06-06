@@ -185,21 +185,24 @@ Router.apiResource('/users', UserController);
 ### Grouped Routes
 
 ```javascript
-Router.group('/admin', () => {
+await Router.group('/admin', () => {
   Router.get('/dashboard', () => 'Admin Panel');
 });
 ```
 
-With middleware:
+File, directory, and mixed source groups are supported:
 
 ```javascript
-Router.group(
-  '/secure',
-  () => {
-    Router.get('/data', () => 'Secure Data');
-  },
-  [authMiddleware],
-);
+await Router.group('/api', [
+  'routes/users.ts',
+  'routes/posts',
+  () => Router.get('/status', () => ({ ok: true })),
+]);
+
+await Router
+  .group('/secure', 'routes/secure')
+  .middleware(authMiddleware)
+  .when(() => secureRoutesEnabled);
 ```
 
 ### Global Middleware Scope

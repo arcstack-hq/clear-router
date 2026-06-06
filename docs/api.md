@@ -252,43 +252,47 @@ Register a HEAD route.
 Router.head('/users/:id', [UserController, 'exists']);
 ```
 
-### group(prefix, callback, middlewares)
+### group(prefix, source, middlewares)
 
-Group routes under a common prefix with optional middlewares.
+Create an awaitable, chainable `RouteGroup` under a common prefix.
 
 **Parameters:**
 
 - `prefix` (string): URL prefix for all routes in the group
-- `callback` (Function): Sync or async function containing route definitions
+- `source` (Function | string | Array): Route callback, file path, directory path, or mixed source array
 - `middlewares` (Function[]): Optional middleware functions
 
-**Returns:** `Promise<void>`
+**Returns:** `RouteGroup`
 
 **Example:**
 
 ```javascript
-Router.group(
+await Router.group(
   '/api',
-  () => {
-    Router.get('/users', handler); // Becomes: /api/users
-    Router.get('/posts', handler); // Becomes: /api/posts
-  },
+  [
+    'routes/users.ts',
+    'routes/posts',
+    () => Router.get('/status', handler),
+  ],
   [apiMiddleware],
 );
 
-// Async group callback
-await Router.group('/api', async () => {
-  await loadRoutes();
-  Router.get('/status', handler); // Becomes: /api/status
-});
+await Router
+  .group('/admin', 'routes/admin')
+  .middleware(authMiddleware)
+  .when((source) => process.env.ADMIN_ENABLED === 'true');
 
 // Nested groups
-Router.group('/api', () => {
-  Router.group('/v1', () => {
+await Router.group('/api', async () => {
+  await Router.group('/v1', () => {
     Router.get('/users', handler); // Becomes: /api/v1/users
   });
 });
 ```
+
+Relative paths resolve from `process.cwd()`. Directory sources are loaded
+recursively in deterministic order. `when()` receives the original source and
+removes the group's routes when its callback returns a falsy value.
 
 ### configure(options)
 

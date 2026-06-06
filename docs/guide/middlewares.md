@@ -202,7 +202,7 @@ Router.get('/reports/{report}', [ReportController, 'show'])
 `Router.group()` applies middleware to every route registered inside the group.
 
 ```ts
-Router.group(
+await Router.group(
   '/admin',
   () => {
     Router.get('/users', [AdminUserController, 'index']);
@@ -212,7 +212,17 @@ Router.group(
 );
 ```
 
-The group prefix and middleware are both inherited by the nested routes.
+Middleware can also be chained onto the returned `RouteGroup`, including groups
+loaded from files or directories:
+
+```ts
+await Router
+  .group('/admin', 'routes/admin')
+  .middleware([AuthMiddleware, AdminMiddleware]);
+```
+
+The group prefix and middleware are inherited by nested routes. Chained
+middleware is attached after every route source has finished registering.
 
 ## Global Middleware Scope
 

@@ -275,20 +275,64 @@ books.show()?.name('books.public.show');
 
 ## Groups & Prefixes
 
-### `Router.group(prefix, callback, middlewares?)`
+### `Router.group(prefix, source, middlewares?)`
 
-Nests routes under a shared prefix, with optional shared middlewares.
+Returns an awaitable `RouteGroup` that registers routes under a shared prefix.
+The source may be a callback, file path, directory path, or an array containing
+any combination of them.
 
 ```ts
 await Router.group(
   '/api/v1',
-  async () => {
-    Router.get('/users', UserController);
-    Router.get('/books', BookController);
-  },
+  [
+    'routes/users.ts',
+    'routes/books',
+    async () => {
+      await prepareRoutes();
+      Router.get('/status', StatusController);
+    },
+  ],
   [AuthMiddleware],
 );
 ```
+
+Relative paths resolve from `process.cwd()`. Absolute paths are accepted
+directly. Directories are loaded recursively in alphabetical order and include
+`.ts`, `.mts`, and `.cts` files, excluding declaration files.
+
+Callback-based and nested groups continue to work:
+
+```ts
+await Router.group('/api', async () => {
+  await Router.group('/v1', () => {
+    Router.get('/users', UserController);
+    Router.get('/books', BookController);
+  });
+});
+```
+
+Chain middleware onto the returned group:
+
+```ts
+await Router
+  .group('/account', 'routes/account')
+  .middleware(AuthMiddleware);
+```
+
+Use `when()` to conditionally retain the registered routes. The condition
+receives the original callback, path, or source array exactly as supplied.
+
+```ts
+await Router
+  .group('/admin', 'routes/admin')
+  .when((source) => {
+    console.log(source); // 'routes/admin'
+    return process.env.ADMIN_ENABLED === 'true';
+  });
+```
+
+When the condition returns a falsy value, the routes registered by that group
+are removed. Nested group conditions only affect their own routes.
 
 ### `Router.middleware(middlewares, callback)`
 

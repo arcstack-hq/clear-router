@@ -94,3 +94,27 @@ class UserController extends Controller {
 
 Router.get('/users/:id', [UserController, 'show']);
 ```
+
+## Grouped Routes
+
+Route groups support callbacks, files, directories, and mixed source arrays.
+
+```ts
+await Router.group('/api', [
+  'routes/users.ts',
+  'routes/posts',
+  () => Router.get('/status', () => ({ ok: true })),
+]);
+```
+
+Middleware and conditional registration are chainable:
+
+```ts
+await Router
+  .group('/secure', 'routes/secure')
+  .middleware(authMiddleware)
+  .when((source) => Boolean(source) && secureRoutesEnabled);
+```
+
+The `when()` callback receives the original source. A falsy return value removes
+the routes registered by that group.
