@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 
-import { CoreRouter } from '../core/router'
+import { CoreRouter } from '../core/CoreRouter'
 
 CoreRouter.configureDefaults({
     container: {

@@ -1,6 +1,6 @@
 import { HTTPResponse, getQuery, getRouterParams, readBody, type H3 } from 'h3'
 
-import { CoreRouter } from '../core/router'
+import { CoreRouter } from '../core/CoreRouter'
 import type { Route } from '../Route'
 import { RouteGroup } from '../RouteGroup'
 import type { ResourceRoutes } from '../ResourceRoutes'
@@ -226,7 +226,7 @@ export class Router extends CoreRouter {
         prefix: string,
         source: RouteGroupSource,
         middlewares?: Middleware[]
-    ): RouteGroup {
+    ): RouteGroup<HttpContext, Middleware, Handler> {
         return super.group(prefix, source, middlewares)
     }
 

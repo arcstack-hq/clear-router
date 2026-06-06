@@ -1,10 +1,10 @@
 import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouteGroupSource } from '../types/basic'
 import type { Handler, HonoApp, HttpContext, Middleware, RouteHandler } from '../types/hono'
 
-import { CoreRouter } from '../core/router'
-import { RouteGroup } from '../RouteGroup'
+import { CoreRouter } from '../core/CoreRouter'
 import type { ResourceRoutes } from '../ResourceRoutes'
 import type { Route } from '../Route'
+import { RouteGroup } from '../RouteGroup'
 import { resolveResponseMeta } from '../core/responses'
 
 /**
@@ -235,7 +235,7 @@ export class Router extends CoreRouter {
         prefix: string,
         source: RouteGroupSource,
         middlewares?: Middleware[]
-    ): RouteGroup {
+    ): RouteGroup<HttpContext, Middleware, Handler> {
         return super.group(prefix, source, middlewares)
     }
 

@@ -2,11 +2,11 @@ import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouteGroupSourc
 import type { Handler, HttpContext, Middleware, RouteHandler } from '../types/express'
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
-import { CoreRouter } from '../core/router'
+import { CoreRouter } from '../core/CoreRouter'
 import type { Router as ExpressRouter } from 'express'
-import { RouteGroup } from '../RouteGroup'
 import { ResourceRoutes } from '../ResourceRoutes'
 import type { Route } from '../Route'
+import { RouteGroup } from '../RouteGroup'
 
 /**
  * @class clear-router Express Router
@@ -225,7 +225,7 @@ export class Router extends CoreRouter {
         prefix: string,
         source: RouteGroupSource,
         middlewares?: Middleware[]
-    ): RouteGroup {
+    ): RouteGroup<HttpContext, Middleware, Handler> {
         return super.group(prefix, source, middlewares)
     }
 

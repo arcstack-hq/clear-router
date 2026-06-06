@@ -3,13 +3,13 @@ import '../example/express/web'
 import { Bind, Container } from '../src/decorators'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
-import { resolve } from 'node:path'
 
 import { Request as ClearRouterRequest } from '../src/core/Request'
 import { Response as ClearRouterResponse } from '../src/core/Response'
 import Router from '../src/express/router'
 import { definePlugin } from '../src/core/plugins'
 import request from 'parasito'
+import { resolve } from 'node:path'
 
 describe('Express App (JS)', () => {
     let app: express.Application
@@ -121,6 +121,28 @@ describe('Express App (JS)', () => {
         await request(app)
             .get('/parent/child/hidden')
             .expect(404)
+    })
+
+    it('supports group middleware chaining', async () => {
+        await Router.group('/parent', async () => {
+            Router.get('/visible', ({ req }: any) => ({
+                visible: true,
+                middlewareCalled: req.groupMiddlewareCalled,
+            }))
+        }).middleware((req: any, _res, next) => {
+            req.groupMiddlewareCalled = true
+            next()
+        })
+
+        await setupApp()
+
+        await request(app)
+            .get('/parent/visible')
+            .expect(200)
+            .expect({
+                visible: true,
+                middlewareCalled: true,
+            })
     })
 
     it('supports class based middleware with a handle method', async () => {

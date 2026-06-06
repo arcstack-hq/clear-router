@@ -2,6 +2,8 @@ import { RouteGroupCondition, RouteGroupContext, RouteGroupOptions } from './typ
 import { isAbsolute, join, resolve } from 'node:path'
 import { readdir, stat } from 'node:fs/promises'
 
+import type { Middleware as EMiddleware } from './types/express'
+import type { Middleware as HMiddleware } from './types/h3'
 import type { Route } from './Route'
 import { importFile } from './core/helpers'
 
@@ -11,10 +13,10 @@ import { importFile } from './core/helpers'
  * @author 3m1n3nc3
  * @repository https://github.com/arkstack-tmp/clear-router
  */
-export class RouteGroup implements PromiseLike<void> {
+export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> implements PromiseLike<void> {
     private readonly checks: Promise<void>[] = []
     private readonly registration: Promise<void>
-    private readonly routes = new Set<Route<any, any, any>>()
+    private readonly routes = new Set<Route<X, M, H>>()
 
     constructor(private readonly options: RouteGroupOptions) {
         this.registration = this.register()
@@ -30,6 +32,22 @@ export class RouteGroup implements PromiseLike<void> {
         this.checks.push(this.registration.then(async () => {
             if (!await condition()) {
                 this.rollback()
+            }
+        }))
+
+        return this
+    }
+
+    /**
+     * Register one or more middleware that will be executed before every route in the group.
+     *
+     * @param middlewares
+     * @returns
+     */
+    middleware (middlewares: M[] | M): this {
+        this.checks.push(this.registration.then(() => {
+            for (const route of this.routes) {
+                route.middleware(middlewares)
             }
         }))
 
@@ -62,7 +80,6 @@ export class RouteGroup implements PromiseLike<void> {
         const fullPrefix = [previousPrefix, this.options.prefix]
             .filter(Boolean)
             .join('/')
-
         const nextContext: RouteGroupContext = {
             prefix: this.options.normalizePath(fullPrefix),
             groupMiddlewares: [

@@ -2,10 +2,10 @@ import type { ApiResourceMiddleware, HttpMethod, ResourceAction, RouteGroupSourc
 import type { FastifyApp, Handler, HttpContext, Middleware, RouteHandler } from '../types/fastify'
 import { isFetchResponse, resolveResponseMeta, responseWasSent } from '../core/responses'
 
-import { CoreRouter } from '../core/router'
-import { RouteGroup } from '../RouteGroup'
+import { CoreRouter } from '../core/CoreRouter'
 import type { ResourceRoutes } from '../ResourceRoutes'
 import type { Route } from '../Route'
+import { RouteGroup } from '../RouteGroup'
 
 /**
  * @class clear-router Fastify Router
@@ -218,7 +218,7 @@ export class Router extends CoreRouter {
         prefix: string,
         source: RouteGroupSource,
         middlewares?: Middleware[]
-    ): RouteGroup {
+    ): RouteGroup<HttpContext, Middleware, Handler> {
         return super.group(prefix, source, middlewares)
     }
 

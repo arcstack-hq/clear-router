@@ -1,32 +1,10 @@
-import type { ApiResourceMiddleware, HttpMethod, ResourceAction } from './types'
+import type { ApiResourceMiddleware, HttpMethod, ResourceAction, ResourceRouteDefinition, ResourceRouteRegistrar, ResourceRouteRemover, ResourceRoutesOptions } from './types'
 
 import type { Middleware as EMiddleware } from './types/express'
 import type { Middleware as HMiddleware } from './types/h3'
 import { ResourceRouteSelection } from './ResourceRouteSelection'
 import { Route } from './Route'
 import { wrap } from './core'
-
-export type ResourceRouteDefinition = {
-    method: HttpMethod
-    path: string
-}
-
-export type ResourceRouteRegistrar<X, M, H> = (input: {
-    action: ResourceAction
-    method: HttpMethod
-    path: string
-    handler: any
-    middlewares?: M[]
-    name: string
-}) => Route<X, M, H>
-
-export type ResourceRouteRemover<X, M, H> = (route: Route<X, M, H>) => void
-
-export type ResourceRoutesOptions<M = any> = {
-    only?: ResourceAction[]
-    except?: ResourceAction[]
-    middlewares?: ApiResourceMiddleware<M>
-}
 
 /**
  * @class clear-router ResourceRoutes
@@ -90,6 +68,10 @@ export class ResourceRoutes<X = any, M = HMiddleware | EMiddleware, H = any> {
 
     /**
      * Only register routes for the provided actions.
+     * 
+     * @param action 
+     * @param actions 
+     * @returns 
      */
     only (action: ResourceAction | ResourceAction[], ...actions: ResourceAction[]): this {
         this.options.only = Array.from(new Set(wrap(action).concat(actions)))
@@ -99,6 +81,10 @@ export class ResourceRoutes<X = any, M = HMiddleware | EMiddleware, H = any> {
 
     /**
      * Register all resource routes except the provided actions.
+     * 
+     * @param action 
+     * @param actions 
+     * @returns 
      */
     except (action: ResourceAction | ResourceAction[], ...actions: ResourceAction[]): this {
         this.options.except = Array.from(new Set(wrap(action).concat(actions)))
@@ -108,6 +94,10 @@ export class ResourceRoutes<X = any, M = HMiddleware | EMiddleware, H = any> {
 
     /**
      * Register one or more middleware that will be executed before the route.
+     * 
+     * @param middlewares 
+     * @param remember 
+     * @returns 
      */
     middleware (middlewares: M[] | M, remember = true): this {
         if (remember) {

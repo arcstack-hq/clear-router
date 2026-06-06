@@ -2,7 +2,7 @@ import { Request, Response } from 'src'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
 
-import { CoreRouter } from '../src/core/router'
+import { CoreRouter } from '../src/core/CoreRouter'
 import Router from '../src/express/router'
 import request from 'parasito'
 

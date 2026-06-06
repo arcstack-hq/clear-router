@@ -78,6 +78,27 @@ export interface RouterConfig {
     }
 }
 
+export type ResourceRouteDefinition = {
+    method: HttpMethod
+    path: string
+}
+
+export type ResourceRouteRegistrar<X, M, H> = (input: {
+    action: ResourceAction
+    method: HttpMethod
+    path: string
+    handler: any
+    middlewares?: M[]
+    name: string
+}) => Route<X, M, H>
+
+export type ResourceRouteRemover<X, M, H> = (route: Route<X, M, H>) => void
+
+export type ResourceRoutesOptions<M = any> = {
+    only?: ResourceAction[]
+    except?: ResourceAction[]
+    middlewares?: ApiResourceMiddleware<M>
+}
 
 export interface RouteGroupContext {
     prefix: string

@@ -972,7 +972,7 @@ export abstract class CoreRouter {
         prefix: string,
         source: RouteGroupSource,
         middlewares?: any[]
-    ): RouteGroup {
+    ): RouteGroup<any, any, any> {
         this.ensureState()
 
         return new RouteGroup({
