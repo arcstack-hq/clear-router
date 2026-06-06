@@ -291,8 +291,17 @@ await Router.group('/api', async () => {
 ```
 
 Relative paths resolve from `process.cwd()`. Directory sources are loaded
-recursively in deterministic order. `when()` receives the original source and
-removes the group's routes when its callback returns a falsy value.
+recursively in deterministic order. `when()` receives callbacks and direct file
+paths individually. For directory sources, it receives every discovered
+absolute file path before import, allowing selected files to be rejected:
+
+```javascript
+await Router
+  .group('/api', 'routes')
+  .when((source) => (
+    typeof source !== 'string' || !source.endsWith('/api.ts')
+  ));
+```
 
 ### configure(options)
 

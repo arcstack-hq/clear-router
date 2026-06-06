@@ -319,20 +319,21 @@ await Router
   .middleware(AuthMiddleware);
 ```
 
-Use `when()` to conditionally retain the registered routes. The condition
-receives the original callback, path, or source array exactly as supplied.
+Use `when()` to filter group sources. Callback and direct file sources are
+passed to the condition directly. Directory sources are expanded first, then
+the condition receives each discovered absolute file path before it is imported.
 
 ```ts
 await Router
-  .group('/admin', 'routes/admin')
+  .group('/api', 'routes')
   .when((source) => {
-    console.log(source); // 'routes/admin'
-    return process.env.ADMIN_ENABLED === 'true';
+    return typeof source !== 'string' || !source.endsWith('/api.ts');
   });
 ```
 
-When the condition returns a falsy value, the routes registered by that group
-are removed. Nested group conditions only affect their own routes.
+This allows a route entry file to load its surrounding directory without
+importing itself. When the condition returns a falsy value, that callback or
+file is rejected. Nested group conditions only affect their own routes.
 
 ### `Router.middleware(middlewares, callback)`
 

@@ -1,4 +1,4 @@
-import { RouteGroupCondition, RouteGroupContext, RouteGroupOptions } from './types'
+import { RouteGroupCondition, RouteGroupContext, RouteGroupEntry, RouteGroupOptions } from './types'
 import { isAbsolute, join, resolve } from 'node:path'
 import { readdir, stat } from 'node:fs/promises'
 
@@ -15,8 +15,10 @@ import { importFile } from './core/helpers'
  */
 export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> implements PromiseLike<void> {
     private readonly checks: Promise<void>[] = []
+    private readonly conditions: RouteGroupCondition[] = []
     private readonly registration: Promise<void>
     private readonly routes = new Set<Route<X, M, H>>()
+    private readonly unfilteredSources = new Set<RouteGroupEntry>()
 
     constructor(private readonly options: RouteGroupOptions) {
         this.registration = this.register()
@@ -29,11 +31,19 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
      * @returns 
      */
     when (condition: RouteGroupCondition): this {
-        this.checks.push(this.registration.then(async () => {
-            if (!await condition(this.options.source)) {
-                this.rollback()
-            }
-        }))
+        this.conditions.push(condition)
+        const unfilteredSources = Array.from(this.unfilteredSources)
+
+        if (unfilteredSources.length) {
+            this.checks.push(this.registration.then(async () => {
+                for (const source of unfilteredSources) {
+                    if (!await condition(source)) {
+                        this.rollback()
+                        break
+                    }
+                }
+            }))
+        }
 
         return this
     }
@@ -97,11 +107,22 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
                 ? this.options.source
                 : [this.options.source]) {
                 if (typeof entry === 'function') {
+                    if (!this.conditions.length) {
+                        this.unfilteredSources.add(entry)
+                    } else if (!await this.accepts(entry)) {
+                        continue
+                    }
+
                     await Promise.resolve(entry())
                     continue
                 }
 
-                for (const file of await this.resolveFiles(entry)) {
+                const resolved = await this.resolveFiles(entry)
+                if (!resolved.directory && !await this.accepts(entry)) continue
+
+                for (const file of resolved.files) {
+                    if (resolved.directory && !await this.accepts(file)) continue
+
                     await importFile(file)
                 }
             }
@@ -109,12 +130,26 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
     }
 
     /**
-     * Rollback the route registrations
-     */
+    * Rollback the route registration
+    */
     private rollback (): void {
         for (const route of this.routes) {
             this.options.removeRoute(route)
         }
+    }
+
+    /**
+     * Check whether a callback or path should be registered.
+     * 
+     * @param source 
+     * @returns 
+     */
+    private async accepts (source: RouteGroupEntry): Promise<boolean> {
+        for (const condition of this.conditions) {
+            if (!await condition(source)) return false
+        }
+
+        return true
     }
 
     /**
@@ -123,7 +158,10 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
      * @param source 
      * @returns 
      */
-    private async resolveFiles (source: string): Promise<string[]> {
+    private async resolveFiles (source: string): Promise<{
+        directory: boolean
+        files: string[]
+    }> {
         const resolved = isAbsolute(source) ? source : resolve(process.cwd(), source)
         let sourceStat
 
@@ -134,14 +172,20 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
         }
 
         if (sourceStat.isFile()) {
-            return [resolved]
+            return {
+                directory: false,
+                files: [resolved],
+            }
         }
 
         if (!sourceStat.isDirectory()) {
             throw new Error(`Route group source must be a file or directory: ${source}`)
         }
 
-        return this.readDirectory(resolved)
+        return {
+            directory: true,
+            files: await this.readDirectory(resolved),
+        }
     }
 
     /**

@@ -9,7 +9,7 @@ import { Response as ClearRouterResponse } from '../src/core/Response'
 import Router from '../src/express/router'
 import { definePlugin } from '../src/core/plugins'
 import request from 'parasito'
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
 
 describe('Express App (JS)', () => {
     let app: express.Application
@@ -79,16 +79,32 @@ describe('Express App (JS)', () => {
             () => Router.get('/first', () => ({ source: 'first-callback' })),
             () => Router.get('/second', () => ({ source: 'second-callback' })),
         ]
+        const seenCallbacks: unknown[] = []
         await Router.group('/callbacks', callbackSources).when((source) => {
-            expect(source).toBe(callbackSources)
+            seenCallbacks.push(source)
 
             return true
         })
+        expect(seenCallbacks).toHaveLength(2)
+        expect(seenCallbacks).toContain(callbackSources[0])
+        expect(seenCallbacks).toContain(callbackSources[1])
 
         await Router.group('/files', [
             'tests/fixtures/group-array/first.ts',
             'tests/fixtures/group-array/second.ts',
         ])
+
+        const seenDirectoryFiles: string[] = []
+        await Router
+            .group('/filtered', 'tests/fixtures/group-filter')
+            .when((source) => {
+                if (typeof source !== 'string') return true
+
+                seenDirectoryFiles.push(basename(source))
+
+                return basename(source) !== 'api.ts'
+            })
+        expect(seenDirectoryFiles).toEqual(['api.ts', 'users.ts'])
 
         await Router.group('/parent', async () => {
             Router.get('/visible', () => ({ visible: true }))
@@ -122,6 +138,15 @@ describe('Express App (JS)', () => {
             .get('/files/second')
             .expect(200)
             .expect({ source: 'second-file' })
+
+        await request(app)
+            .get('/filtered/api-file')
+            .expect(404)
+
+        await request(app)
+            .get('/filtered/users-file')
+            .expect(200)
+            .expect({ source: 'users-file' })
 
         await request(app)
             .get('/parent/visible')

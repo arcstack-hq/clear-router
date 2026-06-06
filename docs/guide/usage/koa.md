@@ -116,5 +116,6 @@ await Router
   .when((source) => Boolean(source) && secureRoutesEnabled);
 ```
 
-The `when()` callback receives the original source. A falsy return value removes
-the routes registered by that group.
+The `when()` callback receives callbacks and direct file paths individually.
+For directory groups, it receives each discovered file path before import, so
+specific files can be rejected.
