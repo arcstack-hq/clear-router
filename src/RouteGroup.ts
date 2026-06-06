@@ -30,7 +30,7 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
      */
     when (condition: RouteGroupCondition): this {
         this.checks.push(this.registration.then(async () => {
-            if (!await condition()) {
+            if (!await condition(this.options.source)) {
                 this.rollback()
             }
         }))

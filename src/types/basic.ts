@@ -117,7 +117,7 @@ export interface RouteGroupOptions {
     removeRoute: (route: Route<any, any, any>) => void
 }
 
-export type RouteGroupCondition = () => MaybePromise<unknown>
+export type RouteGroupCondition = (source: RouteGroupSource) => MaybePromise<unknown>
 
 export interface FileImporter {
     <T = unknown> (filePath: string): Promise<T>;

@@ -66,14 +66,24 @@ describe('Express App (JS)', () => {
     })
 
     it('supports conditional groups and arrays of paths or callbacks', async () => {
-        await Router.group('/conditional', () => {
+        const conditionalCallback = () => {
             Router.get('/hidden', () => ({ hidden: false }))
-        }).when(() => false)
+        }
+        await Router.group('/conditional', conditionalCallback).when((source) => {
+            expect(source).toBe(conditionalCallback)
 
-        await Router.group('/callbacks', [
+            return false
+        })
+
+        const callbackSources = [
             () => Router.get('/first', () => ({ source: 'first-callback' })),
             () => Router.get('/second', () => ({ source: 'second-callback' })),
-        ])
+        ]
+        await Router.group('/callbacks', callbackSources).when((source) => {
+            expect(source).toBe(callbackSources)
+
+            return true
+        })
 
         await Router.group('/files', [
             'tests/fixtures/group-array/first.ts',
