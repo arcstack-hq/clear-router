@@ -3,10 +3,18 @@ import type { JitiOptions, JitiResolveOptions } from 'jiti'
 import type { AsyncLocalStorage } from 'node:async_hooks'
 import type { Route } from 'src/Route'
 
+type OwnStatics<T> = Omit<T, keyof Function | 'prototype'>
+
 /**
  * Controller method reference
  */
-export type ControllerHandler = [any, string];
+export type ControllerHandler<T = any> = T extends abstract new (...args: any[]) => infer I
+    ? [
+        T,
+        | { [K in keyof I]: I[K] extends (...args: any[]) => any ? K : never }[keyof I] & string
+        | { [K in keyof OwnStatics<T>]: OwnStatics<T>[K] extends (...args: any[]) => any ? K : never }[keyof OwnStatics<T>] & string,
+    ]
+    : [any, string];
 
 export type MaybePromise<T = any> = T | Promise<T>
 export type RouteGroupCallback = () => MaybePromise<any>

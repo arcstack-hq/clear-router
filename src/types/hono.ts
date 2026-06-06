@@ -1,7 +1,7 @@
+import type { ClassMiddleware, ControllerHandler } from './basic'
 import type { Context, HonoRequest, MiddlewareHandler } from 'hono'
 
 import type { ClearHttpContext } from '../Contracts'
-import type { ClassMiddleware, ControllerHandler } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 
@@ -20,7 +20,7 @@ export type RouteHandler = (
     req: CoreRequest
 ) => any | Promise<any>
 
-export type Handler = RouteHandler | ControllerHandler
+export type Handler<T = any> = RouteHandler | ControllerHandler<T>
 
 export type NextFunction = () => Promise<void>
 

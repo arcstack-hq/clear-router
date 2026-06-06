@@ -1,7 +1,7 @@
+import type { ClassMiddleware, ControllerHandler } from './basic'
 import type { EventHandlerRequest, H3, H3Event, Middleware as H3Middleware, TypedServerRequest } from 'h3'
 
 import type { ClearHttpContext } from '../Contracts'
-import type { ClassMiddleware, ControllerHandler } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 
@@ -41,9 +41,9 @@ export type RouteHandler = (
 /**
  * Handler can be either a function or controller reference
  */
-export type Handler = RouteHandler | ControllerHandler;
+export type Handler<T = any> = RouteHandler | ControllerHandler<T>
 
-export type NextFunction = () => MaybePromise<unknown | undefined>;
+export type NextFunction = () => MaybePromise<unknown | undefined>
 
 /**
  * Middleware function type

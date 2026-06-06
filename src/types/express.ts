@@ -1,7 +1,7 @@
+import type { ClassMiddleware, ControllerHandler, MiddlewareHandle } from './basic'
 import type { NextFunction, Request, Response } from 'express'
 
 import type { ClearHttpContext } from '../Contracts'
-import type { ClassMiddleware, ControllerHandler, MiddlewareHandle } from './basic'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 
@@ -37,7 +37,7 @@ export type RouteHandler = (
 /**
  * Handler can be either a function or controller reference
  */
-export type Handler = RouteHandler | ControllerHandler;
+export type Handler<T = any> = RouteHandler | ControllerHandler<T>
 
 /**
  * Middleware function type

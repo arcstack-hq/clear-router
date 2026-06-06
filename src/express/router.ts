@@ -81,12 +81,12 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static add (
+    static add<T = any> (
         methods: HttpMethod | HttpMethod[],
         path: string,
         handler: Handler,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.add(methods, path, handler, middlewares)
     }
 
@@ -116,11 +116,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static get (
+    static get<T = any> (
         path: string,
-        handler: Handler,
+        handler: Handler<T>,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.get(path, handler, middlewares)
     }
 
@@ -131,11 +131,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static post (
+    static post<T = any> (
         path: string,
-        handler: Handler,
+        handler: Handler<T>,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.post(path, handler, middlewares)
     }
 
@@ -146,11 +146,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static put (
+    static put<T = any> (
         path: string,
-        handler: Handler,
+        handler: Handler<T>,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.put(path, handler, middlewares)
     }
 
@@ -161,11 +161,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static delete (
+    static delete<T = any> (
         path: string,
-        handler: Handler,
+        handler: Handler<T>,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.delete(path, handler, middlewares)
     }
 
@@ -176,11 +176,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static patch (
+    static patch<T = any> (
         path: string,
-        handler: Handler,
+        handler: Handler<T>,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.patch(path, handler, middlewares)
     }
 
@@ -191,11 +191,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static options (
+    static options<T = any> (
         path: string,
-        handler: Handler,
+        handler: Handler<T>,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.options(path, handler, middlewares)
     }
 
@@ -206,11 +206,11 @@ export class Router extends CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static head (
+    static head<T = any> (
         path: string,
-        handler: Handler,
+        handler: Handler<T>,
         middlewares?: Middleware[] | Middleware
-    ): Route<HttpContext, Middleware, Handler> {
+    ): Route<HttpContext, Middleware, Handler<T>> {
         return super.head(path, handler, middlewares)
     }
 
@@ -221,11 +221,11 @@ export class Router extends CoreRouter {
      * @param callback 
      * @param middlewares 
      */
-    static group (
+    static group<T = any> (
         prefix: string,
         source: RouteGroupSource,
         middlewares?: Middleware[]
-    ): RouteGroup<HttpContext, Middleware, Handler> {
+    ): RouteGroup<HttpContext, Middleware, Handler<T>> {
         return super.group(prefix, source, middlewares)
     }
 
@@ -244,18 +244,18 @@ export class Router extends CoreRouter {
      * 
      * @param type
      */
-    static allRoutes (): Array<Route<HttpContext, Middleware, Handler>>
-    static allRoutes (type: 'path'): Record<string, Route<HttpContext, Middleware, Handler>>
-    static allRoutes (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<HttpContext, Middleware, Handler>> }
-    static allRoutes (type: 'name'): Record<string, Route<HttpContext, Middleware, Handler>>
-    static allRoutes (type?: 'method' | 'path' | 'name'):
-        Array<Route<HttpContext, Middleware, Handler>> |
-        Record<string, Route<HttpContext, Middleware, Handler>> |
-        Record<string, Array<Route<HttpContext, Middleware, Handler>>> {
+    static allRoutes<T = any> (): Array<Route<HttpContext, Middleware, Handler<T>>>
+    static allRoutes<T = any> (type: 'path'): Record<string, Route<HttpContext, Middleware, Handler<T>>>
+    static allRoutes<T = any> (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<HttpContext, Middleware, Handler<T>>> }
+    static allRoutes<T = any> (type: 'name'): Record<string, Route<HttpContext, Middleware, Handler<T>>>
+    static allRoutes<T = any> (type?: 'method' | 'path' | 'name'):
+        Array<Route<HttpContext, Middleware, Handler<T>>> |
+        Record<string, Route<HttpContext, Middleware, Handler<T>>> |
+        Record<string, Array<Route<HttpContext, Middleware, Handler<T>>>> {
         return super.allRoutes(type as any) as any
     }
 
-    static route (name: string): Route<HttpContext, Middleware, Handler> | undefined {
+    static route<T = any> (name: string): Route<HttpContext, Middleware, Handler<T>> | undefined {
         return super.route(name)
     }
 

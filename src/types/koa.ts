@@ -1,16 +1,17 @@
-import type { ClearHttpContext } from '../Contracts'
 import type { ClassMiddleware, ControllerHandler } from './basic'
+
+import type { ClearHttpContext } from '../Contracts'
 import type { Request as CoreRequest } from '../core/Request'
 import type { Response as CoreResponse } from '../core/Response'
 import type Koa from 'koa'
 import type Router from '@koa/router'
 
-export interface RequestWithGetBody extends Koa.Request {
+interface RequestWithGetBody extends Koa.Request {
     getBody: () => Record<string, any>
     body?: any
 }
 
-export interface HttpContext extends Koa.Context, ClearHttpContext {
+interface HttpContext extends Koa.Context, ClearHttpContext {
     request: RequestWithGetBody
     clearRequest: CoreRequest
     clearResponse: CoreResponse
@@ -18,17 +19,19 @@ export interface HttpContext extends Koa.Context, ClearHttpContext {
     query: Record<string, any>
 }
 
-export type RouteHandler = (
+type RouteHandler = (
     ctx: HttpContext,
     req: CoreRequest
 ) => any | Promise<any>
 
-export type Handler = RouteHandler | ControllerHandler
+type Handler<T = any> = RouteHandler | ControllerHandler<T>
 
-export type NextFunction = Koa.Next
+type NextFunction = Koa.Next
 
-export type MiddlewareFunction = Koa.Middleware<any, any>
+type MiddlewareFunction = Koa.Middleware<any, any>
 
-export type Middleware = MiddlewareFunction | ClassMiddleware<MiddlewareFunction>
+type Middleware = MiddlewareFunction | ClassMiddleware<MiddlewareFunction>
 
-export type KoaRouterApp = Router<any, any>
+type KoaRouterApp = Router<any, any>
+
+export { KoaRouterApp, Middleware, NextFunction, Handler, RouteHandler, HttpContext, RequestWithGetBody }

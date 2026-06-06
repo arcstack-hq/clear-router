@@ -52,6 +52,7 @@ export default defineConfig(
             'semi': ['error', 'never'],
             'quotes': ['error', 'single'],
             'no-unused-vars': 'off',
+            '@typescript-eslint/no-unsafe-function-type': 'off',
             '@typescript-eslint/no-unused-vars': [
                 'warn', {
                     'argsIgnorePattern': '^_|_',

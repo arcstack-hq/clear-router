@@ -1,6 +1,7 @@
 import '../example/express/web'
 
 import { Bind, Container } from '../src/decorators'
+import { basename, resolve } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
 
@@ -9,7 +10,6 @@ import { Response as ClearRouterResponse } from '../src/core/Response'
 import Router from '../src/express/router'
 import { definePlugin } from '../src/core/plugins'
 import request from 'parasito'
-import { basename, resolve } from 'node:path'
 
 describe('Express App (JS)', () => {
     let app: express.Application
