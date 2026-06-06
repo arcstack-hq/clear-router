@@ -1,62 +1,29 @@
-// import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-
 import { defineConfig } from 'tsdown'
 
-export default defineConfig([
-  {
-    entry: ['src/index.ts'],
-    format: ['esm', 'cjs'],
-    dts: true,
-    clean: true,
-    exports: true,
-    unbundle: true,
-    outDir: 'dist',
+export default defineConfig({
+  entry: {
+    index: 'src/index.ts',
+    'core/index': 'src/core/index.ts',
+    'decorators/index': 'src/decorators/index.ts',
+    'decorators/setup': 'src/decorators/setup.ts',
+    'express/index': 'src/express/index.ts',
+    'fastify/index': 'src/fastify/index.ts',
+    'h3/index': 'src/h3/index.ts',
+    'hono/index': 'src/hono/index.ts',
+    'koa/index': 'src/koa/index.ts',
+    'types/basic': 'src/types/basic.ts',
+    'types/express': 'src/types/express.ts',
+    'types/fastify': 'src/types/fastify.ts',
+    'types/h3': 'src/types/h3.ts',
+    'types/hono': 'src/types/hono.ts',
+    'types/koa': 'src/types/koa.ts',
   },
-  {
-    dts: true,
-    clean: true,
-    exports: true,
-    unbundle: true,
-    entry: [
-      'src/core/index.ts',
-      'src/decorators/index.ts',
-      'src/decorators/setup.ts',
-      'src/express/index.ts',
-      'src/fastify/index.ts',
-      'src/h3/index.ts',
-      'src/hono/index.ts',
-      'src/koa/index.ts',
-    ],
-    platform: 'node',
-    outDir: 'dist',
-    format: ['esm', 'cjs'],
-    skipNodeModulesBundle: true,
-  },
-  {
-    clean: true,
-    exports: true,
-    entry: {
-      'types/*': [
-        './src/types/*.ts',
-        '!./src/types/index.ts',
-        // '!./src/index.ts',
-        // '!./src/ClearRequest.ts',
-        // '!./src/Route.ts',
-      ],
-    },
-    outDir: 'dist',
-    format: ['esm'],
-    // onSuccess (rsc) {
-    //   for (const n of ['ClearRequest', 'Route']) {
-    //     cpSync(rsc.outDir + `/src/${n}.d.mts`, rsc.outDir + `/types/${n}.d.mts`)
-    //   }
-    //   cpSync(rsc.outDir + '/src/core', rsc.outDir + '/types/core', { recursive: true })
-    //   for (const d of Object.keys(rsc.entry)) {
-    //     const p = d.replace('types', `${rsc.outDir}/types`) + '.d.mts'
-    //     const code = readFileSync(p, 'utf-8')
-    //     writeFileSync(p, code.replace(/\.\.\/src\//g, './'), 'utf-8')
-    //   }
-    //   rmSync(rsc.outDir + '/src', { recursive: true })
-    // },
-  }
-])
+  format: ['esm', 'cjs'],
+  dts: true,
+  clean: true,
+  exports: true,
+  unbundle: true,
+  platform: 'node',
+  outDir: 'dist',
+  skipNodeModulesBundle: true,
+})

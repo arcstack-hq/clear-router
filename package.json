@@ -68,12 +68,30 @@
             "import": "./dist/koa/index.mjs",
             "require": "./dist/koa/index.cjs"
         },
-        "./types/basic": "./dist/types/basic.mjs",
-        "./types/express": "./dist/types/express.mjs",
-        "./types/fastify": "./dist/types/fastify.mjs",
-        "./types/h3": "./dist/types/h3.mjs",
-        "./types/hono": "./dist/types/hono.mjs",
-        "./types/koa": "./dist/types/koa.mjs",
+        "./types/basic": {
+            "import": "./dist/types/basic.mjs",
+            "require": "./dist/types/basic.cjs"
+        },
+        "./types/express": {
+            "import": "./dist/types/express.mjs",
+            "require": "./dist/types/express.cjs"
+        },
+        "./types/fastify": {
+            "import": "./dist/types/fastify.mjs",
+            "require": "./dist/types/fastify.cjs"
+        },
+        "./types/h3": {
+            "import": "./dist/types/h3.mjs",
+            "require": "./dist/types/h3.cjs"
+        },
+        "./types/hono": {
+            "import": "./dist/types/hono.mjs",
+            "require": "./dist/types/hono.cjs"
+        },
+        "./types/koa": {
+            "import": "./dist/types/koa.mjs",
+            "require": "./dist/types/koa.cjs"
+        },
         "./package.json": "./package.json"
     },
     "files": [
