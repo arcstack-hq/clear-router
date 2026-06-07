@@ -2,7 +2,7 @@ import '../example/express/web'
 
 import { Bind, Container } from '../src/decorators'
 import { basename, resolve } from 'node:path'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
 
 import { Request as ClearRouterRequest } from '../src/core/Request'
@@ -70,6 +70,7 @@ describe('Express App (JS)', () => {
             Router.get('/hidden', () => ({ hidden: false }))
         }
         await Router.group('/conditional', conditionalCallback).when((source) => {
+            expectTypeOf(source).toEqualTypeOf<typeof conditionalCallback>()
             expect(source).toBe(conditionalCallback)
 
             return false
@@ -81,6 +82,7 @@ describe('Express App (JS)', () => {
         ]
         const seenCallbacks: unknown[] = []
         await Router.group('/callbacks', callbackSources).when((source) => {
+            expectTypeOf(source).toEqualTypeOf<(typeof callbackSources)[number]>()
             seenCallbacks.push(source)
 
             return true
@@ -98,7 +100,7 @@ describe('Express App (JS)', () => {
         await Router
             .group('/filtered', 'tests/fixtures/group-filter')
             .when((source) => {
-                if (typeof source !== 'string') return true
+                expectTypeOf(source).toEqualTypeOf<string>()
 
                 seenDirectoryFiles.push(basename(source))
 

@@ -1,6 +1,6 @@
 import { JitiOptions, JitiResolveOptions, createJiti } from 'jiti'
 
-import { FileImporter } from 'src/types'
+import { FileImporter } from '../../src/types'
 import { pathToFileURL } from 'node:url'
 import { resolve } from 'node:path'
 

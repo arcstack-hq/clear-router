@@ -1,4 +1,4 @@
-import { RouteGroupCondition, RouteGroupContext, RouteGroupEntry, RouteGroupOptions } from './types'
+import { RouteGroupCondition, RouteGroupConditionSource, RouteGroupContext, RouteGroupEntry, RouteGroupOptions, RouteGroupSource } from './types'
 import { isAbsolute, join, resolve } from 'node:path'
 import { readdir, stat } from 'node:fs/promises'
 
@@ -13,14 +13,19 @@ import { importFile } from './core/helpers'
  * @author 3m1n3nc3
  * @repository https://github.com/arkstack-tmp/clear-router
  */
-export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> implements PromiseLike<void> {
+export class RouteGroup<
+    X = any,
+    M = HMiddleware | EMiddleware,
+    H = any,
+    S extends RouteGroupSource = RouteGroupSource
+> implements PromiseLike<void> {
     private readonly checks: Promise<void>[] = []
-    private readonly conditions: RouteGroupCondition[] = []
+    private readonly conditions: RouteGroupCondition<S>[] = []
     private readonly registration: Promise<void>
     private readonly routes = new Set<Route<X, M, H>>()
     private readonly unfilteredSources = new Set<RouteGroupEntry>()
 
-    constructor(private readonly options: RouteGroupOptions) {
+    constructor(private readonly options: RouteGroupOptions<S>) {
         this.registration = this.register()
     }
 
@@ -30,14 +35,14 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
      * @param condition 
      * @returns 
      */
-    when (condition: RouteGroupCondition): this {
+    when (condition: RouteGroupCondition<S>): this {
         this.conditions.push(condition)
         const unfilteredSources = Array.from(this.unfilteredSources)
 
         if (unfilteredSources.length) {
             this.checks.push(this.registration.then(async () => {
                 for (const source of unfilteredSources) {
-                    if (!await condition(source)) {
+                    if (!await condition(source as RouteGroupConditionSource<S>)) {
                         this.rollback()
                         break
                     }
@@ -146,7 +151,7 @@ export class RouteGroup<X = any, M = HMiddleware | EMiddleware, H = any> impleme
      */
     private async accepts (source: RouteGroupEntry): Promise<boolean> {
         for (const condition of this.conditions) {
-            if (!await condition(source)) return false
+            if (!await condition(source as RouteGroupConditionSource<S>)) return false
         }
 
         return true

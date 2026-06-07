@@ -254,11 +254,11 @@ export class Router extends CoreRouter {
      * @param callback
      * @param middlewares
      */
-    static group<T = any> (
+    static group<T = any, S extends RouteGroupSource = RouteGroupSource> (
         prefix: string,
-        source: RouteGroupSource,
+        source: S,
         middlewares?: Middleware[]
-    ): RouteGroup<HttpContext, Middleware, Handler<T>> {
+    ): RouteGroup<HttpContext, Middleware, Handler<T>, S> {
         return super.group(prefix, source, middlewares)
     }
 

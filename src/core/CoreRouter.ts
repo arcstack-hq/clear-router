@@ -968,11 +968,11 @@ export abstract class CoreRouter {
      * @param callback 
      * @param middlewares 
      */
-    static group (
+    static group<S extends RouteGroupSource> (
         prefix: string,
-        source: RouteGroupSource,
+        source: S,
         middlewares?: any[]
-    ): RouteGroup<any, any, any> {
+    ): RouteGroup<any, any, any, S> {
         this.ensureState()
 
         return new RouteGroup({
