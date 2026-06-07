@@ -14,6 +14,7 @@
     "types": ["node", "vitest", "express"],
     "paths": {
       "src": ["./src/index.ts"],
+      "src/*": ["./src/*"],
       "clear-router/core": ["./src/core/index.ts"],
       "clear-router/core/*": ["./src/core/*"],
       "clear-router/decorators": ["./src/decorators/index.ts"],
