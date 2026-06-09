@@ -9,7 +9,7 @@ import { RouteParameter } from './Contracts'
  * @class clear-router Route
  * @description A route describes a single enpoint on clear-router
  * @author 3m1n3nc3
- * @repository https://github.com/arkstack-tmp/clear-router
+ * @repository https://github.com/arkstack-hq/clear-router
  */
 export class Route<X = any, M = HMiddleware | EMiddleware, H = any> {
     ctx!: X

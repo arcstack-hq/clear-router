@@ -10,7 +10,7 @@ import { wrap } from './core'
  * @class clear-router ResourceRoutes
  * @description A ResourceRoutes creates a collection of resourceful routes in a single call
  * @author 3m1n3nc3
- * @repository https://github.com/arkstack-tmp/clear-router
+ * @repository https://github.com/arkstack-hq/clear-router
  */
 export class ResourceRoutes<X = any, M = HMiddleware | EMiddleware, H = any> {
     static actions = {

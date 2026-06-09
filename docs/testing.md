@@ -594,5 +594,5 @@ beforeEach(() => {
 ## Additional Resources
 
 - [Vitest Documentation](https://vitest.dev)
-- [Parasito Documentation](https://github.com/arkstack-tmp/parasito)
+- [Parasito Documentation](https://github.com/arkstack-hq/parasito)
 - [TypeScript Testing](https://www.typescriptlang.org/docs/handbook/project-references.html#an-example-project)

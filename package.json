@@ -17,13 +17,13 @@
         "commonjs",
         "h3ravel"
     ],
-    "homepage": "https://arkstack-tmp.github.io/clear-router",
+    "homepage": "https://arkstack-hq.github.io/clear-router",
     "bugs": {
-        "url": "https://github.com/arkstack-tmp/clear-router/issues"
+        "url": "https://github.com/arkstack-hq/clear-router/issues"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/arkstack-tmp/clear-router.git"
+        "url": "git+https://github.com/arkstack-hq/clear-router.git"
     },
     "license": "MIT",
     "author": "3m1n1nce <3m1n1nce@toneflix.net>",

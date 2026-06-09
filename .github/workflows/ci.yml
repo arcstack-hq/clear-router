@@ -51,4 +51,4 @@ jobs:
         with:
           directory: ./coverage
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: arkstack-tmp/clear-router
+          slug: arkstack-hq/clear-router

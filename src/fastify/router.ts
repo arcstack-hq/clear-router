@@ -11,7 +11,7 @@ import { RouteGroup } from '../RouteGroup'
  * @class clear-router Fastify Router
  * @description Laravel-style routing system for Fastify using shared clear-router core
  * @author 3m1n3nc3
- * @repository https://github.com/arkstack-tmp/clear-router
+ * @repository https://github.com/arkstack-hq/clear-router
  */
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:fastify'

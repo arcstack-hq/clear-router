@@ -44,7 +44,7 @@ export default defineConfig({
         ],
         socialLinks: [
             { icon: 'discord', link: 'https://discord.gg/jmQybxKQ7R' },
-            { icon: 'github', link: 'https://github.com/arkstack-tmp/clear-router' },
+            { icon: 'github', link: 'https://github.com/arkstack-hq/clear-router' },
             { icon: 'npm', link: 'https://www.npmjs.com/package/clear-router' }
         ],
         search: {

@@ -11,7 +11,7 @@ import { importFile } from './core/helpers'
  * @class clear-router RouteGroup
  * @description A route group describes a collection of routes on clear-router
  * @author 3m1n3nc3
- * @repository https://github.com/arkstack-tmp/clear-router
+ * @repository https://github.com/arkstack-hq/clear-router
  */
 export class RouteGroup<
     X = any,
