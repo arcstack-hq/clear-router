@@ -9,11 +9,11 @@ export default defineConfig({
     themeConfig: {
         nav: [
             { text: 'Guide', link: '/index' },
-            { text: 'Express', link: '/guide/express' },
-            { text: 'Fastify', link: '/guide/fastify' },
-            { text: 'H3', link: '/guide/h3' },
-            { text: 'Hono', link: '/guide/hono' },
-            { text: 'Koa', link: '/guide/koa' },
+            { text: 'Express', link: '/guide/usage/express' },
+            { text: 'Fastify', link: '/guide/usage/fastify' },
+            { text: 'H3', link: '/guide/usage/h3' },
+            { text: 'Hono', link: '/guide/usage/hono' },
+            { text: 'Koa', link: '/guide/usage/koa' },
             { text: 'API', link: '/api' },
         ],
         sidebar: [
