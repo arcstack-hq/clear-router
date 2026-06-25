@@ -35,7 +35,7 @@ export class RouteGroup<
      * @param condition 
      * @returns 
      */
-    when (condition: RouteGroupCondition<S>): this {
+    when(condition: RouteGroupCondition<S>): this {
         this.conditions.push(condition)
         const unfilteredSources = Array.from(this.unfilteredSources)
 
@@ -59,7 +59,7 @@ export class RouteGroup<
      * @param middlewares
      * @returns
      */
-    middleware (middlewares: M[] | M): this {
+    middleware(middlewares: M[] | M): this {
         this.checks.push(this.registration.then(() => {
             for (const route of this.routes) {
                 route.middleware(middlewares)
@@ -76,7 +76,7 @@ export class RouteGroup<
      * @param onrejected 
      * @returns 
      */
-    then<TResult1 = void, TResult2 = never> (
+    then<TResult1 = void, TResult2 = never>(
         onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
         onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
     ): PromiseLike<TResult1 | TResult2> {
@@ -88,7 +88,7 @@ export class RouteGroup<
     /**
      * Register the routes
      */
-    private async register (): Promise<void> {
+    private async register(): Promise<void> {
         const current = this.options.context.getStore()
         const previousPrefix = current?.prefix ?? this.options.defaultPrefix
         const previousMiddlewares = current?.groupMiddlewares ?? this.options.defaultMiddlewares
@@ -137,7 +137,7 @@ export class RouteGroup<
     /**
     * Rollback the route registration
     */
-    private rollback (): void {
+    private rollback(): void {
         for (const route of this.routes) {
             this.options.removeRoute(route)
         }
@@ -149,7 +149,7 @@ export class RouteGroup<
      * @param source 
      * @returns 
      */
-    private async accepts (source: RouteGroupEntry): Promise<boolean> {
+    private async accepts(source: RouteGroupEntry): Promise<boolean> {
         for (const condition of this.conditions) {
             if (!await condition(source as RouteGroupConditionSource<S>)) return false
         }
@@ -163,7 +163,7 @@ export class RouteGroup<
      * @param source 
      * @returns 
      */
-    private async resolveFiles (source: string): Promise<{
+    private async resolveFiles(source: string): Promise<{
         directory: boolean
         files: string[]
     }> {
@@ -199,7 +199,7 @@ export class RouteGroup<
      * @param directory 
      * @returns 
      */
-    private async readDirectory (directory: string): Promise<string[]> {
+    private async readDirectory(directory: string): Promise<string[]> {
         const entries = await readdir(directory, { withFileTypes: true })
         const files: string[] = []
 
@@ -210,7 +210,7 @@ export class RouteGroup<
                 files.push(...await this.readDirectory(path))
             } else if (
                 entry.isFile() &&
-                /\.(?:[cm]?ts)$/.test(entry.name) &&
+                /\.(?:[cm]?[jt]s)$/.test(entry.name) &&
                 !entry.name.endsWith('.d.ts')
             ) {
                 files.push(path)
