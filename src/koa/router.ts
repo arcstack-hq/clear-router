@@ -16,6 +16,10 @@ import { RouteGroup } from '../RouteGroup'
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:koa'
 
+    protected static formatWildcardParam (name: string): string {
+        return `*${name}`
+    }
+
     private static readonly bodyCache = new WeakMap<HttpContext, Record<string, any>>()
 
     private static async readBodyCached (ctx: HttpContext): Promise<Record<string, any>> {
@@ -334,7 +338,7 @@ export class Router extends CoreRouter {
                     throw new Error(`Invalid HTTP method: ${method} for route: ${route.path}`)
                 }
 
-                for (const registrationPath of route.registrationPaths) {
+                for (const registrationPath of this.resolveRegistrationPaths(route)) {
                     ; (router[method] as any)(
                         registrationPath,
                         ...(route.middlewares || []),
@@ -348,10 +352,14 @@ export class Router extends CoreRouter {
                             }
 
                             const inst = instance ?? route
+                            const params = Router.matchRoute(route, ctx, (ctx.params as Record<string, any>) ?? {})
+                            if (params === false) return next()
+                            Object.assign((ctx as any).params ??= {}, params)
+
                             Router.bindRequestToInstance(ctx, inst, route, {
                                 body: reqBody,
                                 query: ctx.query as Record<string, any>,
-                                params: (ctx.params as Record<string, any>) ?? {},
+                                params,
                                 method,
                             })
 
@@ -367,7 +375,7 @@ export class Router extends CoreRouter {
                 }
 
                 if (['put', 'patch', 'delete'].includes(method)) {
-                    for (const registrationPath of route.registrationPaths) {
+                    for (const registrationPath of this.resolveRegistrationPaths(route)) {
                         router.post(
                             registrationPath,
                             ...(route.middlewares || []),
@@ -381,10 +389,14 @@ export class Router extends CoreRouter {
                                 }
 
                                 const inst = instance ?? route
+                                const params = Router.matchRoute(route, ctx, (ctx.params as Record<string, any>) ?? {})
+                                if (params === false) return next()
+                                Object.assign((ctx as any).params ??= {}, params)
+
                                 Router.bindRequestToInstance(ctx, inst, route, {
                                     body: reqBody,
                                     query: ctx.query as Record<string, any>,
-                                    params: (ctx.params as Record<string, any>) ?? {},
+                                    params,
                                     method,
                                 })
 

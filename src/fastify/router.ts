@@ -16,6 +16,10 @@ import { RouteGroup } from '../RouteGroup'
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:fastify'
 
+    protected static formatWildcardParam (): string {
+        return '*'
+    }
+
     private static ensureRequestBodyAccessor (req: any): void {
         if (typeof req.getBody !== 'function') {
             req.getBody = () => req.body ?? {}
@@ -291,7 +295,7 @@ export class Router extends CoreRouter {
                     throw new Error(`Invalid HTTP method: ${method} for route: ${route.path}`)
                 }
 
-                for (const registrationPath of route.registrationPaths) {
+                for (const registrationPath of this.resolveRegistrationPaths(route)) {
                     app.route({
                         method: method.toUpperCase() as any,
                         url: registrationPath,
@@ -309,10 +313,14 @@ export class Router extends CoreRouter {
                             } as HttpContext
 
                             const inst = instance ?? route
+                            const params = Router.matchRoute(route, ctx, (ctx.req.params as Record<string, any>) ?? {})
+                            if (params === false) return reply.code(404).send()
+                            Object.assign((ctx.req as any).params ??= {}, params)
+
                             Router.bindRequestToInstance(ctx, inst, route, {
                                 body: ctx.req.getBody(),
                                 query: (ctx.req.query as Record<string, any>) ?? {},
-                                params: (ctx.req.params as Record<string, any>) ?? {},
+                                params,
                                 method,
                             })
 
@@ -328,7 +336,7 @@ export class Router extends CoreRouter {
                 }
 
                 if (['put', 'patch', 'delete'].includes(method)) {
-                    for (const registrationPath of route.registrationPaths) {
+                    for (const registrationPath of this.resolveRegistrationPaths(route)) {
                         app.route({
                             method: 'POST',
                             url: registrationPath,
@@ -346,10 +354,14 @@ export class Router extends CoreRouter {
                                 } as HttpContext
 
                                 const inst = instance ?? route
+                                const params = Router.matchRoute(route, ctx, (ctx.req.params as Record<string, any>) ?? {})
+                                if (params === false) return reply.code(404).send()
+                                Object.assign((ctx.req as any).params ??= {}, params)
+
                                 Router.bindRequestToInstance(ctx, inst, route, {
                                     body: ctx.req.getBody(),
                                     query: (ctx.req.query as Record<string, any>) ?? {},
-                                    params: (ctx.req.params as Record<string, any>) ?? {},
+                                    params,
                                     method,
                                 })
 

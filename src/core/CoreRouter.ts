@@ -16,6 +16,7 @@ import { Response as CoreResponse } from './Response'
 import { ResourceRoutes } from '../ResourceRoutes'
 import { Route } from '../Route'
 import { RouteGroup } from '../RouteGroup'
+import { RouteRegistrar } from '../RouteRegistrar'
 import { createRequire } from 'node:module'
 
 /**
@@ -36,6 +37,9 @@ export abstract class CoreRouter {
     private static readonly pluginArgumentResolversKey = Symbol.for('clear-router:plugin-argument-resolvers')
     private static requestProvider?: typeof CoreRequest
     private static responseProvider?: typeof CoreResponse
+    private static readonly domainMatcherCache = new Map<string, { regex: RegExp; params: string[] }>()
+    private static readonly constraintRegexCache = new Map<string, RegExp>()
+    static routePatterns = new Map<string, string | RegExp>()
 
     static config: RouterConfig = {
         inferParamName: false,
@@ -157,6 +161,7 @@ export abstract class CoreRouter {
         this.routesByPathMethod.clear()
         this.routesByMethod.clear()
         this.routesByName.clear()
+        this.routePatterns.clear()
 
         return this
     }
@@ -653,6 +658,357 @@ export abstract class CoreRouter {
     }
 
     /**
+     * Compile a host pattern such as `{account}.example.com` into a matcher and
+     * the ordered list of placeholder names it captures. Results are memoized.
+     *
+     * @param pattern
+     * @returns
+     */
+    protected static compileDomain (pattern: string): { regex: RegExp; params: string[] } {
+        const cached = this.domainMatcherCache.get(pattern)
+        if (cached) return cached
+
+        const cleanPattern = pattern.split(':', 1)[0].trim()
+        const escape = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, match => `\\${match}`)
+        const placeholder = /\{([^{}]+)\}/g
+        const params: string[] = []
+
+        let source = '^'
+        let lastIndex = 0
+        let match: RegExpExecArray | null
+
+        while ((match = placeholder.exec(cleanPattern)) !== null) {
+            source += escape(cleanPattern.slice(lastIndex, match.index))
+
+            const raw = match[1].trim()
+            const optional = raw.endsWith('?')
+            const name = (optional ? raw.slice(0, -1) : raw).split(':', 1)[0].trim()
+
+            params.push(name)
+            source += optional ? '([^.]*)' : '([^.]+)'
+            lastIndex = match.index + match[0].length
+        }
+
+        source += escape(cleanPattern.slice(lastIndex))
+        source += '$'
+
+        const compiled = { regex: new RegExp(source, 'i'), params }
+        this.domainMatcherCache.set(pattern, compiled)
+
+        return compiled
+    }
+
+    /**
+     * Match a host against a domain pattern, returning the captured parameters or
+     * `null` when the host does not match.
+     *
+     * @param pattern
+     * @param host
+     * @returns
+     */
+    static matchDomain (pattern: string, host?: string | null): Record<string, string> | null {
+        if (!pattern) return null
+
+        const cleanHost = String(host ?? '').split(':', 1)[0].trim().toLowerCase()
+        const { regex, params } = this.compileDomain(pattern)
+        const match = regex.exec(cleanHost)
+
+        if (!match) return null
+
+        const result: Record<string, string> = {}
+        params.forEach((name, index) => {
+            const value = match[index + 1]
+            if (typeof value !== 'undefined') {
+                result[name] = decodeURIComponent(value)
+            }
+        })
+
+        return result
+    }
+
+    /**
+     * Best-effort extraction of the request host across every supported adapter
+     * context shape (Express/Fastify plain headers, H3 `Headers`, Hono accessor,
+     * Koa context).
+     *
+     * @param ctx
+     * @returns
+     */
+    protected static extractHost (ctx: any): string {
+        const headers = ctx?.req?.headers ?? ctx?.headers
+        let host: any
+
+        if (headers) {
+            host = typeof headers.get === 'function'
+                ? headers.get('host') ?? headers.get(':authority')
+                : headers.host ?? headers[':authority']
+        }
+
+        if (!host && typeof ctx?.req?.header === 'function') {
+            host = ctx.req.header('host')
+        }
+
+        if (!host && typeof ctx?.host === 'string') {
+            host = ctx.host
+        }
+
+        if (Array.isArray(host)) host = host[0]
+
+        return String(host ?? '').split(',', 1)[0].trim()
+    }
+
+    /**
+     * Resolve the domain parameters for a route given the active request context.
+     * Returns `null` when the route is not domain-constrained, `false` when it is
+     * but the host does not match, or the captured parameters on a match.
+     *
+     * @param route
+     * @param ctx
+     * @returns
+     */
+    protected static matchRouteDomain (
+        route: Route<any, any, any>,
+        ctx: any
+    ): Record<string, string> | null | false {
+        if (!route.domainPattern) return null
+
+        return this.matchDomain(route.domainPattern, this.extractHost(ctx)) ?? false
+    }
+
+    /**
+     * Register a global pattern applied to every route parameter sharing the
+     * given name (equivalent to Laravel's `Route::pattern`).
+     *
+     * @param name
+     * @param pattern
+     */
+    static pattern (name: string, pattern: string | RegExp): void {
+        this.ensureState()
+        this.routePatterns.set(name, pattern)
+    }
+
+    /**
+     * Register multiple global parameter patterns at once.
+     *
+     * @param patterns
+     */
+    static patterns (patterns: Record<string, string | RegExp>): void {
+        for (const [name, pattern] of Object.entries(patterns)) {
+            this.pattern(name, pattern)
+        }
+    }
+
+    /**
+     * Merge the global parameter patterns with the route's own constraints. Route
+     * level constraints take precedence over global patterns.
+     *
+     * @param route
+     * @returns
+     */
+    protected static resolveConstraints (route: Route<any, any, any>): Record<string, string | RegExp> {
+        if (!this.routePatterns.size && !Object.keys(route.constraints).length) {
+            return route.constraints
+        }
+
+        return { ...Object.fromEntries(this.routePatterns), ...route.constraints }
+    }
+
+    /**
+     * Compile a constraint pattern into a fully-anchored regular expression.
+     *
+     * @param pattern
+     * @returns
+     */
+    protected static toConstraintRegex (pattern: string | RegExp): RegExp {
+        if (pattern instanceof RegExp) {
+            return new RegExp(`^(?:${pattern.source})$`, pattern.flags.replace('g', ''))
+        }
+
+        const cached = this.constraintRegexCache.get(pattern)
+        if (cached) return cached
+
+        const regex = new RegExp(`^(?:${pattern})$`)
+        this.constraintRegexCache.set(pattern, regex)
+
+        return regex
+    }
+
+    /**
+     * Determine whether the resolved parameters satisfy the route's constraints.
+     * Absent parameters (e.g. optional ones) are ignored.
+     *
+     * @param route
+     * @param params
+     * @returns
+     */
+    protected static satisfiesConstraints (
+        route: Route<any, any, any>,
+        params: Record<string, any>
+    ): boolean {
+        const constraints = this.resolveConstraints(route)
+
+        for (const name of Object.keys(constraints)) {
+            const value = params[name]
+            if (typeof value === 'undefined' || value === null) continue
+
+            const values = Array.isArray(value) ? value : [value]
+            const regex = this.toConstraintRegex(constraints[name])
+
+            if (!values.every(entry => regex.test(String(entry)))) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    /**
+     * Determine which of a route's parameters are allowed to span multiple path
+     * segments (i.e. their constraint matches an encoded forward slash). These are
+     * registered with the adapter's catch-all syntax.
+     *
+     * @param route
+     * @returns
+     */
+    protected static wildcardParameters (route: Route<any, any, any>): Set<string> {
+        const wildcards = new Set<string>()
+        const constraints = this.resolveConstraints(route)
+        const declared = new Set(route.parameters.map(parameter => parameter.name))
+
+        for (const name of Object.keys(constraints)) {
+            if (!declared.has(name)) continue
+            if (this.toConstraintRegex(constraints[name]).test('a/b')) {
+                wildcards.add(name)
+            }
+        }
+
+        return wildcards
+    }
+
+    /**
+     * Render a single wildcard (slash-spanning) parameter for the underlying
+     * router's registration path. Overridden per adapter; the base form keeps the
+     * plain `:name` placeholder.
+     *
+     * @param name
+     * @returns
+     */
+    protected static formatWildcardParam (name: string): string {
+        return `:${name}`
+    }
+
+    /**
+     * Rewrite a route's registration paths so any wildcard parameters use the
+     * adapter's catch-all syntax. Non-wildcard routes are returned unchanged.
+     *
+     * @param route
+     * @returns
+     */
+    protected static resolveRegistrationPaths (route: Route<any, any, any>): string[] {
+        const wildcards = this.wildcardParameters(route)
+        if (!wildcards.size) return route.registrationPaths
+
+        return route.registrationPaths.map(path => path
+            .split('/')
+            .map(segment => {
+                const name = segment.startsWith(':') ? segment.slice(1) : ''
+
+                return name && wildcards.has(name) ? this.formatWildcardParam(name) : segment
+            })
+            .join('/'))
+    }
+
+    /**
+     * Resolve the final parameters for a dispatched route, applying domain
+     * matching and constraint validation. Returns the merged parameters, or
+     * `false` when the route should not handle the request (host mismatch or a
+     * constraint failure) so the adapter can fall through.
+     *
+     * @param route
+     * @param ctx
+     * @param baseParams
+     * @returns
+     */
+    protected static matchRoute (
+        route: Route<any, any, any>,
+        ctx: any,
+        baseParams: Record<string, any> = {}
+    ): Record<string, any> | false {
+        const params: Record<string, any> = { ...(baseParams ?? {}) }
+
+        if (route.domainPattern) {
+            const domainParams = this.matchDomain(route.domainPattern, this.extractHost(ctx))
+            if (!domainParams) return false
+
+            Object.assign(params, domainParams)
+        }
+
+        this.normalizeWildcardParams(route, params)
+
+        if (!this.satisfiesConstraints(route, params)) return false
+
+        return params
+    }
+
+    /**
+     * Normalize wildcard (slash-spanning) parameters into a single string keyed by
+     * the declared parameter name, smoothing over the differing shapes adapters
+     * return (Express yields an array of segments, Fastify keys it under `*`).
+     *
+     * @param route
+     * @param params
+     */
+    protected static normalizeWildcardParams (
+        route: Route<any, any, any>,
+        params: Record<string, any>
+    ): void {
+        const wildcards = this.wildcardParameters(route)
+        if (!wildcards.size) return
+
+        for (const name of wildcards) {
+            let value = params[name]
+
+            if (typeof value === 'undefined' && typeof params['*'] !== 'undefined') {
+                value = params['*']
+                delete params['*']
+            }
+
+            if (Array.isArray(value)) value = value.join('/')
+            if (typeof value !== 'undefined') params[name] = value
+        }
+    }
+
+    /**
+     * Get the route currently being dispatched, if any.
+     *
+     * @returns
+     */
+    static current (): Route<any, any, any> | undefined {
+        const store = this.pluginRequestContext.getStore() as any
+
+        return store?.request?.route ?? store?.ctx?.clearRequest?.route
+    }
+
+    /**
+     * Get the name of the route currently being dispatched.
+     *
+     * @returns
+     */
+    static currentRouteName (): string {
+        return this.current()?.routeName ?? ''
+    }
+
+    /**
+     * Get the action (`Controller@method` or `Closure`) of the route currently
+     * being dispatched.
+     *
+     * @returns
+     */
+    static currentRouteAction (): string {
+        return this.current()?.action ?? ''
+    }
+
+    /**
      * Configures the router with the given options, such as method override settings.
      * 
      * @param this 
@@ -776,6 +1132,7 @@ export abstract class CoreRouter {
         const context = this.groupContext.getStore()
         const activePrefix = context?.prefix ?? this.prefix
         const activeGroupMiddlewares = context?.groupMiddlewares ?? this.groupMiddlewares
+        const activeDomain = context?.domain
 
         methods = Array.isArray(methods) ? methods : [methods]
         middlewares = middlewares
@@ -805,6 +1162,7 @@ export abstract class CoreRouter {
             {
                 registrationPaths,
                 parameters,
+                domain: activeDomain,
                 onName: (name, route, previousName) => {
                     if (previousName && this.routesByName.get(previousName) === route) {
                         this.routesByName.delete(previousName)
@@ -973,18 +1331,54 @@ export abstract class CoreRouter {
         source: S,
         middlewares?: any[]
     ): RouteGroup<any, any, any, S> {
+        return this.makeGroup(prefix, source, middlewares)
+    }
+
+    /**
+     * Build a route group, optionally constrained to a host pattern. Shared by
+     * `group` and the `domain` registrar.
+     *
+     * @param prefix
+     * @param source
+     * @param middlewares
+     * @param extra
+     */
+    protected static makeGroup<S extends RouteGroupSource> (
+        prefix: string,
+        source: S,
+        middlewares?: any[],
+        extra?: { domain?: string }
+    ): RouteGroup<any, any, any, S> {
         this.ensureState()
 
         return new RouteGroup({
             prefix,
             source,
             middlewares,
+            domain: extra?.domain,
             context: this.groupContext,
             defaultPrefix: this.prefix,
             defaultMiddlewares: this.groupMiddlewares,
             normalizePath: path => this.normalizePath(path),
             removeRoute: route => this.removeRoute(route),
         })
+    }
+
+    /**
+     * Begin a route registration constrained to a host pattern such as
+     * `{account}.example.com`. Returns a registrar whose `.group()` registers the
+     * routes under that domain (matched parameters become route parameters).
+     *
+     * @param pattern
+     * @returns
+     */
+    static domain (pattern: string): RouteRegistrar {
+        this.ensureState()
+
+        return new RouteRegistrar(
+            (prefix, source, middlewares, extra) => this.makeGroup(prefix, source, middlewares, extra),
+            { domain: pattern }
+        )
     }
 
     /**
@@ -1283,3 +1677,14 @@ export abstract class CoreRouter {
         instance.clearRequest = clearRequest
     }
 }
+
+/**
+ * Expose the active request's route through the `Route` facade (`Route.current()`,
+ * `Route.currentRouteName()`, `Route.currentRouteAction()`) by delegating to the
+ * shared router request context.
+ */
+Route.bindCurrentResolvers({
+    current: () => CoreRouter.current(),
+    currentRouteName: () => CoreRouter.currentRouteName(),
+    currentRouteAction: () => CoreRouter.currentRouteAction(),
+})

@@ -17,6 +17,10 @@ import { resolveResponseMeta } from '../core/responses'
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:h3'
 
+    protected static formatWildcardParam (name: string): string {
+        return `**:${name}`
+    }
+
     private static readonly bodyCache = new WeakMap<HttpContext, any>()
 
     private static toResponse (ctx: HttpContext, value: any, method: HttpMethod, path: string): any {
@@ -313,7 +317,7 @@ export class Router extends CoreRouter {
                     throw error
                 }
 
-                for (const registrationPath of route.registrationPaths) {
+                for (const registrationPath of this.resolveRegistrationPaths(route)) {
                     app[method](registrationPath, async (event) => {
                         try {
                             const ctx = event as HttpContext
@@ -325,10 +329,14 @@ export class Router extends CoreRouter {
                             }
 
                             const inst = instance ?? route
+                            const params = Router.matchRoute(route, ctx, getRouterParams(ctx, { decode: true }) as Record<string, any>)
+                            if (params === false) return Symbol.for('h3.notFound')
+                            ;(ctx as any).context = Object.assign((ctx as any).context ?? {}, { params })
+
                             Router.bindRequestToInstance(ctx, inst, route, {
                                 body: reqBody,
                                 query: getQuery(ctx) as Record<string, any>,
-                                params: getRouterParams(ctx, { decode: true }) as Record<string, any>,
+                                params,
                                 method,
                             })
 
@@ -348,7 +356,7 @@ export class Router extends CoreRouter {
                 }
 
                 if (['put', 'patch', 'delete'].includes(method)) {
-                    for (const registrationPath of route.registrationPaths) {
+                    for (const registrationPath of this.resolveRegistrationPaths(route)) {
                         app.post(registrationPath, async (event) => {
                             try {
                                 const ctx = event as HttpContext
@@ -358,10 +366,14 @@ export class Router extends CoreRouter {
                                 if (override !== method) return Symbol.for('h3.notFound')
 
                                 const inst = instance ?? route
+                                const params = Router.matchRoute(route, ctx, getRouterParams(ctx, { decode: true }) as Record<string, any>)
+                                if (params === false) return Symbol.for('h3.notFound')
+                                ;(ctx as any).context = Object.assign((ctx as any).context ?? {}, { params })
+
                                 Router.bindRequestToInstance(ctx, inst, route, {
                                     body: reqBody,
                                     query: getQuery(ctx) as Record<string, any>,
-                                    params: getRouterParams(ctx, { decode: true }) as Record<string, any>,
+                                    params,
                                     method,
                                 })
 

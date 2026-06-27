@@ -117,6 +117,7 @@ export type ResourceRoutesOptions<M = any> = {
 export interface RouteGroupContext {
     prefix: string
     groupMiddlewares: any[]
+    domain?: string
     routeCollectors?: Array<Set<Route<any, any, any>>>
 }
 
@@ -124,6 +125,7 @@ export interface RouteGroupOptions<S extends RouteGroupSource = RouteGroupSource
     prefix: string
     source: S
     middlewares?: any[]
+    domain?: string
     context: AsyncLocalStorage<RouteGroupContext>
     defaultPrefix: string
     defaultMiddlewares: any[]

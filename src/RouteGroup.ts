@@ -101,6 +101,7 @@ export class RouteGroup<
                 ...previousMiddlewares,
                 ...(this.options.middlewares || []),
             ],
+            domain: this.options.domain ?? current?.domain,
             routeCollectors: [
                 ...(current?.routeCollectors ?? []),
                 this.routes,

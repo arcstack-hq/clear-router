@@ -16,6 +16,10 @@ import { resolveResponseMeta } from '../core/responses'
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:hono'
 
+    protected static formatWildcardParam (name: string): string {
+        return `:${name}{.+}`
+    }
+
     private static readonly bodyCache = new WeakMap<HttpContext, Record<string, any>>()
 
     private static toResponse (ctx: HttpContext, value: any, method: HttpMethod, path: string): Response | undefined {
@@ -311,7 +315,7 @@ export class Router extends CoreRouter {
                     throw new Error(`Invalid HTTP method: ${method} for route: ${route.path}`)
                 }
 
-                for (const registrationPath of route.registrationPaths) {
+                for (const registrationPath of this.resolveRegistrationPaths(route)) {
                     app[method](
                         registrationPath,
                         ...(route.middlewares || []),
@@ -325,10 +329,13 @@ export class Router extends CoreRouter {
                             }
 
                             const inst = instance ?? route
+                            const params = Router.matchRoute(route, ctx, Router.getParams(ctx))
+                            if (params === false) return (ctx as any).notFound()
+
                             Router.bindRequestToInstance(ctx, inst, route, {
                                 body: reqBody,
                                 query: ctx.req.query() as Record<string, any>,
-                                params: Router.getParams(ctx),
+                                params,
                                 method,
                             })
 
@@ -344,7 +351,7 @@ export class Router extends CoreRouter {
                 }
 
                 if (['put', 'patch', 'delete'].includes(method)) {
-                    for (const registrationPath of route.registrationPaths) {
+                    for (const registrationPath of this.resolveRegistrationPaths(route)) {
                         app.post(
                             registrationPath,
                             ...(route.middlewares || []),
@@ -358,10 +365,13 @@ export class Router extends CoreRouter {
                                 }
 
                                 const inst = instance ?? route
+                                const params = Router.matchRoute(route, ctx, Router.getParams(ctx))
+                                if (params === false) return (ctx as any).notFound()
+
                                 Router.bindRequestToInstance(ctx, inst, route, {
                                     body: reqBody,
                                     query: ctx.req.query() as Record<string, any>,
-                                    params: Router.getParams(ctx),
+                                    params,
                                     method,
                                 })
 

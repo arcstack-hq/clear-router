@@ -18,6 +18,10 @@ import { RouteGroup } from '../RouteGroup'
 export class Router extends CoreRouter {
     protected static routerStateNamespace = 'clear-router:express'
 
+    protected static formatWildcardParam (name: string): string {
+        return `*${name}`
+    }
+
     private static ensureRequestBodyAccessor (req: any): void {
         if (typeof req.getBody !== 'function') {
             req.getBody = () => req.body ?? {}
@@ -312,7 +316,7 @@ export class Router extends CoreRouter {
                     throw error
                 }
 
-                for (const registrationPath of route.registrationPaths) {
+                for (const registrationPath of this.resolveRegistrationPaths(route)) {
                     router[method](
                         registrationPath,
                         (req, _res, next) => {
@@ -337,10 +341,14 @@ export class Router extends CoreRouter {
                                 } as HttpContext
 
                                 const inst = instance ?? route
+                                const params = Router.matchRoute(route, ctx, ctx.req.params as Record<string, any>)
+                                if (params === false) return next('route')
+                                Object.assign(ctx.req.params, params)
+
                                 Router.bindRequestToInstance(ctx, inst, route, {
                                     body: ctx.req.getBody(),
                                     query: ctx.req.query as Record<string, any>,
-                                    params: ctx.req.params as Record<string, any>,
+                                    params,
                                     method,
                                 })
 
@@ -358,7 +366,7 @@ export class Router extends CoreRouter {
                 }
 
                 if (['put', 'patch', 'delete'].includes(method)) {
-                    for (const registrationPath of route.registrationPaths) {
+                    for (const registrationPath of this.resolveRegistrationPaths(route)) {
                         router.post(
                             registrationPath,
                             (req, _res, next) => {
@@ -384,10 +392,14 @@ export class Router extends CoreRouter {
                                     } as HttpContext
 
                                     const inst = instance ?? route
+                                    const params = Router.matchRoute(route, ctx, ctx.req.params as Record<string, any>)
+                                    if (params === false) return next('route')
+                                    Object.assign(ctx.req.params, params)
+
                                     Router.bindRequestToInstance(ctx, inst, route, {
                                         body: ctx.req.getBody(),
                                         query: ctx.req.query as Record<string, any>,
-                                        params: ctx.req.params as Record<string, any>,
+                                        params,
                                         method,
                                     })
 

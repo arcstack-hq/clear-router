@@ -203,6 +203,91 @@ Router.get(
 
 > `HttpContext` extends `Koa.Context`, so all standard Koa context properties (`ctx.body`, `ctx.status`, etc.) are available.
 
+## Route Parameters
+
+Dynamic segments are declared with curly braces. They are converted to the
+underlying framework's parameter syntax automatically, so the same route
+definition works across every adapter.
+
+```ts
+Router.get('/users/{id}', UserController);
+Router.get('/posts/{post}/comments/{comment}', CommentController);
+```
+
+### Optional Parameters
+
+Append `?` to make a parameter optional. The route is registered both with and
+without the segment.
+
+```ts
+Router.get('/users/{name?}', UserController);
+// matches /users and /users/jane
+```
+
+### Scoped Parameters
+
+A parameter may declare a binding field with `{param:field}`. The field is
+exposed on the route and is used for URL generation and for model binding via
+[`@arkormx/plugin-clear-router`](./plugins).
+
+```ts
+Router.get('/posts/{post:slug}', PostController);
+Router.get('/locations/{location:slug}', LocationController);
+
+Router.url('posts.show', { post: { slug: 'hello-world' } });
+// → '/posts/hello-world'
+```
+
+### Regular Expression Constraints
+
+Constrain a parameter to a pattern with the fluent `where*` helpers. When a
+request value does not satisfy the constraint the route does not match and the
+request falls through (resulting in a `404` if nothing else matches).
+
+```ts
+Router.get('/users/{id}', UserController).whereNumber('id');
+Router.get('/posts/{slug}', PostController).where('slug', '[a-z-]+');
+Router.get('/category/{name}', CategoryController).whereIn('name', ['movie', 'song']);
+```
+
+| Method                          | Constraint                                   |
+| ------------------------------- | -------------------------------------------- |
+| `where(name, pattern)`          | Custom regular expression (string or RegExp) |
+| `where({ name: pattern, ... })` | Multiple custom constraints at once          |
+| `whereNumber(...names)`         | `[0-9]+`                                      |
+| `whereAlpha(...names)`          | `[a-zA-Z]+`                                   |
+| `whereAlphaNumeric(...names)`   | `[a-zA-Z0-9]+`                               |
+| `whereUuid(...names)`           | UUID                                          |
+| `whereUlid(...names)`           | ULID                                         |
+| `whereIn(name, values)`         | One of the given values                      |
+
+#### Global Patterns
+
+Use `Router.pattern()` to apply a constraint to every parameter sharing a name.
+Per-route `where*` constraints take precedence over global patterns. Register
+global patterns before calling `Router.apply()`.
+
+```ts
+Router.pattern('id', '[0-9]+');
+Router.patterns({ slug: '[a-z-]+', uuid: '[0-9a-fA-F-]{36}' });
+```
+
+### Encoded Forward Slashes
+
+By default a parameter matches a single path segment. Constraining it with a
+pattern that allows `/` (for example `.*`) lets it span multiple segments. Clear
+Router registers such parameters using each framework's catch-all syntax and
+normalizes the captured value to a single string.
+
+```ts
+Router.get('/search/{search}', SearchController).where('search', '.*');
+// GET /search/foo/bar/baz  →  search === 'foo/bar/baz'
+```
+
+> On Hono, the resolved value is available through the injected `clearRequest`
+> (`clearRequest.params`) rather than `ctx.req.param()`, because Hono exposes
+> params through a method rather than a mutable object.
+
 ## Resource Routes
 
 ### `Router.apiResource(basePath, controller, options?)`
@@ -346,6 +431,54 @@ Router.middleware([AuthMiddleware], () => {
 });
 ```
 
+## Route Domains
+
+Routes can be constrained to a host pattern. Placeholders in the pattern are
+captured and merged into the route parameters, alongside any path parameters.
+Host matching is performed for every adapter; a request whose host does not match
+falls through (resulting in a `404` if nothing else matches).
+
+### `Router.domain(pattern)`
+
+Returns a registrar that scopes a group of routes to a host pattern.
+
+```ts
+Router.domain('{account}.example.com').group(() => {
+  Router.get('/dashboard', ({ req, res }) => {
+    res.json({ account: req.params.account });
+  });
+});
+```
+
+The registrar mirrors `Router.group`, so you can pass a prefix and middlewares,
+and chain `.prefix()` / `.middleware()`:
+
+```ts
+Router
+  .domain('{account}.example.com')
+  .middleware([AuthMiddleware])
+  .group('/admin', 'routes/admin');
+```
+
+### `route.domain(pattern)`
+
+Constrain a single route to a host pattern.
+
+```ts
+Router
+  .get('/team', TeamController)
+  .domain('{account}.example.com')
+  .name('team');
+```
+
+Domain parameters participate in URL generation. When a route has a domain,
+`Router.url()` returns a protocol-relative absolute URL:
+
+```ts
+Router.url('team', { account: 'acme' });
+// → '//acme.example.com/team'
+```
+
 ## Named Routes & URL Generation
 
 Every registered route can be assigned a name for later reference. Resource routes are named automatically (e.g. `books.index`, `books.show`).
@@ -366,6 +499,43 @@ Generate a URL from a named route, substituting any dynamic segments.
 Router.url('books.show', { book: '42' });
 // → '/books/42'
 ```
+
+For routes constrained to a [domain](#route-domains), the generated value is a
+protocol-relative absolute URL that includes the resolved host.
+
+```ts
+Router.url('team', { account: 'acme' });
+// → '//acme.example.com/team'
+```
+
+## Current Route
+
+While a request is being handled, the matched route is available through the
+router as well as the `Route` facade. Both read from the active request context,
+so they return `undefined`/`''` when called outside of a request.
+
+```ts
+import { Router } from 'clear-router/express';
+import { Route } from 'clear-router';
+
+Router.get('/users/{id}', [UserController, 'show']).name('users.show');
+
+// Inside the handler / a controller method:
+Router.current();            // the matched Route instance
+Router.currentRouteName();   // 'users.show'
+Router.currentRouteAction(); // 'UserController@show' (or 'Closure' for callbacks)
+
+// The same accessors exist on the Route facade:
+Route.current();
+Route.currentRouteName();
+Route.currentRouteAction();
+```
+
+| Accessor                | Returns                                                       |
+| ----------------------- | ------------------------------------------------------------ |
+| `current()`             | The matched `Route` instance, or `undefined`                 |
+| `currentRouteName()`    | The route name, or `''`                                      |
+| `currentRouteAction()`  | `Controller@method`, `'Closure'`, or `''`                   |
 
 ## Accessing Routes
 
