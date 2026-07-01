@@ -6,3 +6,10 @@ export {
     type BindToken,
     type BindValue,
 } from '../core/bindings'
+
+export {
+    middleware,
+    getControllerMiddlewares,
+    type MiddlewareDecorator,
+    type MiddlewareInput,
+} from './middleware'

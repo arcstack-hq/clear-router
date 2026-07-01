@@ -1,6 +1,6 @@
 import '../example/express/web'
 
-import { Bind, Container } from '../src/decorators'
+import { Bind, Container, middleware } from '../src/decorators'
 import { basename, resolve } from 'node:path'
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import express, { Router as ExRouter } from 'express'
@@ -184,7 +184,7 @@ describe('Express App (JS)', () => {
 
     it('supports class based middleware with a handle method', async () => {
         class AuthMiddleware {
-            handle (req: any, _res: any, next: any) {
+            handle(req: any, _res: any, next: any) {
                 req.authenticated = true
                 next()
             }
@@ -289,7 +289,7 @@ describe('Express App (JS)', () => {
 
         class BoundUsersController {
             @Bind(ClearRouterRequest, ClearRouterResponse, AuditService)
-            update (request: ClearRouterRequest, response: ClearRouterResponse, audit: AuditService) {
+            update(request: ClearRouterRequest, response: ClearRouterResponse, audit: AuditService) {
                 return response.status(202).json({
                     id: request.param('id'),
                     name: request.input('name'),
@@ -321,7 +321,7 @@ describe('Express App (JS)', () => {
         }
 
         class StandardUsersController {
-            update (request: ClearRouterRequest, audit: AuditService) {
+            update(request: ClearRouterRequest, audit: AuditService) {
                 return {
                     id: request.param('id'),
                     audit: audit.name,
@@ -367,7 +367,7 @@ describe('Express App (JS)', () => {
     it('enables binding through the decorators setup entry', async () => {
         class SetupController {
             @Bind(ClearRouterRequest)
-            show (request: ClearRouterRequest) {
+            show(request: ClearRouterRequest) {
                 return { id: request.param('id') }
             }
         }
@@ -390,13 +390,13 @@ describe('Express App (JS)', () => {
 
         @Bind()
         class MetadataController {
-            show (request: ClearRouterRequest, audit: AuditService) {
+            show(request: ClearRouterRequest, audit: AuditService) {
                 return {
                     id: request.param('id'),
                     audit: audit.name,
                 }
             }
-            audit (audit: AuditService, request: ClearRouterRequest) {
+            audit(audit: AuditService, request: ClearRouterRequest) {
                 return {
                     id: request.param('id'),
                     audit: audit.name,
@@ -447,7 +447,7 @@ describe('Express App (JS)', () => {
 
         class BoundUsersController {
             @Bind(ClearRouterRequest, AuditService)
-            show (request: ClearRouterRequest, audit: AuditService) {
+            show(request: ClearRouterRequest, audit: AuditService) {
                 return {
                     id: request.param('id'),
                     audit: audit.name,
@@ -482,7 +482,7 @@ describe('Express App (JS)', () => {
 
         class LoaderSplitController {
             @Bind(ImportedUser)
-            show (user: InstanceType<typeof LoadedUser>) {
+            show(user: InstanceType<typeof LoadedUser>) {
                 return {
                     source: user.source,
                     loadedInstance: user instanceof LoadedUser,
@@ -514,7 +514,7 @@ describe('Express App (JS)', () => {
     it('allows plugins to augment http context', async () => {
         const plugin = definePlugin<{ name: string }, { pluginName: string }>({
             name: 'test-plugin',
-            setup ({ useHttpContext }) {
+            setup({ useHttpContext }) {
                 useHttpContext(({ ctx }) => {
                     ctx.pluginName = 'test-plugin'
 
@@ -524,7 +524,7 @@ describe('Express App (JS)', () => {
         })
 
         class PluginUsersController {
-            show (ctx: { pluginName: string }) {
+            show(ctx: { pluginName: string }) {
                 return {
                     pluginName: ctx.pluginName
                 }
@@ -549,14 +549,14 @@ describe('Express App (JS)', () => {
 
         const auditPlugin = definePlugin<{ name: string }>({
             name: 'test-audit-plugin',
-            setup ({ bind, options }) {
+            setup({ bind, options }) {
                 bind(AuditService, () => new AuditService(options.name))
             },
         })
 
         class PluginUsersController {
             @Bind(ClearRouterRequest, AuditService)
-            show (request: ClearRouterRequest, audit: AuditService) {
+            show(request: ClearRouterRequest, audit: AuditService) {
                 return {
                     id: request.param('id'),
                     audit: audit.name,
@@ -587,7 +587,7 @@ describe('Express App (JS)', () => {
 
         const asyncAuditPlugin = definePlugin<{ name: string }>({
             name: 'test-async-audit-plugin',
-            async setup ({ bind, options }) {
+            async setup({ bind, options }) {
                 await new Promise(resolve => setTimeout(resolve, 10))
                 bind(AsyncAuditService, () => new AsyncAuditService(options.name))
             },
@@ -595,7 +595,7 @@ describe('Express App (JS)', () => {
 
         class PluginUsersController {
             @Bind(ClearRouterRequest, AsyncAuditService)
-            show (request: ClearRouterRequest, audit: AsyncAuditService) {
+            show(request: ClearRouterRequest, audit: AsyncAuditService) {
                 return {
                     id: request.param('id'),
                     audit: audit.name,
@@ -629,7 +629,7 @@ describe('Express App (JS)', () => {
 
         const requestAuditPlugin = definePlugin({
             name: 'test-request-aware-plugin',
-            setup ({ bind, getRequest }) {
+            setup({ bind, getRequest }) {
                 expect(getRequest()).toBeUndefined()
 
                 bind(RequestAuditService, (d: { request: ClearRouterRequest }) => {
@@ -643,7 +643,7 @@ describe('Express App (JS)', () => {
 
         class PluginUsersController {
             @Bind(RequestAuditService)
-            show (audit: RequestAuditService) {
+            show(audit: RequestAuditService) {
                 return {
                     id: audit.id,
                     method: audit.method,
@@ -680,7 +680,7 @@ describe('Express App (JS)', () => {
 
         const routeModelPlugin = definePlugin({
             name: 'test-replace-arguments-plugin',
-            setup ({ resolveArguments }) {
+            setup({ resolveArguments }) {
                 resolveArguments(({ method, request }) => {
                     if (method !== 'showPluginArguments') return undefined
 
@@ -694,7 +694,7 @@ describe('Express App (JS)', () => {
         })
 
         class PluginArgumentsController {
-            showPluginArguments (
+            showPluginArguments(
                 user: BoundUser,
                 request: ClearRouterRequest,
                 meta: { touched: boolean }
@@ -732,13 +732,13 @@ describe('Express App (JS)', () => {
     it('falls back to the default handler signature when plugin arguments are empty', async () => {
         const emptyArgumentsPlugin = definePlugin({
             name: 'test-empty-arguments-plugin',
-            setup ({ resolveArguments }) {
+            setup({ resolveArguments }) {
                 resolveArguments(() => [])
             },
         })
 
         class EmptyArgumentsController {
-            show (ctx: any, request: ClearRouterRequest) {
+            show(ctx: any, request: ClearRouterRequest) {
                 return {
                     hasContext: Boolean(ctx.req),
                     id: request.param('id'),
@@ -765,7 +765,7 @@ describe('Express App (JS)', () => {
     it('falls back to the default handler signature when binding is disabled', async () => {
         class BoundUsersController {
             @Bind(ClearRouterRequest)
-            show (ctx: any, request: ClearRouterRequest) {
+            show(ctx: any, request: ClearRouterRequest) {
                 return {
                     hasContext: Boolean(ctx.req),
                     id: request.param('id'),
@@ -967,5 +967,126 @@ describe('Express App (JS)', () => {
             .post('/api/users/123')
             .send({})
             .expect(404)
+    })
+
+    describe('middleware decorators', () => {
+        const stamp = (value: string) => (req: any, _res: any, next: any) => {
+            req.stamps = [...(req.stamps ?? []), value]
+            next()
+        }
+
+        it('applies class-level @middleware to every controller action', async () => {
+            @middleware([stamp('class')])
+            class AccountController {
+                index({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+
+                show({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+            }
+
+            Router.get('/accounts', [AccountController, 'index'])
+            Router.get('/accounts/:id', [AccountController, 'show'])
+
+            await setupApp()
+
+            await request(app).get('/accounts').expect(200).expect({ stamps: ['class'] })
+            await request(app).get('/accounts/1').expect(200).expect({ stamps: ['class'] })
+        })
+
+        it('applies method-level @middleware to a single action only', async () => {
+            class LoginController {
+                @middleware(stamp('guest'))
+                create({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+
+                destroy({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+            }
+
+            Router.post('/login', [LoginController, 'create'])
+            Router.delete('/login', [LoginController, 'destroy'])
+
+            await setupApp()
+
+            await request(app).post('/login').expect(200).expect({ stamps: ['guest'] })
+            await request(app).delete('/login').expect(200).expect({ stamps: [] })
+        })
+
+        it('combines class and method middleware, then route-specific middleware', async () => {
+            @middleware(stamp('class'))
+            class DashboardController {
+                @middleware(stamp('method'))
+                index({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+            }
+
+            Router.get('/dashboard', [DashboardController, 'index'], [stamp('route')])
+
+            await setupApp()
+
+            await request(app)
+                .get('/dashboard')
+                .expect(200)
+                .expect({ stamps: ['class', 'method', 'route'] })
+        })
+
+        it('supports class and instance middleware with a handle method', async () => {
+            class ClassMiddleware {
+                handle(req: any, _res: any, next: any) {
+                    req.stamps = [...(req.stamps ?? []), 'class-mw']
+                    next()
+                }
+            }
+
+            const instanceMiddleware = {
+                handle(req: any, _res: any, next: any) {
+                    req.stamps = [...(req.stamps ?? []), 'instance-mw']
+                    next()
+                },
+            }
+
+            @middleware(ClassMiddleware)
+            class ReportController {
+                @middleware(instanceMiddleware)
+                show({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+            }
+
+            Router.get('/reports/:id', [ReportController, 'show'])
+
+            await setupApp()
+
+            await request(app)
+                .get('/reports/1')
+                .expect(200)
+                .expect({ stamps: ['class-mw', 'instance-mw'] })
+        })
+
+        it('applies class-level @middleware across apiResource actions', async () => {
+            @middleware([stamp('resource')])
+            class WidgetController {
+                index({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+
+                show({ req, res }: any) {
+                    return res.json({ stamps: req.stamps ?? [] })
+                }
+            }
+
+            Router.apiResource('/widgets', WidgetController, { only: ['index', 'show'] })
+
+            await setupApp()
+
+            await request(app).get('/widgets').expect(200).expect({ stamps: ['resource'] })
+            await request(app).get('/widgets/1').expect(200).expect({ stamps: ['resource'] })
+        })
     })
 })

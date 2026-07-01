@@ -18,6 +18,7 @@ import { Route } from '../Route'
 import { RouteGroup } from '../RouteGroup'
 import { RouteRegistrar } from '../RouteRegistrar'
 import { createRequire } from 'node:module'
+import { getControllerMiddlewares } from '../decorators/middleware'
 
 /**
  * @class clear-router CoreRouter
@@ -72,7 +73,7 @@ export abstract class CoreRouter {
      * @param middleware 
      * @returns 
      */
-    protected static resolveMiddleware (middleware: any): any {
+    protected static resolveMiddleware(middleware: any): any {
         if (!middleware || typeof middleware === 'function' && !isClass(middleware)) {
             return middleware
         }
@@ -86,11 +87,11 @@ export abstract class CoreRouter {
         return middleware
     }
 
-    protected static resolveMiddlewares (middlewares: any[] = []): any[] {
+    protected static resolveMiddlewares(middlewares: any[] = []): any[] {
         return middlewares.map(middleware => this.resolveMiddleware(middleware))
     }
 
-    protected static routeSpecificity (route: Route<any, any, any>): [number, number, number] {
+    protected static routeSpecificity(route: Route<any, any, any>): [number, number, number] {
         const path = route.registrationPaths
             .slice()
             .sort((left, right) => right.length - left.length)[0] ?? route.path
@@ -100,7 +101,7 @@ export abstract class CoreRouter {
         return [staticSegments, segments.length, path.length]
     }
 
-    protected static orderedRoutes (): Array<Route<any, any, any>> {
+    protected static orderedRoutes(): Array<Route<any, any, any>> {
         return Array.from(this.routes).sort((left, right) => {
             const leftScore = this.routeSpecificity(left)
             const rightScore = this.routeSpecificity(right)
@@ -114,7 +115,7 @@ export abstract class CoreRouter {
         })
     }
 
-    protected static removeRouteMethod (route: Route<any, any, any>, method: HttpMethod, path: string): void {
+    protected static removeRouteMethod(route: Route<any, any, any>, method: HttpMethod, path: string): void {
         route.methods = route.methods.filter(existingMethod => existingMethod !== method)
         this.routesByPathMethod.delete(`${method.toUpperCase()} ${path}`)
 
@@ -133,7 +134,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static removeRoute (route: Route<any, any, any>): void {
+    protected static removeRoute(route: Route<any, any, any>): void {
         this.routes.delete(route)
 
         if (route.routeName && this.routesByName.get(route.routeName) === route) {
@@ -153,7 +154,7 @@ export abstract class CoreRouter {
     /**
      * Resets the router to it's default state
      */
-    static reset () {
+    static reset() {
         this.routes.clear()
         this.prefix = ''
         this.groupMiddlewares = []
@@ -166,7 +167,7 @@ export abstract class CoreRouter {
         return this
     }
 
-    protected static createBaseConfig (): RouterConfig {
+    protected static createBaseConfig(): RouterConfig {
         return {
             inferParamName: false,
             methodOverride: {
@@ -181,7 +182,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static mergeConfig (target: RouterConfig, source?: RouterConfig): RouterConfig {
+    protected static mergeConfig(target: RouterConfig, source?: RouterConfig): RouterConfig {
         if (!source) return target
 
         if (source.methodOverride) {
@@ -201,7 +202,7 @@ export abstract class CoreRouter {
         return target
     }
 
-    protected static getDefaultConfig (): RouterConfig {
+    protected static getDefaultConfig(): RouterConfig {
         const g = globalThis as Record<PropertyKey, any>
 
         if (!g[this.defaultConfigKey]) {
@@ -215,11 +216,11 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static resolveStateNamespace (): string {
+    protected static resolveStateNamespace(): string {
         return String(this.routerStateNamespace || this.name || 'clear-router:core')
     }
 
-    protected static getStateStore (): Record<string, any> {
+    protected static getStateStore(): Record<string, any> {
         const g = globalThis as Record<PropertyKey, any>
 
         if (!g[this.stateStoreKey]) {
@@ -229,7 +230,7 @@ export abstract class CoreRouter {
         return g[this.stateStoreKey] as Record<string, any>
     }
 
-    protected static getPluginStore (): Set<string> {
+    protected static getPluginStore(): Set<string> {
         const g = globalThis as Record<PropertyKey, any>
 
         if (!g[this.pluginStoreKey]) {
@@ -239,7 +240,7 @@ export abstract class CoreRouter {
         return g[this.pluginStoreKey] as Set<string>
     }
 
-    protected static getPluginPendingStore (): Set<Promise<void>> {
+    protected static getPluginPendingStore(): Set<Promise<void>> {
         const g = globalThis as Record<PropertyKey, any>
 
         if (!g[this.pluginPendingKey]) {
@@ -249,7 +250,7 @@ export abstract class CoreRouter {
         return g[this.pluginPendingKey] as Set<Promise<void>>
     }
 
-    protected static getPluginArgumentResolvers (): Set<PluginArgumentsResolver> {
+    protected static getPluginArgumentResolvers(): Set<PluginArgumentsResolver> {
         const g = globalThis as Record<PropertyKey, any>
         if (!g[this.pluginArgumentResolversKey]) {
             g[this.pluginArgumentResolversKey] = new Set<PluginArgumentsResolver>()
@@ -258,7 +259,7 @@ export abstract class CoreRouter {
         return g[this.pluginArgumentResolversKey]
     }
 
-    protected static getPluginHttpCtxResolvers (): Set<PluginArgumentsResolver> {
+    protected static getPluginHttpCtxResolvers(): Set<PluginArgumentsResolver> {
         const g = globalThis as Record<PropertyKey, any>
         if (!g[this.pluginHttpCtxResolversKey]) {
             g[this.pluginHttpCtxResolversKey] = new Set<PluginArgumentsResolver>()
@@ -267,7 +268,7 @@ export abstract class CoreRouter {
         return g[this.pluginHttpCtxResolversKey]
     }
 
-    protected static createDefaultState () {
+    protected static createDefaultState() {
         return {
             config: this.getDefaultConfig(),
             groupContext: new AsyncLocalStorage<RouteGroupContext>(),
@@ -281,7 +282,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static bindStateAccessors (): void {
+    protected static bindStateAccessors(): void {
         if (Object.prototype.hasOwnProperty.call(this, this.stateBoundKey)) {
             return
         }
@@ -305,7 +306,7 @@ export abstract class CoreRouter {
             'globalMiddlewares',
         ]) {
             Object.defineProperty(this, key, {
-                get () {
+                get() {
                     const ns = this.resolveStateNamespace()
                     const registry = this.getStateStore()
 
@@ -315,7 +316,7 @@ export abstract class CoreRouter {
 
                     return registry[ns][key]
                 },
-                set (value) {
+                set(value) {
                     const ns = this.resolveStateNamespace()
                     const registry = this.getStateStore()
 
@@ -338,7 +339,7 @@ export abstract class CoreRouter {
         })
     }
 
-    protected static createDefaultOptionsHandler (): any {
+    protected static createDefaultOptionsHandler(): any {
         return (ctx: any) => {
             const allow = 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD'
 
@@ -383,7 +384,7 @@ export abstract class CoreRouter {
      * 
      * @param options 
      */
-    static configureDefaults (options?: RouterConfig): void {
+    static configureDefaults(options?: RouterConfig): void {
         const g = globalThis as Record<PropertyKey, any>
         const defaults = this.mergeConfig(g[this.defaultConfigKey] || this.createBaseConfig(), options)
         g[this.defaultConfigKey] = defaults
@@ -402,7 +403,7 @@ export abstract class CoreRouter {
      * @param options 
      * @returns 
      */
-    static async use<Options = any> (
+    static async use<Options = any>(
         plugin: ClearRouterPluginInput<Options>,
         options?: Options
     ): Promise<void> {
@@ -428,10 +429,10 @@ export abstract class CoreRouter {
                 bindings: Container.bindings(),
                 configure: this.configure.bind(this),
                 configureDefaults: this.configureDefaults.bind(this),
-                get request () {
+                get request() {
                     return this.getRequest()
                 },
-                get response () {
+                get response() {
                     return this.getResponse()
                 },
                 getRequest: () => this.getCurrentPluginRequestContext()?.request,
@@ -463,18 +464,18 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static async pluginsReady (): Promise<void> {
+    protected static async pluginsReady(): Promise<void> {
         const pending = Array.from(this.getPluginPendingStore())
         if (!pending.length) return
 
         await Promise.all(pending)
     }
 
-    protected static getCurrentPluginRequestContext (): ClearRouterPluginRequestContext | undefined {
+    protected static getCurrentPluginRequestContext(): ClearRouterPluginRequestContext | undefined {
         return this.pluginRequestContext.getStore()
     }
 
-    protected static createPluginRequestContext (ctx: any): ClearRouterPluginRequestContext {
+    protected static createPluginRequestContext(ctx: any): ClearRouterPluginRequestContext {
         const request: CoreRequest = ctx.clearRequest
         const response: CoreResponse = ctx.clearResponse
 
@@ -487,7 +488,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static createPluginBind (): PluginBind {
+    protected static createPluginBind(): PluginBind {
         const bind: PluginBind = (token, value): void => {
             if (typeof value === 'function' && !isClass(value)) {
                 const factory = value as (ctx: ClearRouterPluginRequestContext) => any
@@ -502,7 +503,7 @@ export abstract class CoreRouter {
         return bind
     }
 
-    protected static async resolvePluginArguments (
+    protected static async resolvePluginArguments(
         ctx: any,
         routeContext: Omit<ClearRouterPluginArgumentsContext, keyof ClearRouterPluginRequestContext>
     ): Promise<any[] | undefined> {
@@ -523,7 +524,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static async resolvePluginHttpCtx (
+    protected static async resolvePluginHttpCtx(
         ctx: any,
     ): Promise<void> {
         const resolvers = Array.from(this.getPluginHttpCtxResolvers()) as PluginArgumentsResolver[]
@@ -535,7 +536,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static ensureState (): void {
+    protected static ensureState(): void {
         this.bindStateAccessors()
 
         if (!this.config) {
@@ -588,14 +589,14 @@ export abstract class CoreRouter {
      * @param path  The path to normalize.
      * @returns     The normalized path.
      */
-    static normalizePath (path: string): string {
+    static normalizePath(path: string): string {
         return '/' + path
             .split('/')
             .filter(Boolean)
             .join('/')
     }
 
-    protected static parseRouteParameters (path: string): Array<{
+    protected static parseRouteParameters(path: string): Array<{
         name: string
         field?: string
         optional: boolean
@@ -624,7 +625,7 @@ export abstract class CoreRouter {
         return parameters
     }
 
-    protected static expandRoutePath (path: string): string[] {
+    protected static expandRoutePath(path: string): string[] {
         let paths = ['']
         const segments = this.normalizePath(path).split('/').filter(Boolean)
 
@@ -653,7 +654,7 @@ export abstract class CoreRouter {
         return paths.map(path => path || '/')
     }
 
-    protected static routeRegistrationPaths (path: string): string[] {
+    protected static routeRegistrationPaths(path: string): string[] {
         return this.expandRoutePath(path)
     }
 
@@ -664,7 +665,7 @@ export abstract class CoreRouter {
      * @param pattern
      * @returns
      */
-    protected static compileDomain (pattern: string): { regex: RegExp; params: string[] } {
+    protected static compileDomain(pattern: string): { regex: RegExp; params: string[] } {
         const cached = this.domainMatcherCache.get(pattern)
         if (cached) return cached
 
@@ -706,7 +707,7 @@ export abstract class CoreRouter {
      * @param host
      * @returns
      */
-    static matchDomain (pattern: string, host?: string | null): Record<string, string> | null {
+    static matchDomain(pattern: string, host?: string | null): Record<string, string> | null {
         if (!pattern) return null
 
         const cleanHost = String(host ?? '').split(':', 1)[0].trim().toLowerCase()
@@ -734,7 +735,7 @@ export abstract class CoreRouter {
      * @param ctx
      * @returns
      */
-    protected static extractHost (ctx: any): string {
+    protected static extractHost(ctx: any): string {
         const headers = ctx?.req?.headers ?? ctx?.headers
         let host: any
 
@@ -766,7 +767,7 @@ export abstract class CoreRouter {
      * @param ctx
      * @returns
      */
-    protected static matchRouteDomain (
+    protected static matchRouteDomain(
         route: Route<any, any, any>,
         ctx: any
     ): Record<string, string> | null | false {
@@ -782,7 +783,7 @@ export abstract class CoreRouter {
      * @param name
      * @param pattern
      */
-    static pattern (name: string, pattern: string | RegExp): void {
+    static pattern(name: string, pattern: string | RegExp): void {
         this.ensureState()
         this.routePatterns.set(name, pattern)
     }
@@ -792,7 +793,7 @@ export abstract class CoreRouter {
      *
      * @param patterns
      */
-    static patterns (patterns: Record<string, string | RegExp>): void {
+    static patterns(patterns: Record<string, string | RegExp>): void {
         for (const [name, pattern] of Object.entries(patterns)) {
             this.pattern(name, pattern)
         }
@@ -805,7 +806,7 @@ export abstract class CoreRouter {
      * @param route
      * @returns
      */
-    protected static resolveConstraints (route: Route<any, any, any>): Record<string, string | RegExp> {
+    protected static resolveConstraints(route: Route<any, any, any>): Record<string, string | RegExp> {
         if (!this.routePatterns.size && !Object.keys(route.constraints).length) {
             return route.constraints
         }
@@ -819,7 +820,7 @@ export abstract class CoreRouter {
      * @param pattern
      * @returns
      */
-    protected static toConstraintRegex (pattern: string | RegExp): RegExp {
+    protected static toConstraintRegex(pattern: string | RegExp): RegExp {
         if (pattern instanceof RegExp) {
             return new RegExp(`^(?:${pattern.source})$`, pattern.flags.replace('g', ''))
         }
@@ -841,7 +842,7 @@ export abstract class CoreRouter {
      * @param params
      * @returns
      */
-    protected static satisfiesConstraints (
+    protected static satisfiesConstraints(
         route: Route<any, any, any>,
         params: Record<string, any>
     ): boolean {
@@ -870,7 +871,7 @@ export abstract class CoreRouter {
      * @param route
      * @returns
      */
-    protected static wildcardParameters (route: Route<any, any, any>): Set<string> {
+    protected static wildcardParameters(route: Route<any, any, any>): Set<string> {
         const wildcards = new Set<string>()
         const constraints = this.resolveConstraints(route)
         const declared = new Set(route.parameters.map(parameter => parameter.name))
@@ -893,7 +894,7 @@ export abstract class CoreRouter {
      * @param name
      * @returns
      */
-    protected static formatWildcardParam (name: string): string {
+    protected static formatWildcardParam(name: string): string {
         return `:${name}`
     }
 
@@ -904,7 +905,7 @@ export abstract class CoreRouter {
      * @param route
      * @returns
      */
-    protected static resolveRegistrationPaths (route: Route<any, any, any>): string[] {
+    protected static resolveRegistrationPaths(route: Route<any, any, any>): string[] {
         const wildcards = this.wildcardParameters(route)
         if (!wildcards.size) return route.registrationPaths
 
@@ -929,7 +930,7 @@ export abstract class CoreRouter {
      * @param baseParams
      * @returns
      */
-    protected static matchRoute (
+    protected static matchRoute(
         route: Route<any, any, any>,
         ctx: any,
         baseParams: Record<string, any> = {}
@@ -958,7 +959,7 @@ export abstract class CoreRouter {
      * @param route
      * @param params
      */
-    protected static normalizeWildcardParams (
+    protected static normalizeWildcardParams(
         route: Route<any, any, any>,
         params: Record<string, any>
     ): void {
@@ -983,7 +984,7 @@ export abstract class CoreRouter {
      *
      * @returns
      */
-    static current (): Route<any, any, any> | undefined {
+    static current(): Route<any, any, any> | undefined {
         const store = this.pluginRequestContext.getStore() as any
 
         return store?.request?.route ?? store?.ctx?.clearRequest?.route
@@ -994,7 +995,7 @@ export abstract class CoreRouter {
      *
      * @returns
      */
-    static currentRouteName (): string {
+    static currentRouteName(): string {
         return this.current()?.routeName ?? ''
     }
 
@@ -1004,7 +1005,7 @@ export abstract class CoreRouter {
      *
      * @returns
      */
-    static currentRouteAction (): string {
+    static currentRouteAction(): string {
         return this.current()?.action ?? ''
     }
 
@@ -1015,7 +1016,7 @@ export abstract class CoreRouter {
      * @param options 
      * @returns 
      */
-    static configure (this: any, options?: RouterConfig): void {
+    static configure(this: any, options?: RouterConfig): void {
         this.ensureState()
 
         this.config = this.mergeConfig(this.getDefaultConfig(), this.config)
@@ -1061,7 +1062,7 @@ export abstract class CoreRouter {
         }
     }
 
-    protected static resolveMethodOverride (
+    protected static resolveMethodOverride(
         method: string,
         headers: Headers | Record<string, any>,
         body: unknown
@@ -1121,7 +1122,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static add (
+    static add(
         methods: HttpMethod | HttpMethod[],
         path: string,
         handler: any,
@@ -1157,6 +1158,7 @@ export abstract class CoreRouter {
             this.resolveMiddlewares([
                 ...this.globalMiddlewares,
                 ...activeGroupMiddlewares,
+                ...getControllerMiddlewares(handler),
                 ...(middlewares || []),
             ]),
             {
@@ -1205,7 +1207,7 @@ export abstract class CoreRouter {
      * @param controller 
      * @param options 
      */
-    static apiResource (
+    static apiResource(
         basePath: string,
         controller: any,
         options?: {
@@ -1242,7 +1244,7 @@ export abstract class CoreRouter {
      * @param handler       The handler function for the GET route.
      * @param middlewares   Optional middlewares to apply to the GET route.
      */
-    static get (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+    static get(path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
         return this.add('get', path, handler, middlewares)
     }
 
@@ -1254,7 +1256,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static post (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+    static post(path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
         return this.add('post', path, handler, middlewares)
     }
 
@@ -1266,7 +1268,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static put (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+    static put(path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
         return this.add('put', path, handler, middlewares)
     }
 
@@ -1278,7 +1280,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static delete (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+    static delete(path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
         return this.add('delete', path, handler, middlewares)
     }
 
@@ -1290,7 +1292,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static patch (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+    static patch(path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
         return this.add('patch', path, handler, middlewares)
     }
 
@@ -1302,7 +1304,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static options (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+    static options(path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
         return this.add('options', path, handler, middlewares)
     }
 
@@ -1314,7 +1316,7 @@ export abstract class CoreRouter {
      * @param handler 
      * @param middlewares 
      */
-    static head (path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
+    static head(path: string, handler: any, middlewares?: any[] | any): Route<any, any, any> {
         return this.add('head', path, handler, middlewares)
     }
 
@@ -1326,7 +1328,7 @@ export abstract class CoreRouter {
      * @param callback 
      * @param middlewares 
      */
-    static group<S extends RouteGroupSource> (
+    static group<S extends RouteGroupSource>(
         prefix: string,
         source: S,
         middlewares?: any[]
@@ -1343,7 +1345,7 @@ export abstract class CoreRouter {
      * @param middlewares
      * @param extra
      */
-    protected static makeGroup<S extends RouteGroupSource> (
+    protected static makeGroup<S extends RouteGroupSource>(
         prefix: string,
         source: S,
         middlewares?: any[],
@@ -1372,7 +1374,7 @@ export abstract class CoreRouter {
      * @param pattern
      * @returns
      */
-    static domain (pattern: string): RouteRegistrar {
+    static domain(pattern: string): RouteRegistrar {
         this.ensureState()
 
         return new RouteRegistrar(
@@ -1388,7 +1390,7 @@ export abstract class CoreRouter {
      * @param middlewares 
      * @param callback 
      */
-    static middleware (middlewares: any[], callback: () => void): void {
+    static middleware(middlewares: any[], callback: () => void): void {
         this.ensureState()
 
         const prevMiddlewares = this.globalMiddlewares
@@ -1405,19 +1407,19 @@ export abstract class CoreRouter {
      * 
      * @param this 
      */
-    static allRoutes (): Array<Route<any, any, any>>
+    static allRoutes(): Array<Route<any, any, any>>
     /**
      * @param this  
      * @param type  - 'path' to get routes organized by path
      */
-    static allRoutes (type: 'path'): Record<string, Route<any, any, any>>
+    static allRoutes(type: 'path'): Record<string, Route<any, any, any>>
     /**
      * @param this  
      * @param type  - 'method' to get routes organized by method
      */
-    static allRoutes (type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> }
-    static allRoutes (type: 'name'): Record<string, Route<any, any, any>>
-    static allRoutes (type?: 'method' | 'path' | 'name'):
+    static allRoutes(type: 'method'): { [method in Uppercase<HttpMethod>]?: Array<Route<any, any, any>> }
+    static allRoutes(type: 'name'): Record<string, Route<any, any, any>>
+    static allRoutes(type?: 'method' | 'path' | 'name'):
         Array<Route<any, any, any>> |
         Record<string, Route<any, any, any>> |
         Record<string, Array<Route<any, any, any>>> {
@@ -1441,13 +1443,13 @@ export abstract class CoreRouter {
         )
     }
 
-    static route (name: string): Route<any, any, any> | undefined {
+    static route(name: string): Route<any, any, any> | undefined {
         this.ensureState()
 
         return this.routesByName.get(name)
     }
 
-    static url (name: string, params?: Record<string, any>): string | undefined {
+    static url(name: string, params?: Record<string, any>): string | undefined {
         return this.route(name)?.toPath(params)
     }
 
@@ -1456,7 +1458,7 @@ export abstract class CoreRouter {
      * 
      * @param provider 
      */
-    static setRequestProvider (provider: typeof CoreRequest) {
+    static setRequestProvider(provider: typeof CoreRequest) {
         this.requestProvider = provider
     }
 
@@ -1465,11 +1467,11 @@ export abstract class CoreRouter {
      * 
      * @param provider 
      */
-    static setResponseProvider (provider: typeof CoreResponse) {
+    static setResponseProvider(provider: typeof CoreResponse) {
         this.responseProvider = provider
     }
 
-    private static hasPackageInstalled (name: string): boolean {
+    private static hasPackageInstalled(name: string): boolean {
         try {
             const require = createRequire(import.meta.url)
             require.resolve(name, { paths: [process.cwd()] })
@@ -1488,12 +1490,12 @@ export abstract class CoreRouter {
     private static initializeInstance<
         Prov extends typeof CoreResponse,
         Args extends ConstructorParameters<Prov>[0]
-    > (provider: Prov, args: Args): CoreResponse
+    >(provider: Prov, args: Args): CoreResponse
     private static initializeInstance<
         Prov extends typeof CoreRequest,
         Args extends ConstructorParameters<Prov>[0]
-    > (provider: Prov, args: Args): CoreRequest
-    private static initializeInstance (provider: any, args: any) {
+    >(provider: Prov, args: Args): CoreRequest
+    private static initializeInstance(provider: any, args: any) {
 
         const isRequest = ['CoreRequest', 'Request', 'ClearRequest'].includes(provider.name)
         const isResponse = ['CoreResponse', 'Response', 'ClearResponse'].includes(provider.name)
@@ -1507,7 +1509,7 @@ export abstract class CoreRouter {
         return new provider(args as never)
     }
 
-    protected static resolveHandler (route: Route<any, any, any>): {
+    protected static resolveHandler(route: Route<any, any, any>): {
         handlerFunction: ((ctx: any, req: CoreRequest) => any | Promise<any>) | null
         instance: Controller<any> | null
         bindingTarget?: object
@@ -1565,7 +1567,7 @@ export abstract class CoreRouter {
         return { handlerFunction, instance, bindingTarget, bindingMethod, bindingHandler, bindingMetadata }
     }
 
-    protected static async callHandler (
+    protected static async callHandler(
         handlerFunction: (ctx: any, req: CoreRequest) => any | Promise<any>,
         ctx: any,
         bindingTarget?: object,
@@ -1625,7 +1627,7 @@ export abstract class CoreRouter {
         })
     }
 
-    protected static bindRequestToInstance (
+    protected static bindRequestToInstance(
         ctx: any,
         instance: Controller<any> | Route<any, any, any> | null,
         route: Route<any, any, any>,

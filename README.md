@@ -95,7 +95,21 @@ See [API.md](https://arkstack-hq.github.io/clear-router/api) for complete API do
 ## Middleware Execution Order
 
 ```txt
-[ Global Middleware ] → [ Group Middleware ] → [ Route Middleware ]
+[ Global Middleware ] → [ Group Middleware ] → [ @middleware (class) ] → [ @middleware (method) ] → [ Route Middleware ]
+```
+
+Controllers and controller methods can declare middleware with the `@middleware`
+decorator, accepting the same shapes as any other middleware (callbacks,
+middleware classes, or instances exposing a `handle` method):
+
+```ts
+import { middleware } from 'clear-router/decorators';
+
+@middleware([auth])
+class AccountController {
+  @middleware(GuestMiddleware)
+  create() {}
+}
 ```
 
 ## Handler Execution
