@@ -32,10 +32,6 @@ export abstract class CoreRouter {
     private static readonly stateStoreKey = Symbol.for('clear-router:router-state')
     private static readonly stateBoundKey = Symbol.for('clear-router:router-state-bound')
     private static readonly defaultConfigKey = Symbol.for('clear-router:default-config')
-    private static readonly pluginStoreKey = Symbol.for('clear-router:plugins')
-    private static readonly pluginPendingKey = Symbol.for('clear-router:plugin-promises')
-    private static readonly pluginHttpCtxResolversKey = Symbol.for('clear-router:plugin-http-ctx')
-    private static readonly pluginArgumentResolversKey = Symbol.for('clear-router:plugin-argument-resolvers')
     private static requestProvider?: typeof CoreRequest
     private static responseProvider?: typeof CoreResponse
     private static readonly domainMatcherCache = new Map<string, { regex: RegExp; params: string[] }>()
@@ -52,8 +48,11 @@ export abstract class CoreRouter {
         container: {
             enabled: false,
             autoDiscover: false,
+            strict: false,
         },
     }
+
+    declare static container: Container
 
     protected static groupContext = new AsyncLocalStorage<RouteGroupContext>()
     protected static pluginRequestContext = new AsyncLocalStorage<ClearRouterPluginRequestContext>()
@@ -178,6 +177,7 @@ export abstract class CoreRouter {
             container: {
                 enabled: false,
                 autoDiscover: false,
+                strict: false,
             },
         }
     }
@@ -231,41 +231,27 @@ export abstract class CoreRouter {
     }
 
     protected static getPluginStore(): Set<string> {
-        const g = globalThis as Record<PropertyKey, any>
+        this.bindStateAccessors()
 
-        if (!g[this.pluginStoreKey]) {
-            g[this.pluginStoreKey] = new Set<string>()
-        }
-
-        return g[this.pluginStoreKey] as Set<string>
+        return (this as any).pluginStore
     }
 
     protected static getPluginPendingStore(): Set<Promise<void>> {
-        const g = globalThis as Record<PropertyKey, any>
+        this.bindStateAccessors()
 
-        if (!g[this.pluginPendingKey]) {
-            g[this.pluginPendingKey] = new Set<Promise<void>>()
-        }
-
-        return g[this.pluginPendingKey] as Set<Promise<void>>
+        return (this as any).pluginPending
     }
 
     protected static getPluginArgumentResolvers(): Set<PluginArgumentsResolver> {
-        const g = globalThis as Record<PropertyKey, any>
-        if (!g[this.pluginArgumentResolversKey]) {
-            g[this.pluginArgumentResolversKey] = new Set<PluginArgumentsResolver>()
-        }
+        this.bindStateAccessors()
 
-        return g[this.pluginArgumentResolversKey]
+        return (this as any).pluginArgumentResolvers
     }
 
     protected static getPluginHttpCtxResolvers(): Set<PluginArgumentsResolver> {
-        const g = globalThis as Record<PropertyKey, any>
-        if (!g[this.pluginHttpCtxResolversKey]) {
-            g[this.pluginHttpCtxResolversKey] = new Set<PluginArgumentsResolver>()
-        }
+        this.bindStateAccessors()
 
-        return g[this.pluginHttpCtxResolversKey]
+        return (this as any).pluginHttpCtxResolvers
     }
 
     protected static createDefaultState() {
@@ -279,6 +265,11 @@ export abstract class CoreRouter {
             prefix: '',
             groupMiddlewares: [] as any[],
             globalMiddlewares: [] as any[],
+            container: Container.create(),
+            pluginStore: new Set<string>(),
+            pluginPending: new Set<Promise<void>>(),
+            pluginArgumentResolvers: new Set<PluginArgumentsResolver>(),
+            pluginHttpCtxResolvers: new Set<PluginArgumentsResolver>(),
         }
     }
 
@@ -304,6 +295,11 @@ export abstract class CoreRouter {
             'prefix',
             'groupMiddlewares',
             'globalMiddlewares',
+            'container',
+            'pluginStore',
+            'pluginPending',
+            'pluginArgumentResolvers',
+            'pluginHttpCtxResolvers',
         ]) {
             Object.defineProperty(this, key, {
                 get() {
@@ -407,6 +403,8 @@ export abstract class CoreRouter {
         plugin: ClearRouterPluginInput<Options>,
         options?: Options
     ): Promise<void> {
+        this.ensureState()
+
         const name = typeof plugin === 'function'
             ? plugin.name
             : plugin.name
@@ -418,7 +416,7 @@ export abstract class CoreRouter {
 
         const setup = async (): Promise<void> => {
             const ctx: ClearRouterPluginContext<Options> = {
-                container: Container,
+                container: this.container,
                 bind: this.createPluginBind(),
                 resolveArguments: (resolver) => {
                     this.getPluginArgumentResolvers().add(resolver)
@@ -426,7 +424,7 @@ export abstract class CoreRouter {
                 useHttpContext: (resolver) => {
                     this.getPluginHttpCtxResolvers().add(resolver)
                 },
-                bindings: Container.bindings(),
+                bindings: this.container.bindings(),
                 configure: this.configure.bind(this),
                 configureDefaults: this.configureDefaults.bind(this),
                 get request() {
@@ -484,20 +482,30 @@ export abstract class CoreRouter {
             ctx,
             request,
             response,
-            getBindings: () => Container.bindings(),
+            getBindings: () => Container.current().bindings(),
         }
     }
 
     protected static createPluginBind(): PluginBind {
-        const bind: PluginBind = (token, value): void => {
-            if (typeof value === 'function' && !isClass(value)) {
-                const factory = value as (ctx: ClearRouterPluginRequestContext) => any
-                Container.bind(token, (ctx: any) => factory(this.createPluginRequestContext(ctx)))
+        const bind: PluginBind = (token, value, options): void => {
+            if (value && typeof value === 'object' && 'useFactory' in value) {
+                const factory = value.useFactory as (ctx: ClearRouterPluginRequestContext) => any
+                this.container.bind(token, {
+                    ...value,
+                    useFactory: (ctx: any) => factory(this.createPluginRequestContext(ctx)),
+                })
 
                 return
             }
 
-            Container.bind(token, value)
+            if (typeof value === 'function' && !isClass(value)) {
+                const factory = value as (ctx: ClearRouterPluginRequestContext) => any
+                this.container.bind(token, (ctx: any) => factory(this.createPluginRequestContext(ctx)), options)
+
+                return
+            }
+
+            this.container.bind(token, value, options)
         }
 
         return bind
@@ -1575,7 +1583,10 @@ export abstract class CoreRouter {
         bindingHandler?: object,
         bindingMetadata?: object
     ): Promise<any> {
-        return this.pluginRequestContext.run(this.createPluginRequestContext(ctx), async () => {
+        this.ensureState()
+        const requestContainer = this.container.createRequestScope(ctx)
+
+        return Container.run(requestContainer, () => this.pluginRequestContext.run(this.createPluginRequestContext(ctx), async () => {
             await this.pluginsReady()
             await this.resolvePluginHttpCtx(ctx)
 
@@ -1615,7 +1626,9 @@ export abstract class CoreRouter {
 
             const args = []
             for (const token of tokens) {
-                const resolved = await Container.resolve(token, ctx, Boolean(this.config.container?.autoDiscover))
+                const resolved = this.config.container?.strict
+                    ? await requestContainer.resolveOrFail(token, ctx, Boolean(this.config.container?.autoDiscover))
+                    : await requestContainer.resolve(token, ctx, Boolean(this.config.container?.autoDiscover))
                 if (typeof resolved === 'undefined') {
                     return handlerFunction(ctx, ctx.clearRequest)
                 }
@@ -1624,7 +1637,7 @@ export abstract class CoreRouter {
             }
 
             return (handlerFunction as any)(...args)
-        })
+        }))
     }
 
     protected static bindRequestToInstance(
@@ -1660,14 +1673,12 @@ export abstract class CoreRouter {
         clearRequest.params = payload.params
 
         ctx.clearRequest = clearRequest
-        Container.bind(CoreRequest, ctx.clearRequest)
 
         if (!(ctx.clearResponse instanceof CoreResponse)) {
             ctx.clearResponse = this.initializeInstance(
                 CoreResponse,
                 ctx.response ?? ctx.reply ?? ctx.res
             )
-            Container.bind(CoreResponse, ctx.clearResponse)
         }
 
         if (!instance) return

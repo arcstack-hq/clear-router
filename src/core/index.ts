@@ -1,5 +1,6 @@
 export * from './Request'
 export * from './Response'
+export * from './bindings'
 export * from './plugins'
 export * from '../decorators/middleware'
 export * from './CoreRouter'

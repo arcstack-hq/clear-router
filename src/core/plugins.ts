@@ -1,4 +1,4 @@
-import { BindToken, BindValue, Container } from './bindings'
+import { BindingOptions, BindToken, BindValue, Container } from './bindings'
 
 import type { Request as CoreRequest } from './Request'
 import type { Response as CoreResponse } from './Response'
@@ -28,7 +28,11 @@ export type PluginBindFactory<
     X = any> = (ctx: ClearRouterPluginRequestContext<X>) => T | Promise<T>
 
 export type PluginBindValue<T = any, X = any> = BindValue<T> | PluginBindFactory<T, X>
-export type PluginBind<X = any> = <T>(token: BindToken<T>, value: PluginBindValue<T, X>) => void
+export type PluginBind<X = any> = <T>(
+    token: BindToken<T>,
+    value: PluginBindValue<T, X>,
+    options?: BindingOptions
+) => void
 
 export type PluginArgumentsResolver<HttpContext = any> = (
     ctx: ClearRouterPluginArgumentsContext<HttpContext>
@@ -38,7 +42,7 @@ export interface ClearRouterPluginContext<Options = any, HttpContext = any> {
     /**
      * The service container
      */
-    container: typeof Container
+    container: Container
     /**
      * Register service container bindings
      */
@@ -110,7 +114,7 @@ export interface ClearRouterPlugin<Options = any, HttpContext = any> {
 }
 
 export type ClearRouterPluginInput<Options = any, HttpContext = any> =
-    | ClearRouterPlugin<Options>
+    | ClearRouterPlugin<Options, HttpContext>
     | ((ctx: ClearRouterPluginContext<Options, HttpContext>) => PluginSetupResult)
 
 /**

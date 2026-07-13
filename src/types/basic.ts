@@ -89,6 +89,11 @@ export interface RouterConfig {
         enabled?: boolean
         /** Whether unknown constructor tokens should be instantiated automatically */
         autoDiscover?: boolean
+        /**
+         * Whether unresolved decorated arguments should throw instead of using
+         * the default handler signature
+         */
+        strict?: boolean
     }
 }
 

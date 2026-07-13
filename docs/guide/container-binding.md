@@ -19,14 +19,16 @@ Router.configure({
   container: {
     enabled: true,
     autoDiscover: true,
+    strict: true,
   },
 });
 ```
 
 - `enabled` turns decorated method binding on.
-- `autoDiscover` allows unknown constructor tokens to be instantiated with `new Token()` when no container binding exists.
+- `autoDiscover` allows unknown constructor tokens and their declared dependencies to be instantiated when no explicit binding exists.
+- `strict` throws a resolution error with the dependency path instead of falling back to the default handler arguments.
 
-If binding is disabled, or if a decorated method cannot be resolved, Clear Router falls back to the default `(ctx, clearRequest)` behavior.
+When `strict` is disabled, an unresolved decorated method falls back to the default `(ctx, clearRequest)` behavior for compatibility.
 
 ## One Import Setup
 
@@ -127,7 +129,88 @@ class UsersController {
 }
 ```
 
-Bindings can be values, factories, or classes.
+Bindings can use the shorthand value, factory, or class syntax. Structured providers make the binding behavior explicit:
+
+```ts
+Container.bind(AuditService, {
+  useClass: AuditService,
+  scope: 'request',
+});
+```
+
+Available providers are:
+
+- `useValue`: provide an existing value.
+- `useClass`: construct a class, optionally with `dependencies`.
+- `useFactory`: call a synchronous or asynchronous factory.
+- `useExisting`: alias another token.
+
+## Binding Lifetimes
+
+Every adapter owns an application container and creates a child container for each request. Providers support three lifetimes:
+
+| Scope       | Behavior                                                              |
+| ----------- | --------------------------------------------------------------------- |
+| `singleton` | One instance for the adapter container.                               |
+| `request`   | One instance per request, shared by every resolution in that request. |
+| `transient` | A new instance for every resolution. This is the default.             |
+
+Concurrent resolutions of the same singleton or request-scoped asynchronous provider share the same pending factory result.
+
+Plugin bindings accept the same scope as their third argument:
+
+```ts
+setup({ bind }) {
+  bind(AuditService, ({ request }) => {
+    return new AuditService(request.param('id'));
+  }, { scope: 'request' });
+}
+```
+
+## Constructor Dependencies
+
+Class providers can resolve their constructor dependencies recursively. Use `static inject` with standard TypeScript decorators:
+
+```ts
+class AuditService {
+  static inject = [AuditRepository];
+
+  constructor(readonly repository: AuditRepository) {}
+}
+
+Container.bind(AuditRepository, {
+  useClass: AuditRepository,
+  scope: 'singleton',
+});
+Container.bind(AuditService, { useClass: AuditService });
+```
+
+You can also declare dependencies on the provider:
+
+```ts
+Container.bind(AuditService, {
+  useClass: AuditService,
+  dependencies: [AuditRepository],
+});
+```
+
+When legacy decorator metadata is enabled, constructor parameter metadata is used when no explicit dependency list exists.
+
+## Injection Tokens
+
+Use `InjectionToken<T>` for interfaces, configuration, and primitive values:
+
+```ts
+import { Container, InjectionToken } from 'clear-router/core';
+
+const AuditConfig = new InjectionToken<{ enabled: boolean }>('audit-config');
+
+Container.bind(AuditConfig, {
+  useValue: { enabled: true },
+});
+```
+
+Symbols are also accepted as tokens. `InjectionToken<T>` preserves the resolved value type in TypeScript and produces clearer diagnostics.
 
 ## Auto Discovery
 
@@ -148,7 +231,11 @@ class UsersController {
 }
 ```
 
-Auto-discovered classes should be constructable without arguments. Use `Container.bind()` for classes that need dependencies or configuration.
+Auto-discovered classes may declare constructor dependencies with `static inject` or legacy parameter metadata. Use `Container.bind()` when you need configuration, aliases, or a non-transient lifetime.
+
+## Resolution Errors
+
+Strict mode reports missing and circular dependencies with their full resolution path. You can also request this behavior directly with `container.resolveOrFail(token)`.
 
 ## TypeScript 5.2+ Decorators
 

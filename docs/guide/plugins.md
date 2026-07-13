@@ -106,15 +106,15 @@ export const auditPlugin = definePlugin({
 
 The `setup` function receives a `ClearRouterPluginContext` with the following members:
 
-### `bind(token, factory)`
+### `bind(token, provider, options?)`
 
-Registers a service with the container. The factory receives a dependency object containing the active `request` and `response` when the binding is resolved during a request.
+Registers a service in the current adapter's container. A factory receives a dependency object containing the active `request`, `response`, and framework `ctx` when resolved during a request. Pass `{ scope: 'singleton' | 'request' | 'transient' }` as the third argument, or use a structured `useValue`, `useClass`, `useFactory`, or `useExisting` provider.
 
 ```ts
 setup ({ bind }) {
   bind(AuditService, (d: { request: ClearRouterRequest }) => {
     return new AuditService(d.request.param('id'), d.request.method)
-  })
+  }, { scope: 'request' })
 }
 ```
 

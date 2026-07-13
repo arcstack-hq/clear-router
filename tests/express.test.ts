@@ -670,6 +670,59 @@ describe('Express App (JS)', () => {
             })
     })
 
+    it('isolates request-scoped plugin bindings', async () => {
+        class RequestService {
+            constructor(
+                readonly requestId: string,
+                readonly instanceId: number,
+            ) { }
+        }
+
+        let instances = 0
+        const requestScopePlugin = definePlugin({
+            name: 'test-request-scope-plugin',
+            setup({ bind }) {
+                bind(RequestService, {
+                    scope: 'request',
+                    useFactory: ({ request }) => {
+                        return new RequestService(request.param('id'), ++instances)
+                    },
+                })
+            },
+        })
+
+        class RequestScopeController {
+            @Bind(RequestService, RequestService)
+            show(first: RequestService, second: RequestService) {
+                return {
+                    requestId: first.requestId,
+                    sameInstance: first === second,
+                    instanceId: first.instanceId,
+                }
+            }
+        }
+
+        Router.configure({
+            container: {
+                enabled: true,
+                strict: true,
+            },
+        })
+        await Router.use(requestScopePlugin)
+        Router.get('/api/request-scope/:id', [RequestScopeController, 'show'])
+
+        await setupApp()
+
+        const [first, second] = await Promise.all([
+            request(app).get('/api/request-scope/first'),
+            request(app).get('/api/request-scope/second'),
+        ])
+
+        expect(first.body).toMatchObject({ requestId: 'first', sameInstance: true })
+        expect(second.body).toMatchObject({ requestId: 'second', sameInstance: true })
+        expect(first.body.instanceId).not.toBe(second.body.instanceId)
+    })
+
     it('allows plugins to replace all controller method arguments', async () => {
         class BoundUser {
             constructor(

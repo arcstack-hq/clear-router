@@ -314,6 +314,7 @@ Configure HTTP method override behavior for POST requests.
 - `options.methodOverride.headerKeys` (string | string[]): Header key(s) to inspect for method override
 - `options.container.enabled` (boolean): Enable/disable decorated handler argument binding
 - `options.container.autoDiscover` (boolean): Instantiate unknown class tokens when no explicit container binding exists
+- `options.container.strict` (boolean): Throw detailed errors for unresolved decorated arguments
 
 When enabled, a POST request can target `put`, `patch`, `delete`, or `post` route handlers based on configured override keys.
 
