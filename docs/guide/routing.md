@@ -57,6 +57,7 @@ Router.configureDefaults({
 | `methodOverride.headerKeys` | `string \| string[]` | —       | Header keys to check for method override.                                                      |
 | `container.enabled`         | `boolean`            | `false` | Enable decorated handler parameter binding via a DI container.                                 |
 | `container.autoDiscover`    | `boolean`            | `false` | Automatically instantiate unknown constructor tokens when resolving dependencies.              |
+| `container.strict`          | `boolean`            | `false` | Throw a dependency resolution error instead of falling back to default handler arguments.      |
 
 ## Registering Routes
 
@@ -247,17 +248,20 @@ request falls through (resulting in a `404` if nothing else matches).
 ```ts
 Router.get('/users/{id}', UserController).whereNumber('id');
 Router.get('/posts/{slug}', PostController).where('slug', '[a-z-]+');
-Router.get('/category/{name}', CategoryController).whereIn('name', ['movie', 'song']);
+Router.get('/category/{name}', CategoryController).whereIn('name', [
+  'movie',
+  'song',
+]);
 ```
 
 | Method                          | Constraint                                   |
 | ------------------------------- | -------------------------------------------- |
 | `where(name, pattern)`          | Custom regular expression (string or RegExp) |
 | `where({ name: pattern, ... })` | Multiple custom constraints at once          |
-| `whereNumber(...names)`         | `[0-9]+`                                      |
-| `whereAlpha(...names)`          | `[a-zA-Z]+`                                   |
+| `whereNumber(...names)`         | `[0-9]+`                                     |
+| `whereAlpha(...names)`          | `[a-zA-Z]+`                                  |
 | `whereAlphaNumeric(...names)`   | `[a-zA-Z0-9]+`                               |
-| `whereUuid(...names)`           | UUID                                          |
+| `whereUuid(...names)`           | UUID                                         |
 | `whereUlid(...names)`           | ULID                                         |
 | `whereIn(name, values)`         | One of the given values                      |
 
@@ -341,11 +345,9 @@ Router.apiResource('/books', BookController, {
 `apiResource()` returns a `ResourceRoutes` collection. You can filter the generated actions after creation:
 
 ```ts
-Router.apiResource('/books', BookController)
-  .only('index', 'show');
+Router.apiResource('/books', BookController).only('index', 'show');
 
-Router.apiResource('/books', BookController)
-  .except('destroy');
+Router.apiResource('/books', BookController).except('destroy');
 ```
 
 The collection can also be used for resource middleware chaining:
@@ -399,9 +401,7 @@ await Router.group('/api', async () => {
 Chain middleware onto the returned group:
 
 ```ts
-await Router
-  .group('/account', 'routes/account')
-  .middleware(AuthMiddleware);
+await Router.group('/account', 'routes/account').middleware(AuthMiddleware);
 ```
 
 Use `when()` to filter group sources. Callback and direct file sources are
@@ -409,11 +409,9 @@ passed to the condition directly. Directory sources are expanded first, then
 the condition receives each discovered absolute file path before it is imported.
 
 ```ts
-await Router
-  .group('/api', 'routes')
-  .when((source) => {
-    return typeof source !== 'string' || !source.endsWith('/api.ts');
-  });
+await Router.group('/api', 'routes').when((source) => {
+  return typeof source !== 'string' || !source.endsWith('/api.ts');
+});
 ```
 
 This allows a route entry file to load its surrounding directory without
@@ -454,8 +452,7 @@ The registrar mirrors `Router.group`, so you can pass a prefix and middlewares,
 and chain `.prefix()` / `.middleware()`:
 
 ```ts
-Router
-  .domain('{account}.example.com')
+Router.domain('{account}.example.com')
   .middleware([AuthMiddleware])
   .group('/admin', 'routes/admin');
 ```
@@ -465,8 +462,7 @@ Router
 Constrain a single route to a host pattern.
 
 ```ts
-Router
-  .get('/team', TeamController)
+Router.get('/team', TeamController)
   .domain('{account}.example.com')
   .name('team');
 ```
@@ -521,8 +517,8 @@ import { Route } from 'clear-router';
 Router.get('/users/{id}', [UserController, 'show']).name('users.show');
 
 // Inside the handler / a controller method:
-Router.current();            // the matched Route instance
-Router.currentRouteName();   // 'users.show'
+Router.current(); // the matched Route instance
+Router.currentRouteName(); // 'users.show'
 Router.currentRouteAction(); // 'UserController@show' (or 'Closure' for callbacks)
 
 // The same accessors exist on the Route facade:
@@ -531,11 +527,11 @@ Route.currentRouteName();
 Route.currentRouteAction();
 ```
 
-| Accessor                | Returns                                                       |
-| ----------------------- | ------------------------------------------------------------ |
-| `current()`             | The matched `Route` instance, or `undefined`                 |
-| `currentRouteName()`    | The route name, or `''`                                      |
-| `currentRouteAction()`  | `Controller@method`, `'Closure'`, or `''`                   |
+| Accessor               | Returns                                      |
+| ---------------------- | -------------------------------------------- |
+| `current()`            | The matched `Route` instance, or `undefined` |
+| `currentRouteName()`   | The route name, or `''`                      |
+| `currentRouteAction()` | `Controller@method`, `'Closure'`, or `''`    |
 
 ## Accessing Routes
 
