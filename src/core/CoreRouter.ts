@@ -1229,7 +1229,7 @@ export abstract class CoreRouter {
         if (!!this.config.inferParamName && this.hasPackageInstalled('@h3ravel/support')) {
             const require = createRequire(import.meta.url)
             const { str } = require('@h3ravel/support')
-            paramName = str(basePath).singular().afterLast('/').toString()
+            paramName = str(basePath).singular().afterLast('/').camel().toString()
         }
 
         return new ResourceRoutes(
